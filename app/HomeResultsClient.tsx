@@ -65,21 +65,20 @@ type PackageItem = {
 
 function PackageCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)] xl:grid xl:grid-cols-[minmax(0,1fr)_250px]">
-      <div className="p-5 xl:p-6">
-        <div className="grid gap-5 xl:grid-cols-[190px_minmax(0,1fr)] xl:items-start">
-          <div className="h-[170px] w-full animate-pulse rounded-[18px] bg-slate-200 xl:h-[190px]" />
-          <div className="xl:flex xl:min-h-[190px] xl:flex-col">
-            <div className="h-6 w-4/5 animate-pulse rounded-2xl bg-slate-200 xl:h-7 xl:w-2/3" />
-            <div className="mt-3 h-4 w-1/2 animate-pulse rounded-full bg-slate-100 xl:mt-4 xl:w-1/3" />
-            <div className="mt-4 flex flex-wrap gap-2 xl:mt-5">
-              <div className="h-7 w-20 animate-pulse rounded-full bg-orange-100 xl:h-8 xl:w-24" />
-              <div className="h-7 w-24 animate-pulse rounded-full bg-slate-100 xl:h-8 xl:w-28" />
-            </div>
-            <div className="mt-5 space-y-3 xl:mt-auto">
-              <div className="h-4 w-full animate-pulse rounded-full bg-slate-100" />
-              <div className="h-4 w-5/6 animate-pulse rounded-full bg-slate-100" />
-            </div>
+    <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)] xl:grid xl:grid-cols-[190px_minmax(0,1fr)_250px]">
+      <div className="hidden animate-pulse bg-slate-200 xl:block" />
+      <div className="p-5 xl:px-6 xl:py-6">
+        <div className="h-[170px] w-full animate-pulse rounded-[18px] bg-slate-200 xl:mb-0 xl:hidden" />
+        <div className="mt-5 xl:mt-0">
+          <div className="h-6 w-4/5 animate-pulse rounded-2xl bg-slate-200 xl:h-7 xl:w-2/3" />
+          <div className="mt-3 h-4 w-1/2 animate-pulse rounded-full bg-slate-100 xl:mt-4 xl:w-1/3" />
+          <div className="mt-4 flex flex-wrap gap-2 xl:mt-5">
+            <div className="h-7 w-20 animate-pulse rounded-full bg-orange-100 xl:h-8 xl:w-24" />
+            <div className="h-7 w-24 animate-pulse rounded-full bg-slate-100 xl:h-8 xl:w-28" />
+          </div>
+          <div className="mt-5 space-y-3">
+            <div className="h-4 w-full animate-pulse rounded-full bg-slate-100" />
+            <div className="h-4 w-5/6 animate-pulse rounded-full bg-slate-100" />
           </div>
         </div>
       </div>

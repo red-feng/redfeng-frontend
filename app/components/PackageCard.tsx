@@ -101,34 +101,39 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
 
   return (
     <article className="overflow-hidden rounded-[22px] border border-[#eef1f6] bg-white shadow-[0_20px_44px_-36px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-34px_rgba(15,23,42,0.22)]">
-      <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_250px]">
-        <div className="p-5 xl:p-6">
-          <div className="grid gap-5 xl:grid-cols-[190px_minmax(0,1fr)] xl:items-start">
-            <div className="relative h-[170px] w-full overflow-hidden rounded-[18px] border border-[#eef1f6] xl:h-[190px]">
+      <div className="grid gap-0 xl:grid-cols-[190px_minmax(0,1fr)_250px]">
+        <div className="relative hidden self-stretch overflow-hidden border-r border-[#eef1f6] xl:block">
+          <Image src={imageSrc} alt={imageAlt} fill sizes="190px" className="object-cover" />
+          <div className="absolute left-4 top-4 rounded-full bg-white/92 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-700 shadow-sm backdrop-blur">
+            {availableLabel}
+          </div>
+        </div>
+
+        <div className="p-5 xl:px-6 xl:py-6">
+          <div className="min-w-0">
+            <div className="relative mb-5 h-[170px] w-full overflow-hidden rounded-[18px] border border-[#eef1f6] xl:hidden">
               <Image src={imageSrc} alt={imageAlt} fill sizes="(max-width: 1279px) 100vw, 190px" className="object-cover" />
               <div className="absolute left-4 top-4 rounded-full bg-white/92 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-700 shadow-sm backdrop-blur">
                 {availableLabel}
               </div>
             </div>
 
-            <div className="min-w-0 xl:flex xl:min-h-[190px] xl:flex-col">
-              <h2 className="line-clamp-2 text-[24px] font-semibold leading-[1.08] tracking-[-0.04em] text-slate-950">{displayTitle}</h2>
-              {locationText ? <p className="mt-2 text-[13px] text-slate-500">{t.location}: {locationText}</p> : null}
+            <h2 className="line-clamp-2 text-[24px] font-semibold leading-[1.08] tracking-[-0.04em] text-slate-950">{displayTitle}</h2>
+            {locationText ? <p className="mt-2 text-[13px] text-slate-500">{t.location}: {locationText}</p> : null}
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                {infoChips.map((chip) => (
-                  <span key={chip.key} className={`rounded-[10px] border border-[#eef2f6] px-2.5 py-1.5 text-[11px] font-medium ${chip.tone}`}>
-                    {chip.label}
-                  </span>
-                ))}
-              </div>
-
-              {hasDescription ? (
-                <p className="mt-4 line-clamp-2 text-[13px] leading-6 text-slate-600 xl:mt-auto">
-                  {translation?.description}
-                </p>
-              ) : null}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {infoChips.map((chip) => (
+                <span key={chip.key} className={`rounded-[10px] border border-[#eef2f6] px-2.5 py-1.5 text-[11px] font-medium ${chip.tone}`}>
+                  {chip.label}
+                </span>
+              ))}
             </div>
+
+            {hasDescription ? (
+              <p className="mt-4 line-clamp-2 text-[13px] leading-6 text-slate-600">
+                {translation?.description}
+              </p>
+            ) : null}
           </div>
         </div>
 
