@@ -587,22 +587,20 @@ export default function PackageCatalogInteractiveShell({
   return (
     <>
       {stickyBar && typeof document !== "undefined" ? createPortal(stickyBar, document.body) : stickyBar}
-      <main className={`${homeLayoutLock.pageXClass} relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(255,215,196,0.22),transparent_24%),radial-gradient(circle_at_right_18%,rgba(255,224,205,0.18),transparent_20%),linear-gradient(180deg,#fffdfb_0%,#f8fbff_52%,#ffffff_100%)] pb-10 pt-4 md:pb-14 md:pt-5`}>
-        <section className="pb-1">
-          <div id="package-search" ref={searchSectionRef} className="mx-auto max-w-[1240px] px-4 sm:px-6 md:px-8">
-            <SearchBar
-              key={`package-catalog-search:${locale}:${searchParamsKey}`}
-              locale={locale}
-              countries={searchBarCountries}
-              destinationPath="/packages/catalog"
-              variant="catalog"
-            />
-          </div>
+      <main className={`${homeLayoutLock.pageXClass} relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(255,215,196,0.22),transparent_24%),radial-gradient(circle_at_right_18%,rgba(255,224,205,0.18),transparent_20%),linear-gradient(180deg,#fffdfb_0%,#f8fbff_52%,#ffffff_100%)] pb-10 pt-5 md:pb-14`}>
+        <section id="package-search" ref={searchSectionRef} className={`${homeLayoutLock.contentWidthClass} mt-6 max-w-[1240px]`}>
+          <SearchBar
+            key={`package-catalog-search:${locale}:${searchParamsKey}`}
+            locale={locale}
+            countries={searchBarCountries}
+            destinationPath="/packages/catalog"
+            variant="catalog"
+          />
         </section>
 
         <section className={`${homeLayoutLock.contentWidthClass} mt-5 max-w-[1240px]`}>
           <div
-            className="relative overflow-hidden rounded-[20px] border border-[#ffc49b] bg-[#ff9a61] px-5 py-5 shadow-[0_24px_46px_-34px_rgba(239,98,44,0.44)]"
+            className="relative overflow-hidden rounded-[20px] border border-[#ffc49b] bg-[#ff9a61] px-5 py-5 shadow-[0_24px_46px_-34px_rgba(239,98,44,0.44)] xl:min-h-[148px]"
             style={{
               backgroundImage: "url('/package-strip-bg.png')",
               backgroundSize: "cover",
@@ -611,9 +609,9 @@ export default function PackageCatalogInteractiveShell({
             }}
           >
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,109,33,0.28)_0%,rgba(255,109,33,0.1)_35%,rgba(255,255,255,0.04)_100%)]" />
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div className="max-w-[430px]">
-                <div className="rounded-[28px] border border-white/70 bg-white px-7 py-6 shadow-[0_20px_48px_-32px_rgba(15,23,42,0.22)]">
+            <div className="flex flex-col gap-4 xl:min-h-[108px] xl:flex-row xl:items-center xl:justify-between">
+              <div className="max-w-[430px] xl:self-stretch">
+                <div className="flex h-full min-h-[108px] flex-col justify-center rounded-[28px] border border-white/70 bg-white px-7 py-6 shadow-[0_20px_48px_-32px_rgba(15,23,42,0.22)]">
                   <p className="text-[16px] font-semibold tracking-[-0.03em] text-[#11a36a]">
                     {filterSummaryTitle}
                   </p>
