@@ -114,6 +114,8 @@ export default function SearchBar({
     if (duration) params.set("duration", duration)
     else params.delete("duration")
 
+    if (isMapCompactVariant) params.set("map", "1")
+
     params.delete("departure_date")
     params.delete("page")
 

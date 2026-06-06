@@ -374,6 +374,7 @@ export default function FilterClient({
   const t = dictionaries[locale].filter
   const priceCurrency = localeCurrencyMap[locale]
   const showMapDebug = searchParams.get("debug_map") === "1"
+  const isMapRequested = searchParams.get("map") === "1"
   const sliderMin = 0
   const sliderMax = Math.max(maxAvailablePrice, sliderMin)
   const priceChangeTimeoutRef = useRef<number | null>(null)
@@ -382,7 +383,7 @@ export default function FilterClient({
   const [maxPrice, setMaxPrice] = useState(initialState?.maxPrice ?? sliderMax)
   const [selectedFacilities, setSelectedFacilities] = useState<string[]>(initialState?.selectedFacilities ?? [])
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false)
-  const [isMapModalOpen, setIsMapModalOpen] = useState(false)
+  const [isMapModalOpen, setIsMapModalOpen] = useState(isMapRequested)
   const [manualActiveMapCountry, setManualActiveMapCountry] = useState("")
   const [manualActiveMapPackageId, setManualActiveMapPackageId] = useState("")
   const [mapViewportState, setMapViewportState] = useState<{ key: string; bbox: string } | null>(null)
@@ -492,6 +493,10 @@ export default function FilterClient({
     }
   }, [isMapModalOpen, isMobilePanelOpen])
 
+  useEffect(() => {
+    setIsMapModalOpen(isMapRequested)
+  }, [isMapRequested])
+
   const resetFilters = () => {
     setMinPrice(sliderMin)
     setMaxPrice(sliderMax)
@@ -541,8 +546,28 @@ export default function FilterClient({
     .join(" • ")
   const exploreAction =
     locale === "en" ? "Open map area" : locale === "zh" ? "打开地图区域" : "Buka area peta"
+  const syncMapQueryState = (nextOpen: boolean) => {
+    const params = new URLSearchParams(searchParams.toString())
+
+    if (nextOpen) params.set("map", "1")
+    else params.delete("map")
+
+    const nextQuery = params.toString()
+    const currentQuery = searchParams.toString()
+    if (nextQuery === currentQuery) return
+
+    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname
+    router.replace(nextUrl, { scroll: false })
+  }
+
   const handleExploreClick = () => {
     setIsMapModalOpen(true)
+    syncMapQueryState(true)
+  }
+
+  const handleCloseMapModal = () => {
+    setIsMapModalOpen(false)
+    syncMapQueryState(false)
   }
   const mapModalBackLabel =
     locale === "en" ? "Back to List View" : locale === "zh" ? "返回列表" : "Kembali ke daftar"
@@ -1076,7 +1101,7 @@ export default function FilterClient({
             <div className="grid items-center gap-2 xl:grid-cols-[auto_minmax(0,1fr)_auto]">
               <button
                 type="button"
-                onClick={() => setIsMapModalOpen(false)}
+                onClick={handleCloseMapModal}
                 className="inline-flex shrink-0 items-center gap-1.5 rounded-[10px] border border-[#c8d7ee] bg-white px-3 py-2 text-[12px] font-semibold text-[#1b4f87] transition hover:bg-[#f5f9ff]"
               >
                 <span aria-hidden="true">‹</span>
@@ -1093,7 +1118,7 @@ export default function FilterClient({
               </div>
               <button
                 type="button"
-                onClick={() => setIsMapModalOpen(false)}
+                onClick={handleCloseMapModal}
                 className="shrink-0 rounded-full border border-slate-300 bg-white px-3 py-2 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50"
               >
                 {mobileCloseLabel}
