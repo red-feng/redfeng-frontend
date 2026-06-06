@@ -10,7 +10,7 @@ type SearchBarProps = {
   countries: string[]
   destinationPath?: string
   submitLabel?: string
-  variant?: "default" | "catalog"
+  variant?: "default" | "catalog" | "mapCompact"
 }
 
 const localizedCountryLabels: Record<string, { id: string; en: string; zh: string }> = {
@@ -81,6 +81,7 @@ export default function SearchBar({
   const [style, setStyle] = useState(searchParams.get("style") || "")
   const [duration, setDuration] = useState(searchParams.get("duration") || "")
   const isCatalogVariant = variant === "catalog"
+  const isMapCompactVariant = variant === "mapCompact"
 
   const countryOptions = useMemo(() => {
     const uniqueCountries = [...new Set(countries.map((value) => value.trim()).filter(Boolean))]
@@ -219,6 +220,124 @@ export default function SearchBar({
               {isPending
                 ? loadingLabel
                 : submitLabel || (locale === "en" ? "Apply Filter" : locale === "zh" ? "åº”ç”¨ç­›é€‰" : "Terapkan Filter")}
+            </button>
+          </div>
+        </div>
+
+        <style jsx>{`
+          @keyframes searchBarLoading {
+            from {
+              transform: translateX(-120%);
+            }
+            to {
+              transform: translateX(680%);
+            }
+          }
+        `}</style>
+      </div>
+    )
+  }
+
+  if (isMapCompactVariant) {
+    return (
+      <div className={`relative min-w-0 transition-opacity duration-200 ${isPending ? "opacity-75" : "opacity-100"}`}>
+        {isPending ? (
+          <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-[24px]">
+            <div className="absolute inset-0 bg-white/28 backdrop-blur-[1px]" />
+            <div className="absolute left-0 top-0 h-full w-24 -translate-x-full animate-[searchBarLoading_1.1s_linear_infinite] bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+          </div>
+        ) : null}
+
+        <div className="rounded-[20px] border border-[#eef1f6] bg-white px-3 py-2 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.16)]">
+          <div className="grid min-w-0 gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.9fr)_auto] md:items-center">
+            <label className="group flex min-w-0 items-center gap-2 rounded-[14px] border border-[#eceff4] bg-[#fcfdff] px-3 py-2.5 transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
+                <CountryIcon />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[9px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                  {t.countryLabel}
+                </span>
+                <select
+                  value={country}
+                  onChange={(event) => setCountry(event.target.value)}
+                  disabled={isPending}
+                  className="mt-0.5 w-full appearance-none bg-transparent text-[13px] font-semibold text-slate-900 outline-none"
+                >
+                  <option value="">{t.allCountries}</option>
+                  {countryOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {formatCountryLabel(option, locale)}
+                    </option>
+                  ))}
+                </select>
+              </span>
+              <span className="shrink-0 text-slate-400 transition group-focus-within:text-orange-500">
+                <ChevronMark />
+              </span>
+            </label>
+
+            <label className="group flex min-w-0 items-center gap-2 rounded-[14px] border border-[#eceff4] bg-[#fcfdff] px-3 py-2.5 transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
+                <StyleIcon />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[9px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                  {t.styleLabel}
+                </span>
+                <select
+                  value={style}
+                  onChange={(event) => setStyle(event.target.value)}
+                  disabled={isPending}
+                  className="mt-0.5 w-full appearance-none bg-transparent text-[13px] font-semibold text-slate-900 outline-none"
+                >
+                  <option value="">{t.allStyles}</option>
+                  {travelStyleOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {formatTravelStyleLabel(option.value, locale)}
+                    </option>
+                  ))}
+                </select>
+              </span>
+              <span className="shrink-0 text-slate-400 transition group-focus-within:text-orange-500">
+                <ChevronMark />
+              </span>
+            </label>
+
+            <label className="group flex min-w-0 items-center gap-2 rounded-[14px] border border-[#eceff4] bg-[#fcfdff] px-3 py-2.5 transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
+                <DurationIcon />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[9px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                  {t.durationLabel}
+                </span>
+                <select
+                  value={duration}
+                  onChange={(event) => setDuration(event.target.value)}
+                  disabled={isPending}
+                  className="mt-0.5 w-full appearance-none bg-transparent text-[13px] font-semibold text-slate-900 outline-none"
+                >
+                  <option value="">{t.allDurations}</option>
+                  <option value="1-3">1-3 {t.day}</option>
+                  <option value="4-7">4-7 {t.day}</option>
+                  <option value="8+">8+ {t.day}</option>
+                </select>
+              </span>
+              <span className="shrink-0 text-slate-400 transition group-focus-within:text-orange-500">
+                <ChevronMark />
+              </span>
+            </label>
+
+            <button
+              type="button"
+              onClick={applyFilter}
+              disabled={isPending}
+              className="h-[52px] rounded-[14px] bg-gradient-to-r from-[#ff6934] via-[#ff5d2d] to-[#ef4423] px-4 text-[13px] font-semibold text-white shadow-[0_18px_34px_-22px_rgba(239,68,35,0.72)] transition hover:-translate-y-0.5 hover:from-[#ff5d2d] hover:to-[#ea3b1c] disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isPending
+                ? loadingLabel
+                : submitLabel || (locale === "en" ? "Apply" : locale === "zh" ? "应用" : "Terapkan")}
             </button>
           </div>
         </div>

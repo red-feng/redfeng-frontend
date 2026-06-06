@@ -1073,7 +1073,7 @@ export default function FilterClient({
         ? createPortal(
         <div className="fixed inset-0 z-[200] flex flex-col bg-white">
           <div className="border-b border-slate-200 bg-white px-4 py-3 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.35)]">
-            <div className="flex items-center justify-between gap-3">
+            <div className="grid items-center gap-3 xl:grid-cols-[auto_minmax(0,1fr)_auto]">
               <button
                 type="button"
                 onClick={() => setIsMapModalOpen(false)}
@@ -1082,6 +1082,15 @@ export default function FilterClient({
                 <span aria-hidden="true">‹</span>
                 <span>{mapModalBackLabel}</span>
               </button>
+              <div className="min-w-0">
+                <SearchBar
+                  key={`package-map-search:${locale}:${selectedCountry || ""}:${selectedStyle || ""}:${selectedDuration || ""}`}
+                  locale={locale}
+                  countries={searchBarCountries}
+                  destinationPath="/packages/catalog"
+                  variant="mapCompact"
+                />
+              </div>
               <button
                 type="button"
                 onClick={() => setIsMapModalOpen(false)}
@@ -1089,15 +1098,6 @@ export default function FilterClient({
               >
                 {mobileCloseLabel}
               </button>
-            </div>
-            <div className="mt-3">
-              <SearchBar
-                key={`package-map-search:${locale}:${selectedCountry || ""}:${selectedStyle || ""}:${selectedDuration || ""}`}
-                locale={locale}
-                countries={searchBarCountries}
-                destinationPath="/packages/catalog"
-                variant="catalog"
-              />
             </div>
             <div className="mt-3 flex min-w-0 items-center justify-center gap-2">
               <span className="truncate rounded-full border border-[#dbe7f5] bg-[#f6fbff] px-3 py-1.5 text-xs font-semibold text-[#1b4f87]">{resolvedHeaderChip}</span>
