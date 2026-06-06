@@ -248,21 +248,18 @@ export default function SearchBar({
           </div>
         ) : null}
 
-        <div className="rounded-[20px] border border-[#eef1f6] bg-white px-3 py-2 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.16)]">
-          <div className="grid min-w-0 gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.9fr)_auto] md:items-center">
-            <label className="group flex min-w-0 items-center gap-2 rounded-[14px] border border-[#eceff4] bg-[#fcfdff] px-3 py-2.5 transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
+        <div className="rounded-[16px] border border-[#eef1f6] bg-white px-2 py-1.5 shadow-[0_12px_28px_-26px_rgba(15,23,42,0.12)]">
+          <div className="grid min-w-0 gap-1.5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.78fr)_auto] md:items-center">
+            <label className="group flex min-w-0 items-center gap-2 rounded-[10px] border border-[#eceff4] bg-[#fcfdff] px-2.5 py-1.5 transition focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
                 <CountryIcon />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[9px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                  {t.countryLabel}
-                </span>
                 <select
                   value={country}
                   onChange={(event) => setCountry(event.target.value)}
                   disabled={isPending}
-                  className="mt-0.5 w-full appearance-none bg-transparent text-[13px] font-semibold text-slate-900 outline-none"
+                  className="w-full appearance-none bg-transparent text-[12px] font-semibold text-slate-900 outline-none"
                 >
                   <option value="">{t.allCountries}</option>
                   {countryOptions.map((option) => (
@@ -277,19 +274,16 @@ export default function SearchBar({
               </span>
             </label>
 
-            <label className="group flex min-w-0 items-center gap-2 rounded-[14px] border border-[#eceff4] bg-[#fcfdff] px-3 py-2.5 transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
+            <label className="group flex min-w-0 items-center gap-2 rounded-[10px] border border-[#eceff4] bg-[#fcfdff] px-2.5 py-1.5 transition focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
                 <StyleIcon />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[9px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                  {t.styleLabel}
-                </span>
                 <select
                   value={style}
                   onChange={(event) => setStyle(event.target.value)}
                   disabled={isPending}
-                  className="mt-0.5 w-full appearance-none bg-transparent text-[13px] font-semibold text-slate-900 outline-none"
+                  className="w-full appearance-none bg-transparent text-[12px] font-semibold text-slate-900 outline-none"
                 >
                   <option value="">{t.allStyles}</option>
                   {travelStyleOptions.map((option) => (
@@ -304,19 +298,16 @@ export default function SearchBar({
               </span>
             </label>
 
-            <label className="group flex min-w-0 items-center gap-2 rounded-[14px] border border-[#eceff4] bg-[#fcfdff] px-3 py-2.5 transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
+            <label className="group flex min-w-0 items-center gap-2 rounded-[10px] border border-[#eceff4] bg-[#fcfdff] px-2.5 py-1.5 transition focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
                 <DurationIcon />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[9px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                  {t.durationLabel}
-                </span>
                 <select
                   value={duration}
                   onChange={(event) => setDuration(event.target.value)}
                   disabled={isPending}
-                  className="mt-0.5 w-full appearance-none bg-transparent text-[13px] font-semibold text-slate-900 outline-none"
+                  className="w-full appearance-none bg-transparent text-[12px] font-semibold text-slate-900 outline-none"
                 >
                   <option value="">{t.allDurations}</option>
                   <option value="1-3">1-3 {t.day}</option>
@@ -333,11 +324,11 @@ export default function SearchBar({
               type="button"
               onClick={applyFilter}
               disabled={isPending}
-              className="h-[52px] rounded-[14px] bg-gradient-to-r from-[#ff6934] via-[#ff5d2d] to-[#ef4423] px-4 text-[13px] font-semibold text-white shadow-[0_18px_34px_-22px_rgba(239,68,35,0.72)] transition hover:-translate-y-0.5 hover:from-[#ff5d2d] hover:to-[#ea3b1c] disabled:cursor-not-allowed disabled:opacity-70"
+              className="h-[40px] rounded-[10px] bg-gradient-to-r from-[#ff6934] via-[#ff5d2d] to-[#ef4423] px-3 text-[11px] font-semibold text-white shadow-[0_12px_24px_-18px_rgba(239,68,35,0.72)] transition hover:-translate-y-0.5 hover:from-[#ff5d2d] hover:to-[#ea3b1c] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isPending
                 ? loadingLabel
-                : submitLabel || (locale === "en" ? "Apply" : locale === "zh" ? "应用" : "Terapkan")}
+                : submitLabel || (locale === "en" ? "Apply" : locale === "zh" ? "应用" : "Pakai")}
             </button>
           </div>
         </div>

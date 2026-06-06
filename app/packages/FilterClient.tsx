@@ -1072,15 +1072,15 @@ export default function FilterClient({
       {isMapModalOpen && typeof document !== "undefined"
         ? createPortal(
         <div className="fixed inset-0 z-[200] flex flex-col bg-white">
-          <div className="border-b border-slate-200 bg-white px-4 py-3 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.35)]">
-            <div className="grid items-center gap-3 xl:grid-cols-[auto_minmax(0,1fr)_auto]">
+          <div className="border-b border-slate-200 bg-white px-3 py-2 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.35)]">
+            <div className="grid items-center gap-2 xl:grid-cols-[auto_minmax(0,1fr)_auto]">
               <button
                 type="button"
                 onClick={() => setIsMapModalOpen(false)}
-                className="inline-flex shrink-0 items-center gap-2 rounded-[14px] border border-[#c8d7ee] bg-white px-4 py-2.5 text-sm font-semibold text-[#1b4f87] transition hover:bg-[#f5f9ff]"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-[10px] border border-[#c8d7ee] bg-white px-3 py-2 text-[12px] font-semibold text-[#1b4f87] transition hover:bg-[#f5f9ff]"
               >
                 <span aria-hidden="true">‹</span>
-                <span>{mapModalBackLabel}</span>
+                <span>{locale === "en" ? "Back" : locale === "zh" ? "返回" : "Kembali"}</span>
               </button>
               <div className="min-w-0">
                 <SearchBar
@@ -1094,12 +1094,12 @@ export default function FilterClient({
               <button
                 type="button"
                 onClick={() => setIsMapModalOpen(false)}
-                className="shrink-0 rounded-full border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                className="shrink-0 rounded-full border border-slate-300 bg-white px-3 py-2 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50"
               >
                 {mobileCloseLabel}
               </button>
             </div>
-            <div className="mt-3 flex min-w-0 items-center justify-center gap-2">
+            <div className="hidden">
               <span className="truncate rounded-full border border-[#dbe7f5] bg-[#f6fbff] px-3 py-1.5 text-xs font-semibold text-[#1b4f87]">{resolvedHeaderChip}</span>
               <p className="truncate text-xs text-slate-500">{resolvedExploreTitle} • {resolvedExploreMeta}</p>
             </div>
