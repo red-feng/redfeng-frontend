@@ -579,6 +579,8 @@ export default function FilterClient({
       : locale === "zh"
         ? "阶段 1 地图模式：按区域和价格比较套餐。"
         : "Mode peta tahap 1: bandingkan paket berdasarkan area dan harga."
+  const mapModalSurfaceTitle = mapModalTitle
+  const mapModalSurfaceHint = mapModalHint
   const mapModalEmpty =
     locale === "en"
       ? "No package points are ready for this filter yet."
