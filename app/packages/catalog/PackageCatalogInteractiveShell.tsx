@@ -743,6 +743,7 @@ export default function PackageCatalogInteractiveShell({
             locale={locale}
             maxAvailablePrice={maxAvailablePrice}
             packages={packages}
+            searchBarCountries={searchBarCountries}
             selectedCountry={selectedCountry}
             selectedStyle={selectedStyle}
             selectedDuration={selectedDuration}

@@ -106,6 +106,7 @@ export default function HomeResultsClient({
   locale,
   maxAvailablePrice,
   packages,
+  searchBarCountries = [],
   selectedCountry,
   selectedDuration,
   selectedStyle,
@@ -119,6 +120,7 @@ export default function HomeResultsClient({
   locale: Locale
   maxAvailablePrice: number
   packages: PackageItem[]
+  searchBarCountries?: string[]
   selectedCountry?: string
   selectedDuration?: string
   selectedStyle?: string
@@ -359,6 +361,7 @@ export default function HomeResultsClient({
           maxAvailablePrice={maxAvailablePrice}
           onChange={handleFilterChange}
           packages={packages}
+          searchBarCountries={searchBarCountries}
           selectedCountry={selectedCountry}
           selectedStyle={selectedStyle}
           selectedDuration={selectedDuration}

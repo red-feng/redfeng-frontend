@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import dynamic from "next/dynamic"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import SearchBar from "@/app/components/SearchBar"
 import { getFacilityCategoryLabel, getFacilityLabel } from "@/lib/facility-labels"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { formatPackageMoney, localeCurrencyMap, resolvePackageTranslation } from "@/lib/package-pricing"
@@ -349,6 +350,7 @@ export default function FilterClient({
   maxAvailablePrice,
   onChange,
   packages,
+  searchBarCountries = [],
   selectedCountry,
   selectedStyle,
   selectedDuration,
@@ -360,6 +362,7 @@ export default function FilterClient({
   maxAvailablePrice: number
   onChange: (state: PackageFilterState) => void
   packages?: PackagePreview[]
+  searchBarCountries?: string[]
   selectedCountry?: string
   selectedStyle?: string
   selectedDuration?: string
@@ -1068,30 +1071,41 @@ export default function FilterClient({
 
       {isMapModalOpen && typeof document !== "undefined"
         ? createPortal(
-        <div className="fixed inset-0 z-[200] bg-white">
-          <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.35)]">
-            <button
-              type="button"
-              onClick={() => setIsMapModalOpen(false)}
-              className="inline-flex items-center gap-2 rounded-[14px] border border-[#c8d7ee] bg-white px-4 py-2.5 text-sm font-semibold text-[#1b4f87] transition hover:bg-[#f5f9ff]"
-            >
-              <span aria-hidden="true">‹</span>
-              <span>{mapModalBackLabel}</span>
-            </button>
-            <div className="hidden min-w-0 flex-1 items-center justify-center gap-2 md:flex">
+        <div className="fixed inset-0 z-[200] flex flex-col bg-white">
+          <div className="border-b border-slate-200 bg-white px-4 py-3 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.35)]">
+            <div className="flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setIsMapModalOpen(false)}
+                className="inline-flex shrink-0 items-center gap-2 rounded-[14px] border border-[#c8d7ee] bg-white px-4 py-2.5 text-sm font-semibold text-[#1b4f87] transition hover:bg-[#f5f9ff]"
+              >
+                <span aria-hidden="true">‹</span>
+                <span>{mapModalBackLabel}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsMapModalOpen(false)}
+                className="shrink-0 rounded-full border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              >
+                {mobileCloseLabel}
+              </button>
+            </div>
+            <div className="mt-3">
+              <SearchBar
+                key={`package-map-search:${locale}:${selectedCountry || ""}:${selectedStyle || ""}:${selectedDuration || ""}`}
+                locale={locale}
+                countries={searchBarCountries}
+                destinationPath="/packages/catalog"
+                variant="catalog"
+              />
+            </div>
+            <div className="mt-3 flex min-w-0 items-center justify-center gap-2">
               <span className="truncate rounded-full border border-[#dbe7f5] bg-[#f6fbff] px-3 py-1.5 text-xs font-semibold text-[#1b4f87]">{resolvedHeaderChip}</span>
               <p className="truncate text-xs text-slate-500">{resolvedExploreTitle} • {resolvedExploreMeta}</p>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsMapModalOpen(false)}
-              className="rounded-full border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
-            >
-              {mobileCloseLabel}
-            </button>
           </div>
 
-          <div className="relative h-[calc(100vh-69px)] overflow-hidden bg-[#dcebf8]">
+          <div className="relative min-h-0 flex-1 overflow-hidden bg-[#dcebf8]">
             <ActiveResultsMap
               bbox={useActiveResultMap ? activeViewportBBox : resolvedMapWindow.bbox}
               markers={
