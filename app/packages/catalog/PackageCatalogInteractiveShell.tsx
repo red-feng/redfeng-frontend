@@ -731,7 +731,7 @@ export default function PackageCatalogInteractiveShell({
           </div>
         </section>
 
-        <div id="package-search-results" ref={resultsSectionRef}>
+        <section id="package-search-results" ref={resultsSectionRef} className={`${homeLayoutLock.contentWidthClass} mt-5 max-w-[1240px]`}>
           <HomeResultsClient
             key={`package-catalog-results:${locale}:${searchParamsKey}`}
             facilities={facilities}
@@ -747,7 +747,7 @@ export default function PackageCatalogInteractiveShell({
             selectedDuration={selectedDuration}
             totalPackages={totalPackages}
           />
-        </div>
+        </section>
       </main>
 
       <PublicStickyAction locale={locale} href="#package-search" label={stickyLabel} summary={stickySummary} />
