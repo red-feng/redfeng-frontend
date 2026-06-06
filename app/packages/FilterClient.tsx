@@ -1076,7 +1076,7 @@ export default function FilterClient({
                 className="inline-flex shrink-0 items-center gap-1.5 rounded-[10px] border border-[#c8d7ee] bg-white px-3 py-2 text-[12px] font-semibold text-[#1b4f87] transition hover:bg-[#f5f9ff]"
               >
                 <span aria-hidden="true">‹</span>
-                <span>{locale === "en" ? "Back" : locale === "zh" ? "返回" : "Kembali"}</span>
+                <span>{mapModalBackLabel}</span>
               </button>
               <div className="min-w-0">
                 <SearchBar
@@ -1234,3 +1234,4 @@ export default function FilterClient({
     </>
   )
 }
+
