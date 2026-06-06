@@ -227,9 +227,9 @@ export default function SearchBar({
               onClick={applyFilter}
               disabled={isPending}
               aria-label={submitLabel || (locale === "en" ? "Apply Filter" : locale === "zh" ? "Apply Filter" : "Terapkan Filter")}
-              className="inline-flex h-[58px] w-full items-center justify-center rounded-[18px] bg-gradient-to-r from-[#ff6934] via-[#ff5d2d] to-[#ef4423] text-white shadow-[0_18px_34px_-22px_rgba(239,68,35,0.72)] transition hover:-translate-y-0.5 hover:from-[#ff5d2d] hover:to-[#ea3b1c] disabled:cursor-not-allowed disabled:opacity-70 md:w-[72px]"
+              className="inline-flex h-[58px] w-full items-center justify-center self-center rounded-[18px] bg-gradient-to-r from-[#ff6934] via-[#ff5d2d] to-[#ef4423] text-white shadow-[0_18px_34px_-22px_rgba(239,68,35,0.72)] transition hover:-translate-y-0.5 hover:from-[#ff5d2d] hover:to-[#ea3b1c] disabled:cursor-not-allowed disabled:opacity-70 md:w-[72px]"
             >
-              {isPending ? loadingLabel : <span className="relative top-[2px] flex"><SearchIcon /></span>}
+              {isPending ? loadingLabel : <SearchIcon />}
             </button>
           </div>
         </div>
