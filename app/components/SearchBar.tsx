@@ -64,6 +64,15 @@ function ChevronMark() {
   return <span className="text-lg leading-none text-slate-400">⌄</span>
 }
 
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[2]">
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="M16 16 21 21" />
+    </svg>
+  )
+}
+
 export default function SearchBar({
   locale,
   countries,
@@ -324,7 +333,19 @@ export default function SearchBar({
               type="button"
               onClick={applyFilter}
               disabled={isPending}
-              className="h-[40px] rounded-[10px] bg-gradient-to-r from-[#ff6934] via-[#ff5d2d] to-[#ef4423] px-3 text-[11px] font-semibold text-white shadow-[0_12px_24px_-18px_rgba(239,68,35,0.72)] transition hover:-translate-y-0.5 hover:from-[#ff5d2d] hover:to-[#ea3b1c] disabled:cursor-not-allowed disabled:opacity-70"
+              aria-label={submitLabel || t.apply}
+              className="relative inline-flex h-[40px] w-[40px] items-center justify-center rounded-[10px] bg-gradient-to-r from-[#ff6934] via-[#ff5d2d] to-[#ef4423] text-[0px] text-white shadow-[0_12px_24px_-18px_rgba(239,68,35,0.72)] transition hover:-translate-y-0.5 hover:from-[#ff5d2d] hover:to-[#ea3b1c] disabled:cursor-not-allowed disabled:opacity-70"
+              style={
+                isPending
+                  ? undefined
+                  : {
+                      backgroundImage:
+                        "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16 21 21'/%3E%3C/svg%3E\"), linear-gradient(90deg, #ff6934, #ff5d2d, #ef4423)",
+                      backgroundRepeat: "no-repeat, no-repeat",
+                      backgroundPosition: "center, center",
+                      backgroundSize: "16px 16px, 100% 100%",
+                    }
+              }
             >
               {isPending
                 ? loadingLabel
