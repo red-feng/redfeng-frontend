@@ -64,6 +64,15 @@ function ChevronMark() {
   return <span className="text-lg leading-none text-slate-400">⌄</span>
 }
 
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[2]">
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="M16 16 21 21" />
+    </svg>
+  )
+}
+
 export default function SearchBar({
   locale,
   countries,
@@ -217,11 +226,10 @@ export default function SearchBar({
               type="button"
               onClick={applyFilter}
               disabled={isPending}
-              className="rounded-[18px] bg-gradient-to-r from-[#ff6934] via-[#ff5d2d] to-[#ef4423] px-6 py-4 text-[15px] font-semibold text-white shadow-[0_18px_34px_-22px_rgba(239,68,35,0.72)] transition hover:-translate-y-0.5 hover:from-[#ff5d2d] hover:to-[#ea3b1c] disabled:cursor-not-allowed disabled:opacity-70"
+              aria-label={submitLabel || (locale === "en" ? "Apply Filter" : locale === "zh" ? "Apply Filter" : "Terapkan Filter")}
+              className="inline-flex h-[58px] w-full items-center justify-center rounded-[18px] bg-gradient-to-r from-[#ff6934] via-[#ff5d2d] to-[#ef4423] text-white shadow-[0_18px_34px_-22px_rgba(239,68,35,0.72)] transition hover:-translate-y-0.5 hover:from-[#ff5d2d] hover:to-[#ea3b1c] disabled:cursor-not-allowed disabled:opacity-70 md:w-[72px]"
             >
-              {isPending
-                ? loadingLabel
-                : submitLabel || (locale === "en" ? "Apply Filter" : locale === "zh" ? "åº”ç”¨ç­›é€‰" : "Terapkan Filter")}
+              {isPending ? loadingLabel : <SearchIcon />}
             </button>
           </div>
         </div>
@@ -468,3 +476,5 @@ export default function SearchBar({
     </div>
   )
 }
+
+
