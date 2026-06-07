@@ -263,7 +263,7 @@ export default function PackageCatalogInteractiveShell({
     [locale],
   )
 
-  const compactSecondaryAction = locale === "en" ? "Filters" : locale === "zh" ? "ç­›é€‰" : "Filter"
+  const compactSecondaryAction = locale === "en" ? "Sort" : locale === "zh" ? "排序" : "Urutkan"
 
   const styleSummary = selectedStyle
     ? formatTravelStyleLabel(selectedStyle, locale)
@@ -573,7 +573,7 @@ export default function PackageCatalogInteractiveShell({
                 </div>
                 <button
                   type="button"
-                  onClick={scrollToSearch}
+                  onClick={scrollToResults}
                   className="inline-flex h-[52px] flex-col items-center justify-center gap-1 rounded-[16px] border border-[#efc4ad] bg-[#fff1e7] px-4 text-center text-[12px] font-semibold text-[#b85a2c] shadow-[0_10px_20px_-18px_rgba(239,91,42,0.35)] transition hover:bg-[#ffe7d8]"
                 >
                   <svg viewBox="0 0 16 16" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
