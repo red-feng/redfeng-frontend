@@ -13,6 +13,9 @@ import type { Locale } from "@/lib/i18n"
 import { resolvePackageTranslation } from "@/lib/package-pricing"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
 
+const STICKY_SCROLL_ENTER_Y = 80
+const STICKY_SCROLL_EXIT_Y = 40
+
 type Facility = {
   id: string
   name: string
@@ -189,11 +192,28 @@ export default function PackageCatalogInteractiveShell({
   const resultsSectionRef = useRef<HTMLDivElement | null>(null)
   const quickChipScrollRef = useRef<HTMLDivElement | null>(null)
   const recommendationScrollRef = useRef<HTMLDivElement | null>(null)
+  const [isScrolled, setIsScrolled] = useState(false)
   const [isStickySearchExpanded, setIsStickySearchExpanded] = useState(false)
   const [canScrollChipLeft, setCanScrollChipLeft] = useState(false)
   const [canScrollChipRight, setCanScrollChipRight] = useState(false)
   const [canScrollRecommendationLeft, setCanScrollRecommendationLeft] = useState(false)
   const [canScrollRecommendationRight, setCanScrollRecommendationRight] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled((current) => {
+        const nextScrolled = current ? window.scrollY > STICKY_SCROLL_EXIT_Y : window.scrollY > STICKY_SCROLL_ENTER_Y
+        if (!nextScrolled) {
+          setIsStickySearchExpanded(false)
+        }
+        return nextScrolled
+      })
+    }
+
+    handleScroll()
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
 
   useEffect(() => {
     const container = quickChipScrollRef.current
@@ -359,7 +379,7 @@ export default function PackageCatalogInteractiveShell({
         ? "查看列表"
         : "Lihat list"
 
-  const shouldShowCompactStickyBar = false
+  const shouldShowCompactStickyBar = isScrolled
   const showChipScrollLeft = !isStickySearchExpanded && canScrollChipLeft
   const showChipScrollRight = !isStickySearchExpanded && canScrollChipRight
 
