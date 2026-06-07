@@ -650,18 +650,6 @@ export default function PackageCatalogInteractiveShell({
                             {recommendationPackages.map((pkg, index) => {
                               const isActive = index === 0
                               const isBudgetPick = !isActive && index === 1
-                              const rankingLabel =
-                                index === 0
-                                  ? locale === "en"
-                                    ? "#1 Cheapest"
-                                    : locale === "zh"
-                                      ? "#1 最低价"
-                                      : "#1 Termurah"
-                                  : index === 1
-                                    ? "#2"
-                                    : index === 2
-                                      ? "#3"
-                                      : `#${index + 1}`
                               return (
                                 <Link
                                   key={pkg.id}
@@ -674,13 +662,6 @@ export default function PackageCatalogInteractiveShell({
                                         : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
                                   }`}
                                 >
-                                  <p
-                                    className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${
-                                      isActive ? "text-[#11a36a]" : isBudgetPick ? "text-emerald-700" : "text-slate-400"
-                                    }`}
-                                  >
-                                    {rankingLabel}
-                                  </p>
                                   <p className="truncate text-[12px] font-semibold">{getPackageDisplayTitle(pkg, locale)}</p>
                                   <p className={`mt-1 text-[12px] font-semibold ${isActive ? "text-[#11a36a]" : isBudgetPick ? "text-emerald-700" : "text-slate-700"}`}>
                                     {formatPackagePrice(pkg.livePricing?.priceAdult ?? pkg.price_adult, pkg.livePricing?.currency ?? pkg.currency, locale)}
