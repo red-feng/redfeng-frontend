@@ -102,6 +102,7 @@ export default function SearchBar({
     return uniqueCountries
   }, [countries, country])
 
+  // PROTECTED-PACKAGE-MAP-SEARCHBAR-START
   const applyFilter = () => {
     const params = new URLSearchParams(searchParams.toString())
 
@@ -128,6 +129,7 @@ export default function SearchBar({
       router.push(nextQuery ? `${targetPath}?${nextQuery}` : targetPath, { scroll: false })
     })
   }
+  // PROTECTED-PACKAGE-MAP-SEARCHBAR-END
 
   const loadingLabel = locale === "en" ? "Loading..." : locale === "zh" ? "åŠ è½½ä¸­..." : "Memuat..."
 

@@ -683,6 +683,7 @@ export default function FilterClient({
         ? `查看 ${activeMapPackageCount} 个套餐`
         : `Lihat ${activeMapPackageCount} paket`
 
+  // PROTECTED-PACKAGE-MAP-RESULTS-START
   const geoReadyPackages = mapModalPackages.filter((pkg) => getPreviewGeoPoint(pkg) !== null)
   const mapReadyPackages = mapModalPackages.filter((pkg) => Boolean(getPreviewMapPoint(pkg, selectedCountry)))
   const useActiveResultMap = mapReadyPackages.length > 0
@@ -835,6 +836,7 @@ export default function FilterClient({
       : locale === "zh"
         ? "æœ€ä½Žä»·å¥—é¤ç‚¹ä½"
         : "Titik paket termurah"
+  // PROTECTED-PACKAGE-MAP-RESULTS-END
   const mapAccessibilitySummary = [
     mapModalTitle,
     mapModalHint,
