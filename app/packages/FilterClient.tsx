@@ -134,6 +134,23 @@ function getPreviewGeoPoint(pkg: PackagePreview): GeoPoint | null {
   }
 }
 
+function getPreviewMapPoint(pkg: PackagePreview, fallbackCountry?: string): GeoPoint {
+  const geoPoint = getPreviewGeoPoint(pkg)
+  if (geoPoint) return geoPoint
+
+  const countryWindow = getCountryMapWindow(pkg.country || fallbackCountry)
+  const center = getBBoxCenter(countryWindow.bbox)
+  const seed = hashSeed(`${pkg.id}:${pkg.country || fallbackCountry || "map"}`)
+  const jitterLng = ((seed % 100) / 100 - 0.5) * Math.min((parseBBox(countryWindow.bbox).maxLng - parseBBox(countryWindow.bbox).minLng) * 0.08, 1.8)
+  const jitterLat = ((Math.floor(seed / 17) % 100) / 100 - 0.5) * Math.min((parseBBox(countryWindow.bbox).maxLat - parseBBox(countryWindow.bbox).minLat) * 0.08, 1.2)
+
+  return {
+    lat: clamp(center.lat + jitterLat, -85, 85),
+    lng: clamp(center.lng + jitterLng, -179.5, 179.5),
+    label: String(pkg.country || fallbackCountry || "Tour destination").trim(),
+  }
+}
+
 function hashSeed(value: string) {
   let hash = 0
   for (let index = 0; index < value.length; index += 1) {
@@ -227,6 +244,35 @@ function buildGeoMapWindow(packages: PackagePreview[], fallbackCountry?: string)
   }
 }
 
+function buildPackageMapWindow(packages: PackagePreview[], fallbackCountry?: string): MapWindow {
+  const mapPoints = packages.map((pkg) => getPreviewMapPoint(pkg, fallbackCountry))
+  if (mapPoints.length === 0) return getCountryMapWindow(fallbackCountry)
+
+  const lngs = mapPoints.map((point) => point.lng)
+  const lats = mapPoints.map((point) => point.lat)
+  const minLng = Math.min(...lngs)
+  const maxLng = Math.max(...lngs)
+  const minLat = Math.min(...lats)
+  const maxLat = Math.max(...lats)
+  const lngSpan = Math.max(maxLng - minLng, 0.35)
+  const latSpan = Math.max(maxLat - minLat, 0.25)
+  const paddedMinLng = clamp(minLng - lngSpan * 0.4, -179.5, 179.5)
+  const paddedMaxLng = clamp(maxLng + lngSpan * 0.4, -179.5, 179.5)
+  const paddedMinLat = clamp(minLat - latSpan * 0.4, -85, 85)
+  const paddedMaxLat = clamp(maxLat + latSpan * 0.4, -85, 85)
+  const centerLng = (paddedMinLng + paddedMaxLng) / 2
+  const centerLat = (paddedMinLat + paddedMaxLat) / 2
+
+  return {
+    centerLabel: fallbackCountry || mapPoints[0]?.label || "Results",
+    left: ((centerLng + 180) / 360) * 100,
+    top: ((90 - centerLat) / 180) * 100,
+    width: clamp(((paddedMaxLng - paddedMinLng) / 360) * 100, 8, 34),
+    height: clamp(((paddedMaxLat - paddedMinLat) / 180) * 100, 8, 28),
+    bbox: `${paddedMinLng},${paddedMinLat},${paddedMaxLng},${paddedMaxLat}`,
+  }
+}
+
 function zoomBBox(bbox: string, factor: number) {
   const { minLng, minLat, maxLng, maxLat } = parseBBox(bbox)
   const centerLng = (minLng + maxLng) / 2
@@ -247,25 +293,35 @@ function pointIsInsideBBox(point: GeoPoint, bbox: string) {
   return point.lng >= minLng && point.lng <= maxLng && point.lat >= minLat && point.lat <= maxLat
 }
 
-function buildGeoMarkerLayout(packages: PackagePreview[], bbox: string) {
+function buildPackageMarkerLayout(packages: PackagePreview[], bbox: string, fallbackCountry?: string) {
   const { minLng, minLat, maxLng, maxLat } = parseBBox(bbox)
   const lngRange = Math.max(maxLng - minLng, 0.0001)
   const latRange = Math.max(maxLat - minLat, 0.0001)
+  const placedMarkers: Array<{ left: number; top: number }> = []
 
   return [...packages]
     .sort((left, right) => getPreviewPrice(left) - getPreviewPrice(right))
-    .map((pkg) => {
-      const point = getPreviewGeoPoint(pkg)
-      if (!point) return null
+    .map((pkg, index) => {
+      const point = getPreviewMapPoint(pkg, fallbackCountry)
+      const baseLeft = clamp(((point.lng - minLng) / lngRange) * 100, 6, 94)
+      const baseTop = clamp((1 - (point.lat - minLat) / latRange) * 100, 8, 92)
+      const overlappingCount = placedMarkers.filter((marker) => Math.abs(marker.left - baseLeft) < 3.8 && Math.abs(marker.top - baseTop) < 4.6).length
+      const seed = hashSeed(`${pkg.id}:${index}:${overlappingCount}`)
+      const ring = Math.floor(overlappingCount / 6) + 1
+      const angle = ((seed % 360) * Math.PI) / 180
+      const offsetDistance = overlappingCount === 0 ? 0 : 2.4 + ring * 1.2
+      const left = clamp(baseLeft + Math.cos(angle) * offsetDistance, 6, 94)
+      const top = clamp(baseTop + Math.sin(angle) * offsetDistance, 8, 92)
+
+      placedMarkers.push({ left, top })
 
       return {
         pkg,
         point,
-        left: clamp(((point.lng - minLng) / lngRange) * 100, 6, 94),
-        top: clamp((1 - (point.lat - minLat) / latRange) * 100, 8, 92),
+        left,
+        top,
       }
     })
-    .filter((entry): entry is { pkg: PackagePreview; point: GeoPoint; left: number; top: number } => entry !== null)
 }
 
 function buildCountryMarkerLayout(packages: PackagePreview[], selectedCountry: string | undefined) {
@@ -628,22 +684,22 @@ export default function FilterClient({
         : `Lihat ${activeMapPackageCount} paket`
 
   const geoReadyPackages = mapModalPackages.filter((pkg) => getPreviewGeoPoint(pkg) !== null)
-  const uniqueCountries = [...new Set(mapModalPackages.map((pkg) => String(pkg.country || "").trim()).filter(Boolean))]
-  const useActiveResultMap = geoReadyPackages.length > 0 && (Boolean(selectedCountry) || uniqueCountries.length <= 1)
-  const activeResultBaseWindow = useActiveResultMap ? buildGeoMapWindow(geoReadyPackages, selectedCountry) : mapWindow
+  const mapReadyPackages = mapModalPackages.filter((pkg) => Boolean(getPreviewMapPoint(pkg, selectedCountry)))
+  const useActiveResultMap = mapReadyPackages.length > 0
+  const activeResultBaseWindow = useActiveResultMap ? buildPackageMapWindow(mapReadyPackages, selectedCountry) : mapWindow
   const activeResultViewportKey = useActiveResultMap
-    ? `geo:${selectedCountry || "all"}:${geoReadyPackages.map((pkg) => pkg.id).join(",")}`
+    ? `geo:${selectedCountry || "all"}:${mapReadyPackages.map((pkg) => pkg.id).join(",")}`
     : `country:${selectedCountry || "all"}:${mapCountries.map((entry) => `${entry.country}:${entry.packages.length}`).join(",")}`
   const activeViewportBBox =
     mapViewportState?.key === activeResultViewportKey ? mapViewportState.bbox : activeResultBaseWindow.bbox
   const resolvedMapWindow = buildMapWindowFromBBox(activeViewportBBox, activeResultBaseWindow.centerLabel)
   const visibleGeoPackages = useActiveResultMap
-    ? geoReadyPackages.filter((pkg) => {
-        const point = getPreviewGeoPoint(pkg)
-        return point ? pointIsInsideBBox(point, activeViewportBBox) : false
+    ? mapReadyPackages.filter((pkg) => {
+        const point = getPreviewMapPoint(pkg, selectedCountry)
+        return pointIsInsideBBox(point, activeViewportBBox)
       })
     : []
-  const resolvedGeoMarkers = useActiveResultMap ? buildGeoMarkerLayout(visibleGeoPackages, activeViewportBBox) : []
+  const resolvedGeoMarkers = useActiveResultMap ? buildPackageMarkerLayout(visibleGeoPackages, activeViewportBBox, selectedCountry) : []
   const resolvedCountryMarkers = !useActiveResultMap
     ? mapCountries.map(({ country, cheapestPackage, windowBox }) => {
         const center = getBBoxCenter(windowBox.bbox)
