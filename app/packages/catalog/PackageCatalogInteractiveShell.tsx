@@ -392,6 +392,17 @@ export default function PackageCatalogInteractiveShell({
     window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" })
   }
 
+  const scrollToHeader = () => {
+    const target = document.getElementById("top")
+    if (target) {
+      const top = target.getBoundingClientRect().top + window.scrollY
+      window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" })
+      return
+    }
+
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
   const scrollToResults = () => {
     const target = resultsSectionRef.current
     if (!target) return
@@ -500,7 +511,7 @@ export default function PackageCatalogInteractiveShell({
                 </button>
                 <button
                   type="button"
-                  onClick={scrollToSearch}
+                  onClick={scrollToHeader}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-[#f1ddd0] bg-[#fff7f1] text-[#ef5b2a] transition hover:bg-[#fff1e7]"
                   aria-label={compactCopy.action}
                 >
