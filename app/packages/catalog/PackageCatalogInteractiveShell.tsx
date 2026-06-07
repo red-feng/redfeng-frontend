@@ -264,8 +264,6 @@ export default function PackageCatalogInteractiveShell({
   )
 
   const compactSecondaryAction = locale === "en" ? "Filters" : locale === "zh" ? "ç­›é€‰" : "Filter"
-  const compactSummaryMeta =
-    locale === "en" ? "Packages ready to compare" : locale === "zh" ? "å¯ç›´æŽ¥æ¯”è¾ƒçš„å¥—é¤" : "Paket siap dibandingkan"
 
   const styleSummary = selectedStyle
     ? formatTravelStyleLabel(selectedStyle, locale)
@@ -498,7 +496,6 @@ export default function PackageCatalogInteractiveShell({
                     <p className="mt-1 truncate text-[13px] text-slate-500">
                       {compactCopy.style}: {styleSummary} | {compactCopy.duration}: {durationSummary}
                     </p>
-                    <p className="mt-1 truncate text-[11px] font-medium text-slate-400">{compactSummaryMeta}</p>
                   </div>
                 </button>
                 <button

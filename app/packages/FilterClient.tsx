@@ -899,7 +899,6 @@ export default function FilterClient({
           <div className="pointer-events-none absolute right-[92px] top-0 h-full w-px bg-white/70" />
           <div className="relative flex h-full flex-col justify-end">
              <p className="max-w-[220px] text-[18px] font-semibold tracking-[-0.03em] text-[#b85a2c]">{resolvedExploreTitle}</p>
-             <p className="mt-2 max-w-[230px] text-[13px] text-slate-500">{resolvedExploreMeta}</p>
              <p className="mt-3 max-w-[240px] text-[12px] font-medium text-[#ef5b2a]">{resolvedExploreSummary}</p>
              <button
                type="button"
