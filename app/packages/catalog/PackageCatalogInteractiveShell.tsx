@@ -463,31 +463,12 @@ export default function PackageCatalogInteractiveShell({
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={scrollToSearch}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-[#f1ddd0] bg-[#fff7f1] text-[#ef5b2a] transition hover:bg-[#fff1e7]"
-                      aria-label={compactCopy.action}
-                    >
-                      <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
-                        <path d="M8 12.5v-9" />
-                        <path d="M4.5 6.5 8 3l3.5 3.5" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => setIsStickySearchExpanded(false)}
                       className="inline-flex rounded-[12px] border border-[#f1ddd0] bg-white px-3 py-2 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50"
                     >
                       {locale === "en" ? "Close" : locale === "zh" ? "å…³é—­" : "Tutup"}
                     </button>
                   </div>
-                </div>
-                <div className="mb-3 flex flex-wrap gap-2 px-1">
-                  {stickyChips.map((chip) => (
-                    <span key={chip.key} className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-medium ${chip.badgeTone}`}>
-                      <span className="text-[10px] uppercase tracking-[0.18em] opacity-75">{chip.label}</span>
-                      <span className="font-semibold">{chip.value}</span>
-                    </span>
-                  ))}
                 </div>
                 <SearchBar
                   key={`package-catalog-sticky-search:${locale}:${searchParamsKey}`}
