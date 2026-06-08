@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import Image from "next/image"
 import Link from "next/link"
@@ -568,28 +568,28 @@ export default function FilterClient({
     effectiveMinPrice > sliderMin || effectiveMaxPrice < sliderMax || selectedFacilities.length > 0
 
   const mobileFilterTitle =
-    locale === "en" ? "Filter packages" : locale === "zh" ? "ç­›é€‰å¥—é¤" : "Filter paket"
+    locale === "en" ? "Filter packages" : locale === "zh" ? "筛选套餐" : "Filter paket"
   const mobileFilterSubtitle =
     locale === "en"
       ? "Refine the packages that match your plan."
       : locale === "zh"
-        ? "è°ƒæ•´ç¬¦åˆä½ è®¡åˆ’çš„å¥—ç¥¨ã€‚"
+        ? "调整符合你计划的套餐。"
         : "Atur paket yang paling cocok dengan rencanamu."
   const mobileOpenLabel =
-    locale === "en" ? "Open filters" : locale === "zh" ? "æ‰“å¼€ç­›é€‰" : "Buka filter"
+    locale === "en" ? "Open filters" : locale === "zh" ? "打开筛选" : "Buka filter"
   const mobileCloseLabel =
-    locale === "en" ? "Close" : locale === "zh" ? "å…³é—­" : "Tutup"
+    locale === "en" ? "Close" : locale === "zh" ? "关闭" : "Tutup"
   const trustTitle =
     locale === "en"
       ? "Safe and trusted booking"
       : locale === "zh"
-        ? "å®‰å…¨å¯é çš„é¢„è®¢"
+        ? "安全可靠的预订"
         : "Pemesanan aman dan terpercaya"
   const trustBody =
     locale === "en"
       ? "Secure transactions, protected customer data, and support when you need it."
       : locale === "zh"
-        ? "å®‰å…¨äº¤æ˜“ã€�å®¢æˆ·æ•°æ®å—ä¿æŠ¤ï¼Œå¹¶åœ¨éœ€è¦æ—¶æä¾›æ”¯æŒã€‚"
+        ? "安全交易、客户数据受保护，并在需要时提供支持。"
         : "Transaksi lebih aman, data customer terlindungi, dan dukungan saat Anda membutuhkannya."
   const exploreTitle =
     locale === "en"
@@ -746,14 +746,14 @@ export default function FilterClient({
     ? locale === "en"
       ? "Active package results"
       : locale === "zh"
-        ? "å½“å‰å¥—é¤ç»“æžœ"
+        ? "当前套餐结果"
         : "Hasil paket aktif"
     : mapModalSurfaceTitle
   const resolvedMapModalSurfaceHint = useActiveResultMap
     ? locale === "en"
       ? "Map now follows the packages that match your current search."
       : locale === "zh"
-        ? "åœ°å›¾çŽ°åœ¨è·Ÿéšå½“å‰æœç´¢åŒ¹é…çš„å¥—é¤ã€‚"
+        ? "地图现在跟随当前搜索匹配的套餐。"
         : "Peta sekarang mengikuti paket yang cocok dengan pencarian aktifmu."
     : mapModalSurfaceHint
   const resolvedFocusLabel = useActiveResultMap
@@ -763,14 +763,14 @@ export default function FilterClient({
     ? locale === "en"
       ? "Active-search map mode. Zoom controls update the visible results on this map."
       : locale === "zh"
-        ? "å½“å‰æœç´¢åœ°å›¾æ¨¡å¼ã€‚è§†å›¾ä¼šè·ŸéšçœŸå®žå¥—é¤ç‚¹ä½ã€‚"
+        ? "当前搜索地图模式。视图会跟随真实套餐点位。"
         : "Mode peta hasil aktif. Tombol zoom memperbarui hasil yang terlihat di peta ini."
     : mapZoomHint
   const resolvedMapInteractionHint = useActiveResultMap
     ? locale === "en"
       ? "Tap a package price point to inspect the active search results on the map."
       : locale === "zh"
-        ? "ç‚¹å‡»å¥—é¤ä»·æ ¼ç‚¹ä½ï¼ŒæŸ¥çœ‹åœ°å›¾ä¸Šçš„å½“å‰æœç´¢ç»“æžœã€‚"
+        ? "点击套餐价格点位，查看地图上的当前搜索结果。"
         : "Klik titik harga paket untuk memeriksa hasil pencarian aktif di peta."
     : mapInteractionHint
   const resolvedActiveMapPackages = useActiveResultMap ? resolvedGeoMarkers.map((entry) => entry.pkg) : activeMapPackages
@@ -785,35 +785,35 @@ export default function FilterClient({
       : locale === "en"
         ? `${resolvedActiveMapPackageCount} active results are visible on this map`
         : locale === "zh"
-          ? `è¿™å¼ åœ°å›¾ä¸Šæ˜¾ç¤º ${resolvedActiveMapPackageCount} ä¸ªå½“å‰ç»“æžœ`
+          ? `这张地图上显示 ${resolvedActiveMapPackageCount} 个当前结果`
           : `${resolvedActiveMapPackageCount} hasil pencarian aktif terlihat di peta ini`
     : activeAreaSummary
   const resolvedApplyAreaLabel = useActiveResultMap
     ? locale === "en"
       ? "View active results"
       : locale === "zh"
-        ? "æŸ¥çœ‹å½“å‰ç»“æžœ"
+        ? "查看当前结果"
         : "Lihat hasil aktif"
     : applyAreaLabel
   const resolvedMapDrawerTitle = useActiveResultMap
     ? locale === "en"
       ? `Showing ${resolvedActiveMapPackageCount} active results`
       : locale === "zh"
-        ? `æ˜¾ç¤º ${resolvedActiveMapPackageCount} ä¸ªå½“å‰ç»“æžœ`
+        ? `显示 ${resolvedActiveMapPackageCount} 个当前结果`
         : `Menampilkan ${resolvedActiveMapPackageCount} hasil aktif`
     : mapDrawerTitle
   const resolvedExploreTitle = useActiveResultMap
     ? locale === "en"
       ? `Active results in ${resolvedFocusLabel}`
       : locale === "zh"
-        ? `${resolvedFocusLabel} å½“å‰ç»“æžœ`
+        ? `${resolvedFocusLabel} 当前结果`
         : `Hasil aktif di ${resolvedFocusLabel}`
     : exploreTitle
   const resolvedExploreMeta = useActiveResultMap
     ? locale === "en"
       ? `Viewport currently shows ${resolvedActiveMapPackageCount} live package points`
       : locale === "zh"
-        ? `åœ°å›¾è·Ÿéš ${resolvedActiveMapPackageCount} ä¸ªçœŸå®žå¥—é¤ç‚¹ä½`
+        ? `地图跟随 ${resolvedActiveMapPackageCount} 个真实套餐点位`
         : `Viewport saat ini menampilkan ${resolvedActiveMapPackageCount} titik paket yang nyata`
     : exploreMeta
   const resolvedExploreSummary = useActiveResultMap ? resolvedActiveAreaSummary : activeAreaSummary
@@ -821,7 +821,7 @@ export default function FilterClient({
     ? locale === "en"
       ? "Open active result map"
       : locale === "zh"
-        ? "æ‰“å¼€å½“å‰ç»“æžœåœ°å›¾"
+        ? "打开当前结果地图"
         : "Buka peta hasil aktif"
     : exploreAction
   const resolvedHeaderChip = useActiveResultMap ? resolvedFocusLabel : activeCountryLabel
@@ -829,12 +829,12 @@ export default function FilterClient({
     ? locale === "en"
       ? "Active search results"
       : locale === "zh"
-        ? "å½“å‰æœç´¢ç»“æžœ"
+        ? "当前搜索结果"
         : "Hasil pencarian aktif"
     : locale === "en"
       ? "Cheapest package points"
       : locale === "zh"
-        ? "æœ€ä½Žä»·å¥—é¤ç‚¹ä½"
+        ? "最低价套餐点位"
         : "Titik paket termurah"
   // PROTECTED-PACKAGE-MAP-RESULTS-END
   const mapAccessibilitySummary = [
@@ -853,7 +853,7 @@ export default function FilterClient({
   const resetViewportLabel =
     locale === "en" ? "Fit map" : locale === "zh" ? "Fit map" : "Sesuaikan peta"
   const mapPreviewOpenLabel =
-    locale === "en" ? "Open details" : locale === "zh" ? "打开详情" : "Buka detail"
+    locale === "en" ? "Open details" : locale === "zh" ? "æ‰“å¼€è¯¦æƒ…" : "Buka detail"
   const zoomViewport = (factor: number) => {
     setMapViewportState({
       key: activeResultViewportKey,
@@ -919,7 +919,7 @@ export default function FilterClient({
               {locale === "en"
                 ? "Adjust your package preference"
                 : locale === "zh"
-                  ? "è°ƒæ•´ä½ çš„å¥—ç¥¨åå¥½"
+                  ? "调整你的套餐偏好"
                   : "Atur preferensi paketmu"}
             </p>
           </div>
@@ -1017,7 +1017,7 @@ export default function FilterClient({
                       {locale === "en"
                         ? `${selectedCount} selected`
                         : locale === "zh"
-                          ? `å·²é€‰ ${selectedCount}`
+                          ? `已选 ${selectedCount}`
                           : `${selectedCount} dipilih`}
                     </span>
                   ) : null}
@@ -1138,7 +1138,7 @@ export default function FilterClient({
             <div className="sr-only" aria-live="polite">
               <p>{mapAccessibilitySummary}</p>
               <span className="truncate rounded-full border border-[#dbe7f5] bg-[#f6fbff] px-3 py-1.5 text-xs font-semibold text-[#1b4f87]">{resolvedHeaderChip}</span>
-              <p className="truncate text-xs text-slate-500">{resolvedExploreTitle} • {resolvedExploreMeta}</p>
+               <p className="truncate text-xs text-slate-500">{resolvedExploreTitle} • {resolvedExploreMeta}</p>
             </div>
           </div>
 

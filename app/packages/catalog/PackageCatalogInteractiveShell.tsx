@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
@@ -89,21 +89,21 @@ type Props = {
 
 function formatCountrySummary(value: string, locale: Locale) {
   if (!value) {
-    return locale === "en" ? "All countries" : locale === "zh" ? "å…¨éƒ¨å›½å®¶" : "Semua negara"
+    return locale === "en" ? "All countries" : locale === "zh" ? "全部国家" : "Semua negara"
   }
 
   const normalized = value.trim().toLowerCase()
   const labels: Record<string, { id: string; en: string; zh: string }> = {
-    indonesia: { id: "Indonesia", en: "Indonesia", zh: "å°åº¦å°¼è¥¿äºš" },
-    japan: { id: "Jepang", en: "Japan", zh: "æ—¥æœ¬" },
-    singapore: { id: "Singapura", en: "Singapore", zh: "æ–°åŠ å¡" },
-    china: { id: "China", en: "China", zh: "ä¸­å›½" },
-    thailand: { id: "Thailand", en: "Thailand", zh: "æ³°å›½" },
-    malaysia: { id: "Malaysia", en: "Malaysia", zh: "é©¬æ¥è¥¿äºš" },
-    vietnam: { id: "Vietnam", en: "Vietnam", zh: "è¶Šå—" },
-    korea: { id: "Korea", en: "Korea", zh: "éŸ©å›½" },
-    "south korea": { id: "Korea Selatan", en: "South Korea", zh: "éŸ©å›½" },
-    "saudi arabia": { id: "Arab Saudi", en: "Saudi Arabia", zh: "æ²™ç‰¹é˜¿æ‹‰ä¼¯" },
+    indonesia: { id: "Indonesia", en: "Indonesia", zh: "印度尼西亚" },
+    japan: { id: "Jepang", en: "Japan", zh: "日本" },
+    singapore: { id: "Singapura", en: "Singapore", zh: "新加坡" },
+    china: { id: "China", en: "China", zh: "中国" },
+    thailand: { id: "Thailand", en: "Thailand", zh: "泰国" },
+    malaysia: { id: "Malaysia", en: "Malaysia", zh: "马来西亚" },
+    vietnam: { id: "Vietnam", en: "Vietnam", zh: "越南" },
+    korea: { id: "Korea", en: "Korea", zh: "韩国" },
+    "south korea": { id: "Korea Selatan", en: "South Korea", zh: "韩国" },
+    "saudi arabia": { id: "Arab Saudi", en: "Saudi Arabia", zh: "沙特阿拉伯" },
   }
 
   const match = labels[normalized]
@@ -112,11 +112,11 @@ function formatCountrySummary(value: string, locale: Locale) {
 
 function formatDurationSummary(value: string, locale: Locale) {
   if (!value) {
-    return locale === "en" ? "Any duration" : locale === "zh" ? "ä»»æ„æ—¶é•¿" : "Durasi fleksibel"
+    return locale === "en" ? "Any duration" : locale === "zh" ? "任意时长" : "Durasi fleksibel"
   }
-  if (value === "1-3") return locale === "en" ? "1-3 days" : locale === "zh" ? "1-3 å¤©" : "1-3 hari"
-  if (value === "4-7") return locale === "en" ? "4-7 days" : locale === "zh" ? "4-7 å¤©" : "4-7 hari"
-  if (value === "8+") return locale === "en" ? "8+ days" : locale === "zh" ? "8 å¤©ä»¥ä¸Š" : "8+ hari"
+  if (value === "1-3") return locale === "en" ? "1-3 days" : locale === "zh" ? "1-3 天" : "1-3 hari"
+  if (value === "4-7") return locale === "en" ? "4-7 days" : locale === "zh" ? "4-7 天" : "4-7 hari"
+  if (value === "8+") return locale === "en" ? "8+ days" : locale === "zh" ? "8 天以上" : "8+ hari"
   return value
 }
 
@@ -258,7 +258,7 @@ export default function PackageCatalogInteractiveShell({
       locale === "en"
         ? { style: "Travel style", duration: "Duration", action: "Edit search" }
         : locale === "zh"
-          ? { style: "æ—…è¡Œé£Žæ ¼", duration: "è¡Œç¨‹æ—¶é•¿", action: "è°ƒæ•´æœç´¢" }
+          ? { style: "旅行方式", duration: "行程时长", action: "调整搜索" }
           : { style: "Travel style", duration: "Durasi", action: "Ubah pencarian" },
     [locale],
   )
@@ -270,7 +270,7 @@ export default function PackageCatalogInteractiveShell({
     : locale === "en"
       ? "All styles"
       : locale === "zh"
-        ? "å…¨éƒ¨é£Žæ ¼"
+        ? "全部风格"
         : "Semua style"
 
   const durationSummary = formatDurationSummary(selectedDuration, locale)
@@ -295,7 +295,7 @@ export default function PackageCatalogInteractiveShell({
     },
     {
       key: "results",
-      label: locale === "en" ? "Results" : locale === "zh" ? "Ã§Â»â€œÃ¦Å¾Å“" : "Hasil",
+      label: locale === "en" ? "Results" : locale === "zh" ? "结果" : "Hasil",
       value: `${totalPackages}`,
       badgeTone: "border-emerald-200 bg-emerald-50/80 text-emerald-700",
       cardTone: "border-emerald-200 bg-emerald-50/70 text-emerald-700 hover:border-emerald-300",
@@ -466,7 +466,7 @@ export default function PackageCatalogInteractiveShell({
                       onClick={() => setIsStickySearchExpanded(false)}
                       className="inline-flex rounded-[12px] border border-[#f1ddd0] bg-white px-3 py-2 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50"
                     >
-                      {locale === "en" ? "Close" : locale === "zh" ? "å…³é—­" : "Tutup"}
+                      {locale === "en" ? "Close" : locale === "zh" ? "关闭" : "Tutup"}
                     </button>
                   </div>
                 </div>
@@ -659,7 +659,7 @@ export default function PackageCatalogInteractiveShell({
                                     {formatPackagePrice(pkg.livePricing?.priceAdult ?? pkg.price_adult, pkg.livePricing?.currency ?? pkg.currency, locale)}
                                   </p>
                                   <p className={`mt-1 truncate text-[10px] font-medium ${isActive ? "text-[#11a36a]" : isBudgetPick ? "text-emerald-700" : "text-slate-500"}`}>
-                                    {isActive ? recommendationTitle : isBudgetPick ? (locale === "en" ? "Value pick" : locale === "zh" ? "超值推荐" : "Pilihan hemat") : formatPackageMeta(pkg, locale) || recommendationTitle}
+                                    {isActive ? recommendationTitle : isBudgetPick ? (locale === "en" ? "Value pick" : locale === "zh" ? "è¶…å€¼æŽ¨è" : "Pilihan hemat") : formatPackageMeta(pkg, locale) || recommendationTitle}
                                   </p>
                                 </Link>
                               )

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useMemo, useState, useTransition } from "react"
@@ -14,16 +14,16 @@ type SearchBarProps = {
 }
 
 const localizedCountryLabels: Record<string, { id: string; en: string; zh: string }> = {
-  indonesia: { id: "Indonesia", en: "Indonesia", zh: "å°å°¼" },
-  japan: { id: "Jepang", en: "Japan", zh: "æ—¥æœ¬" },
-  singapore: { id: "Singapura", en: "Singapore", zh: "æ–°åŠ å¡" },
-  china: { id: "China", en: "China", zh: "ä¸­å›½" },
-  thailand: { id: "Thailand", en: "Thailand", zh: "æ³°å›½" },
-  malaysia: { id: "Malaysia", en: "Malaysia", zh: "é©¬æ¥è¥¿äºš" },
-  vietnam: { id: "Vietnam", en: "Vietnam", zh: "è¶Šå—" },
-  korea: { id: "Korea", en: "Korea", zh: "éŸ©å›½" },
-  "south korea": { id: "Korea Selatan", en: "South Korea", zh: "éŸ©å›½" },
-  "saudi arabia": { id: "Arab Saudi", en: "Saudi Arabia", zh: "æ²™ç‰¹é˜¿æ‹‰ä¼¯" },
+  indonesia: { id: "Indonesia", en: "Indonesia", zh: "印度尼西亚" },
+  japan: { id: "Jepang", en: "Japan", zh: "日本" },
+  singapore: { id: "Singapura", en: "Singapore", zh: "新加坡" },
+  china: { id: "China", en: "China", zh: "中国" },
+  thailand: { id: "Thailand", en: "Thailand", zh: "泰国" },
+  malaysia: { id: "Malaysia", en: "Malaysia", zh: "马来西亚" },
+  vietnam: { id: "Vietnam", en: "Vietnam", zh: "越南" },
+  korea: { id: "Korea", en: "Korea", zh: "韩国" },
+  "south korea": { id: "Korea Selatan", en: "South Korea", zh: "韩国" },
+  "saudi arabia": { id: "Arab Saudi", en: "Saudi Arabia", zh: "沙特阿拉伯" },
 }
 
 function formatCountryLabel(country: string, locale: Locale) {
@@ -131,7 +131,7 @@ export default function SearchBar({
   }
   // PROTECTED-PACKAGE-MAP-SEARCHBAR-END
 
-  const loadingLabel = locale === "en" ? "Loading..." : locale === "zh" ? "åŠ è½½ä¸­..." : "Memuat..."
+  const loadingLabel = locale === "en" ? "Loading..." : locale === "zh" ? "加载中..." : "Memuat..."
 
   if (isCatalogVariant) {
     return (
@@ -228,7 +228,7 @@ export default function SearchBar({
               type="button"
               onClick={applyFilter}
               disabled={isPending}
-              aria-label={submitLabel || (locale === "en" ? "Apply Filter" : locale === "zh" ? "Apply Filter" : "Terapkan Filter")}
+              aria-label={submitLabel || (locale === "en" ? "Apply Filter" : locale === "zh" ? "应用筛选" : "Terapkan Filter")}
               className="inline-flex h-[58px] w-full items-center justify-center self-center rounded-[18px] bg-gradient-to-r from-[#ff6934] via-[#ff5d2d] to-[#ef4423] text-white shadow-[0_18px_34px_-22px_rgba(239,68,35,0.72)] transition hover:-translate-y-0.5 hover:from-[#ff5d2d] hover:to-[#ea3b1c] disabled:cursor-not-allowed disabled:opacity-70 md:w-[72px]"
             >
               {isPending ? loadingLabel : <SearchIcon />}
@@ -389,7 +389,7 @@ export default function SearchBar({
                 {locale === "en"
                   ? "Find your next trip quickly"
                   : locale === "zh"
-                    ? "å¿«é€Ÿæ‰¾åˆ°ä¸‹ä¸€æ®µæ—…ç¨‹"
+                    ? "快速找到下一段旅程"
                     : "Cari paket perjalananmu lebih cepat"}
               </p>
             </div>
