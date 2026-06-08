@@ -588,7 +588,16 @@ export default function PackageCatalogInteractiveShell({
         </section>
 
         <section className={`${homeLayoutLock.contentWidthClass} mt-5 max-w-[1240px]`}>
-          <div className="relative overflow-hidden rounded-[20px] border border-[#eef1f5] bg-white px-5 py-5 shadow-[0_24px_46px_-34px_rgba(15,23,42,0.18)] xl:min-h-[148px]">
+          <div
+            className="relative overflow-hidden rounded-[20px] border border-[#ffc49b] bg-[#ff9a61] px-5 py-5 shadow-[0_24px_46px_-34px_rgba(239,98,44,0.44)] xl:min-h-[148px]"
+            style={{
+              backgroundImage: "url('/package-strip-bg.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
+          >
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,109,33,0.28)_0%,rgba(255,109,33,0.1)_35%,rgba(255,255,255,0.04)_100%)]" />
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div className="max-w-[430px]">
                 <div className="rounded-[28px] border border-white bg-white px-7 py-6 shadow-[0_20px_48px_-32px_rgba(15,23,42,0.22)]">
