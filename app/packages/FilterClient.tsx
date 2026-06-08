@@ -1055,20 +1055,6 @@ export default function FilterClient({
         })}
       </div>
 
-      <div className="rounded-[22px] border border-[#eef1f6] bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.18)]">
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff4ec] text-orange-500">
-            <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
-              <path d="M12 3.8 5.5 6.5v5c0 4.2 2.5 7.5 6.5 8.7 4-1.2 6.5-4.5 6.5-8.7v-5L12 3.8Z" />
-              <path d="m9.5 12 1.6 1.6 3.4-3.7" />
-            </svg>
-          </span>
-          <div>
-            <p className="text-sm font-semibold text-slate-950">{trustTitle}</p>
-            <p className="mt-2 text-sm leading-6 text-slate-600">{trustBody}</p>
-          </div>
-        </div>
-      </div>
     </div>
   )
 
