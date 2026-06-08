@@ -445,10 +445,10 @@ export default function PackageCatalogInteractiveShell({
   }
 
   const stickyBar = shouldShowCompactStickyBar ? (
-    <div className="fixed inset-x-0 top-0 z-[90] border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)] backdrop-blur-sm animate-[packageStickyDock_180ms_ease-out]">
+    <div className="fixed inset-x-0 top-0 z-[90] border-b border-[#f1ddd0] bg-white shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)] animate-[packageStickyDock_180ms_ease-out]">
       <div className={`${homeLayoutLock.pageXClass} py-2 sm:py-3 lg:py-0`}>
         <div className={homeLayoutLock.contentWidthClass}>
-          <div className="scale-[0.994] overflow-hidden rounded-[22px] border border-[#f1ddd0] bg-white/92 backdrop-blur transition-all duration-200 lg:border-transparent lg:bg-transparent lg:shadow-none">
+          <div className="scale-[0.994] overflow-hidden rounded-[22px] border border-[#f1ddd0] bg-white transition-all duration-200 lg:border-transparent lg:bg-white lg:shadow-none">
             {isStickySearchExpanded ? (
               <div className="animate-[packageStickyExpand_220ms_ease-out] p-3 sm:p-4">
                 <div className="mb-3 flex items-center justify-between gap-3 px-1">
@@ -600,12 +600,9 @@ export default function PackageCatalogInteractiveShell({
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,109,33,0.28)_0%,rgba(255,109,33,0.1)_35%,rgba(255,255,255,0.04)_100%)]" />
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div className="max-w-[430px]">
-                <div className="rounded-[28px] border border-white/70 bg-white px-7 py-6 shadow-[0_20px_48px_-32px_rgba(15,23,42,0.22)]">
+                <div className="rounded-[28px] border border-white bg-white px-7 py-6 shadow-[0_20px_48px_-32px_rgba(15,23,42,0.22)]">
                   <p className="text-[16px] font-semibold tracking-[-0.03em] text-[#11a36a]">
                     {filterSummaryTitle}
-                  </p>
-                  <p className="mt-2 text-[14px] text-slate-500">
-                    {filterSummaryMeta}
                   </p>
                 </div>
               </div>
