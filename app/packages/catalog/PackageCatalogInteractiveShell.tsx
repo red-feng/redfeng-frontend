@@ -600,7 +600,7 @@ export default function PackageCatalogInteractiveShell({
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,109,33,0.28)_0%,rgba(255,109,33,0.1)_35%,rgba(255,255,255,0.04)_100%)]" />
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div className="max-w-[430px]">
-                <div className="rounded-[28px] border border-white/70 bg-white px-7 py-6 shadow-[0_20px_48px_-32px_rgba(15,23,42,0.22)]">
+                <div className="relative isolate rounded-[28px] border border-white/70 bg-white px-7 py-6 shadow-[0_22px_52px_-32px_rgba(15,23,42,0.2),0_0_0_1px_rgba(255,255,255,0.85)]">
                   <p className="text-[16px] font-semibold tracking-[-0.03em] text-[#11a36a]">
                     {filterSummaryTitle}
                   </p>
