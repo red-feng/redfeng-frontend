@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { createPortal } from "react-dom"
 import HomeResultsClient from "@/app/HomeResultsClient"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
@@ -188,6 +189,7 @@ export default function PackageCatalogInteractiveShell({
   selectedStyle,
   selectedDuration,
 }: Props) {
+  const router = useRouter()
   const searchSectionRef = useRef<HTMLDivElement | null>(null)
   const resultsSectionRef = useRef<HTMLDivElement | null>(null)
   const quickChipScrollRef = useRef<HTMLDivElement | null>(null)
@@ -374,10 +376,10 @@ export default function PackageCatalogInteractiveShell({
         : "Hanya sedikit paket yang cocok dengan filter aktif."
   const recommendationActionLabel =
     locale === "en"
-      ? "View list"
+      ? "Reset"
       : locale === "zh"
-        ? "查看列表"
-        : "Lihat list"
+        ? "重置"
+        : "Reset"
 
   const shouldShowCompactStickyBar = isScrolled
   const showChipScrollLeft = !isStickySearchExpanded && canScrollChipLeft
@@ -410,6 +412,10 @@ export default function PackageCatalogInteractiveShell({
     const headerOffset = typeof window !== "undefined" && window.innerWidth >= 1024 ? 110 : 80
     const top = target.getBoundingClientRect().top + window.scrollY - headerOffset
     window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" })
+  }
+
+  const resetCatalogSearch = () => {
+    router.push("/packages/catalog", { scroll: false })
   }
 
   const handleStickyChipClick = (chipKey: string) => {
@@ -682,13 +688,13 @@ export default function PackageCatalogInteractiveShell({
                     </div>
                     <button
                       type="button"
-                      onClick={scrollToResults}
+                      onClick={resetCatalogSearch}
                       title={recommendationActionLabel}
                       className="inline-flex shrink-0 flex-col items-center justify-center gap-2 rounded-[16px] border border-white/40 bg-transparent px-4 py-3 text-center text-[12px] font-semibold text-white shadow-none transition hover:bg-white/10 xl:min-w-[92px]"
                     >
                       <svg viewBox="0 0 16 16" className="h-7 w-7 fill-none stroke-current stroke-[1.8]">
-                        <rect x="2.5" y="3" width="11" height="10" rx="2" />
-                        <path d="M5 6h6M5 8.5h6M5 11h4" />
+                        <path d="M13 8a5 5 0 1 1-1.45-3.5" />
+                        <path d="M13 3.5v3.2H9.8" />
                       </svg>
                       <span>{recommendationActionLabel}</span>
                     </button>
