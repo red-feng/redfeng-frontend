@@ -1186,7 +1186,7 @@ export default function FilterClient({
                             <div className="flex items-end justify-between gap-3">
                               <div className="min-w-0">
                                 <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">
-                                  {locale === "en" ? "Starting from" : locale === "zh" ? "起价" : "Mulai dari"}
+                                  {"Mulai dari"}
                                 </p>
                                 <p className="mt-1 truncate text-[22px] font-semibold leading-none tracking-[-0.04em] text-[#ef5b2a]">
                                   {formatPackageMoney(

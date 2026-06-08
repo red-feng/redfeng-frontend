@@ -68,7 +68,7 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
   const hasDescription = Boolean(translation?.description?.trim())
   const dayLabel = locale === "zh" ? "天" : locale === "en" ? "days" : "hari"
   const availableLabel = locale === "zh" ? "Bisa dipesan" : locale === "en" ? "Available now" : "Tersedia sekarang"
-  const fromLabel = locale === "zh" ? "Mulai dari" : locale === "en" ? "Starting from" : "Mulai dari"
+  const fromLabel = "Mulai dari"
 
   const infoChips = [
     pkg.travel_style

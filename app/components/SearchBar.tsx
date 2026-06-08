@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useMemo, useState, useTransition } from "react"
+import { type ReactNode, useEffect, useMemo, useRef, useState, useTransition } from "react"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { formatTravelStyleLabel, travelStyleOptions } from "@/lib/travelStyles"
 
@@ -73,6 +73,134 @@ function SearchIcon() {
   )
 }
 
+type DropdownOption = {
+  value: string
+  label: string
+}
+
+function SearchDropdownField({
+  icon,
+  label,
+  value,
+  placeholder,
+  options,
+  isOpen,
+  onToggle,
+  onClose,
+  onChange,
+  compact = false,
+}: {
+  icon: ReactNode
+  label: string
+  value: string
+  placeholder: string
+  options: DropdownOption[]
+  isOpen: boolean
+  onToggle: () => void
+  onClose: () => void
+  onChange: (value: string) => void
+  compact?: boolean
+}) {
+  const rootRef = useRef<HTMLDivElement | null>(null)
+  const selectedLabel = options.find((option) => option.value === value)?.label || placeholder
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        onClose()
+      }
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose()
+      }
+    }
+
+    window.addEventListener("mousedown", handlePointerDown)
+    window.addEventListener("keydown", handleEscape)
+
+    return () => {
+      window.removeEventListener("mousedown", handlePointerDown)
+      window.removeEventListener("keydown", handleEscape)
+    }
+  }, [isOpen, onClose])
+
+  const shellClass = compact
+    ? "group flex min-w-0 items-center gap-2 rounded-[10px] border border-[#eceff4] bg-[#fcfdff] px-2.5 py-1.5 transition focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100"
+    : "group flex min-w-0 items-center gap-3 rounded-[18px] border border-[#eceff4] bg-[#fcfdff] px-4 py-4 transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100"
+  const iconShellClass = compact
+    ? "flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500"
+    : "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500"
+  const menuPaddingClass = compact ? "p-1.5" : "p-2"
+  const optionClass = compact ? "rounded-[12px] px-3 py-2.5 text-[13px]" : "rounded-[14px] px-4 py-3 text-[14px]"
+
+  return (
+    <div ref={rootRef} className="relative min-w-0">
+      <div className={shellClass}>
+        <span className={iconShellClass}>{icon}</span>
+        <div className="min-w-0 flex-1">
+          <span className={`block font-semibold uppercase tracking-[0.26em] text-slate-400 ${compact ? "text-[9px]" : "text-[10px]"}`}>{label}</span>
+          <button
+            type="button"
+            onClick={onToggle}
+            className={`mt-1 flex w-full items-center gap-3 rounded-[12px] bg-transparent text-left outline-none ${compact ? "text-[12px]" : "text-[14px] sm:text-[15px]"}`}
+            aria-haspopup="listbox"
+            aria-expanded={isOpen}
+          >
+            <span className="min-w-0 flex-1 truncate font-semibold text-slate-900">{selectedLabel}</span>
+            <span className={`shrink-0 text-slate-400 transition group-focus-within:text-orange-500 ${isOpen ? "rotate-180 text-orange-500" : ""}`}>
+              <ChevronMark />
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {isOpen ? (
+        <div className="absolute left-0 right-0 top-full z-[260] mt-3">
+          <div className={`overflow-hidden rounded-[20px] border border-[#efe2d8] bg-white ${menuPaddingClass} shadow-[0_24px_60px_-28px_rgba(15,23,42,0.22)]`}>
+            <div role="listbox" className="max-h-72 overflow-y-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  onChange("")
+                  onClose()
+                }}
+                className={`flex w-full items-center text-left font-medium transition ${optionClass} ${
+                  value === "" ? "bg-[#fff1ea] text-[#ef4423]" : "text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {placeholder}
+              </button>
+              {options.map((option) => {
+                const active = option.value === value
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      onChange(option.value)
+                      onClose()
+                    }}
+                    className={`flex w-full items-center text-left font-medium transition ${optionClass} ${
+                      active ? "bg-[#fff1ea] text-[#ef4423]" : "text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span className="truncate">{option.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 export default function SearchBar({
   locale,
   countries,
@@ -89,18 +217,37 @@ export default function SearchBar({
   const [country, setCountry] = useState(searchParams.get("country") || "")
   const [style, setStyle] = useState(searchParams.get("style") || "")
   const [duration, setDuration] = useState(searchParams.get("duration") || "")
+  const [openMenu, setOpenMenu] = useState<"country" | "style" | "duration" | null>(null)
   const isCatalogVariant = variant === "catalog"
   const isMapCompactVariant = variant === "mapCompact"
 
-  const countryOptions = useMemo(() => {
+  const countryOptions = useMemo<DropdownOption[]>(() => {
     const uniqueCountries = [...new Set(countries.map((value) => value.trim()).filter(Boolean))]
 
     if (country && !uniqueCountries.includes(country)) {
-      return [country, ...uniqueCountries]
+      return [country, ...uniqueCountries].map((option) => ({
+        value: option,
+        label: formatCountryLabel(option, locale),
+      }))
     }
 
-    return uniqueCountries
-  }, [countries, country])
+    return uniqueCountries.map((option) => ({
+      value: option,
+      label: formatCountryLabel(option, locale),
+    }))
+  }, [countries, country, locale])
+  const styleOptions = useMemo<DropdownOption[]>(
+    () => travelStyleOptions.map((option) => ({ value: option.value, label: formatTravelStyleLabel(option.value, locale) })),
+    [locale],
+  )
+  const durationOptions = useMemo<DropdownOption[]>(
+    () => [
+      { value: "1-3", label: `1-3 ${t.day}` },
+      { value: "4-7", label: `4-7 ${t.day}` },
+      { value: "8+", label: `8+ ${t.day}` },
+    ],
+    [t.day],
+  )
 
   // PROTECTED-PACKAGE-MAP-SEARCHBAR-START
   const applyFilter = () => {
@@ -145,84 +292,41 @@ export default function SearchBar({
 
         <div className="rounded-[24px] border border-[#eef1f6] bg-white p-4 shadow-[0_22px_52px_-38px_rgba(15,23,42,0.18)]">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
-            <label className="group flex min-w-0 items-center gap-3 rounded-[18px] border border-[#eceff4] bg-[#fcfdff] px-4 py-4 transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
-                <CountryIcon />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-400">
-                  {t.countryLabel}
-                </span>
-                <select
-                  value={country}
-                  onChange={(event) => setCountry(event.target.value)}
-                  disabled={isPending}
-                  className="mt-1 w-full appearance-none bg-transparent text-[14px] font-semibold text-slate-900 outline-none sm:text-[15px]"
-                >
-                  <option value="">{t.allCountries}</option>
-                  {countryOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {formatCountryLabel(option, locale)}
-                    </option>
-                  ))}
-                </select>
-              </span>
-              <span className="shrink-0 text-slate-400 transition group-focus-within:text-orange-500">
-                <ChevronMark />
-              </span>
-            </label>
+            <SearchDropdownField
+              icon={<CountryIcon />}
+              label={t.countryLabel}
+              value={country}
+              placeholder={t.allCountries}
+              options={countryOptions}
+              isOpen={openMenu === "country"}
+              onToggle={() => setOpenMenu((current) => (current === "country" ? null : "country"))}
+              onClose={() => setOpenMenu(null)}
+              onChange={setCountry}
+            />
 
-            <label className="group flex min-w-0 items-center gap-3 rounded-[18px] border border-[#eceff4] bg-[#fcfdff] px-4 py-4 transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
-                <StyleIcon />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-400">
-                  {t.styleLabel}
-                </span>
-                <select
-                  value={style}
-                  onChange={(event) => setStyle(event.target.value)}
-                  disabled={isPending}
-                  className="mt-1 w-full appearance-none bg-transparent text-[14px] font-semibold text-slate-900 outline-none sm:text-[15px]"
-                >
-                  <option value="">{t.allStyles}</option>
-                  {travelStyleOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {formatTravelStyleLabel(option.value, locale)}
-                    </option>
-                  ))}
-                </select>
-              </span>
-              <span className="shrink-0 text-slate-400 transition group-focus-within:text-orange-500">
-                <ChevronMark />
-              </span>
-            </label>
+            <SearchDropdownField
+              icon={<StyleIcon />}
+              label={t.styleLabel}
+              value={style}
+              placeholder={t.allStyles}
+              options={styleOptions}
+              isOpen={openMenu === "style"}
+              onToggle={() => setOpenMenu((current) => (current === "style" ? null : "style"))}
+              onClose={() => setOpenMenu(null)}
+              onChange={setStyle}
+            />
 
-            <label className="group flex min-w-0 items-center gap-3 rounded-[18px] border border-[#eceff4] bg-[#fcfdff] px-4 py-4 transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
-                <DurationIcon />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-400">
-                  {t.durationLabel}
-                </span>
-                <select
-                  value={duration}
-                  onChange={(event) => setDuration(event.target.value)}
-                  disabled={isPending}
-                  className="mt-1 w-full appearance-none bg-transparent text-[14px] font-semibold text-slate-900 outline-none sm:text-[15px]"
-                >
-                  <option value="">{t.allDurations}</option>
-                  <option value="1-3">1-3 {t.day}</option>
-                  <option value="4-7">4-7 {t.day}</option>
-                  <option value="8+">8+ {t.day}</option>
-                </select>
-              </span>
-              <span className="shrink-0 text-slate-400 transition group-focus-within:text-orange-500">
-                <ChevronMark />
-              </span>
-            </label>
+            <SearchDropdownField
+              icon={<DurationIcon />}
+              label={t.durationLabel}
+              value={duration}
+              placeholder={t.allDurations}
+              options={durationOptions}
+              isOpen={openMenu === "duration"}
+              onToggle={() => setOpenMenu((current) => (current === "duration" ? null : "duration"))}
+              onClose={() => setOpenMenu(null)}
+              onChange={setDuration}
+            />
 
             <button
               type="button"
@@ -262,75 +366,44 @@ export default function SearchBar({
 
         <div className="rounded-[16px] border border-[#eef1f6] bg-white px-2 py-1.5 shadow-[0_12px_28px_-26px_rgba(15,23,42,0.12)]">
           <div className="grid min-w-0 gap-1.5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.78fr)_auto] md:items-center">
-            <label className="group flex min-w-0 items-center gap-2 rounded-[10px] border border-[#eceff4] bg-[#fcfdff] px-2.5 py-1.5 transition focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
-                <CountryIcon />
-              </span>
-              <span className="min-w-0 flex-1">
-                <select
-                  value={country}
-                  onChange={(event) => setCountry(event.target.value)}
-                  disabled={isPending}
-                  className="w-full appearance-none bg-transparent text-[12px] font-semibold text-slate-900 outline-none"
-                >
-                  <option value="">{t.allCountries}</option>
-                  {countryOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {formatCountryLabel(option, locale)}
-                    </option>
-                  ))}
-                </select>
-              </span>
-              <span className="shrink-0 text-slate-400 transition group-focus-within:text-orange-500">
-                <ChevronMark />
-              </span>
-            </label>
+            <SearchDropdownField
+              icon={<CountryIcon />}
+              label={t.countryLabel}
+              value={country}
+              placeholder={t.allCountries}
+              options={countryOptions}
+              isOpen={openMenu === "country"}
+              onToggle={() => setOpenMenu((current) => (current === "country" ? null : "country"))}
+              onClose={() => setOpenMenu(null)}
+              onChange={setCountry}
+              compact
+            />
 
-            <label className="group flex min-w-0 items-center gap-2 rounded-[10px] border border-[#eceff4] bg-[#fcfdff] px-2.5 py-1.5 transition focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
-                <StyleIcon />
-              </span>
-              <span className="min-w-0 flex-1">
-                <select
-                  value={style}
-                  onChange={(event) => setStyle(event.target.value)}
-                  disabled={isPending}
-                  className="w-full appearance-none bg-transparent text-[12px] font-semibold text-slate-900 outline-none"
-                >
-                  <option value="">{t.allStyles}</option>
-                  {travelStyleOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {formatTravelStyleLabel(option.value, locale)}
-                    </option>
-                  ))}
-                </select>
-              </span>
-              <span className="shrink-0 text-slate-400 transition group-focus-within:text-orange-500">
-                <ChevronMark />
-              </span>
-            </label>
+            <SearchDropdownField
+              icon={<StyleIcon />}
+              label={t.styleLabel}
+              value={style}
+              placeholder={t.allStyles}
+              options={styleOptions}
+              isOpen={openMenu === "style"}
+              onToggle={() => setOpenMenu((current) => (current === "style" ? null : "style"))}
+              onClose={() => setOpenMenu(null)}
+              onChange={setStyle}
+              compact
+            />
 
-            <label className="group flex min-w-0 items-center gap-2 rounded-[10px] border border-[#eceff4] bg-[#fcfdff] px-2.5 py-1.5 transition focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
-                <DurationIcon />
-              </span>
-              <span className="min-w-0 flex-1">
-                <select
-                  value={duration}
-                  onChange={(event) => setDuration(event.target.value)}
-                  disabled={isPending}
-                  className="w-full appearance-none bg-transparent text-[12px] font-semibold text-slate-900 outline-none"
-                >
-                  <option value="">{t.allDurations}</option>
-                  <option value="1-3">1-3 {t.day}</option>
-                  <option value="4-7">4-7 {t.day}</option>
-                  <option value="8+">8+ {t.day}</option>
-                </select>
-              </span>
-              <span className="shrink-0 text-slate-400 transition group-focus-within:text-orange-500">
-                <ChevronMark />
-              </span>
-            </label>
+            <SearchDropdownField
+              icon={<DurationIcon />}
+              label={t.durationLabel}
+              value={duration}
+              placeholder={t.allDurations}
+              options={durationOptions}
+              isOpen={openMenu === "duration"}
+              onToggle={() => setOpenMenu((current) => (current === "duration" ? null : "duration"))}
+              onClose={() => setOpenMenu(null)}
+              onChange={setDuration}
+              compact
+            />
 
             <button
               type="button"
@@ -411,8 +484,8 @@ export default function SearchBar({
               >
                 <option value="">{t.allCountries}</option>
                 {countryOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {formatCountryLabel(option, locale)}
+                  <option key={option.value} value={option.value}>
+                    {option.label}
                   </option>
                 ))}
               </select>
