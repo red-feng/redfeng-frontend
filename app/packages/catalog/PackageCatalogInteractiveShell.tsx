@@ -665,7 +665,15 @@ export default function PackageCatalogInteractiveShell({
                                     {formatPackagePrice(pkg.livePricing?.priceAdult ?? pkg.price_adult, pkg.livePricing?.currency ?? pkg.currency, locale)}
                                   </p>
                                   <p className={`mt-1 truncate text-[10px] font-medium ${isActive ? "text-[#11a36a]" : isBudgetPick ? "text-emerald-700" : "text-slate-500"}`}>
-                                    {isActive ? recommendationTitle : isBudgetPick ? (locale === "en" ? "Value pick" : locale === "zh" ? "è¶…å€¼æŽ¨è" : "Pilihan hemat") : formatPackageMeta(pkg, locale) || recommendationTitle}
+                                    {isActive
+                                      ? recommendationTitle
+                                      : isBudgetPick
+                                        ? locale === "en"
+                                          ? "Value pick"
+                                          : locale === "zh"
+                                            ? "超值推荐"
+                                            : "Pilihan hemat"
+                                        : formatPackageMeta(pkg, locale) || recommendationTitle}
                                   </p>
                                 </Link>
                               )
