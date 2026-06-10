@@ -33,6 +33,27 @@ export type FlightCatalogBuildResult = {
   source: FlightCatalogDataSource
 }
 
+function extractAirportCode(value: string) {
+  const normalized = value.replace(/\s+/g, " ").trim()
+  const trailingCodeMatch = normalized.match(/\(([A-Z]{3})\)$/)
+  if (trailingCodeMatch) return trailingCodeMatch[1]
+
+  const leadingCodeMatch = normalized.match(/^([A-Z]{3})\b/)
+  if (leadingCodeMatch) return leadingCodeMatch[1]
+
+  return normalized.split(/\s+/)[0] || ""
+}
+
+function normalizeRequestedCabin(value: string) {
+  const normalized = value.trim().toLowerCase()
+  if (!normalized) return "Economy"
+  if (normalized === "ekonomi") return "Economy"
+  if (normalized === "ekonomi premium") return "Premium Economy"
+  if (normalized === "bisnis") return "Business"
+  if (normalized === "kelas satu") return "First Class"
+  return value
+}
+
 function logFlightCatalogDecision(
   message: string,
   details: Record<string, unknown>,
@@ -188,13 +209,16 @@ export async function buildFlightCatalogItems({
     transitFilterCount: transitTypes.length,
     priceBandFilterCount: priceBands.length,
   }
+  const originCode = extractAirportCode(rawFrom)
+  const destinationCode = extractAirportCode(rawTo)
+  const normalizedCabin = normalizeRequestedCabin(cabin)
   const affiliateFlightSearchResult = await dharmawisataAffiliateFlightProvider.searchFlights({
     tripType: isFlightTripMode(trip) ? trip : "round_trip",
-    originCode: rawFrom.trim().split(/\s+/)[0] || "",
-    destinationCode: rawTo.trim().split(/\s+/)[0] || "",
+    originCode,
+    destinationCode,
     departDate: depart,
     returnDate: trip === "round_trip" ? returnDate : undefined,
-    cabinClass: cabin as "Economy" | "Premium Economy" | "Business" | "First Class",
+    cabinClass: normalizedCabin as "Economy" | "Premium Economy" | "Business" | "First Class",
     passengers: { adults: 1, children: 0, infants: 0 },
     locale,
   })
@@ -207,6 +231,9 @@ export async function buildFlightCatalogItems({
 
   logFlightCatalogDecision("catalog-source-selected", {
     ...requestSummary,
+    originCode,
+    destinationCode,
+    normalizedCabin,
     providerKey: affiliateFlightSearchResult.providerKey,
     upstreamOfferCount: affiliateFlightSearchResult.offers.length,
     source,
@@ -251,6 +278,9 @@ export async function buildFlightCatalogItems({
 
   logFlightCatalogDecision("catalog-items-filtered", {
     ...requestSummary,
+    originCode,
+    destinationCode,
+    normalizedCabin,
     source,
     baseResultCount: baseResults.length,
     finalItemCount: itemsResult.length,
