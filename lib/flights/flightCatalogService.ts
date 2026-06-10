@@ -1,6 +1,6 @@
 import type { DummyCatalogItem } from "@/lib/service-dummy-catalog"
 import type { FlightTripMode } from "@/app/components/flights/flightSearchParams"
-import { dummyAffiliateFlightProvider } from "@/lib/flights/dummyAffiliateFlightProvider"
+import { dharmawisataAffiliateFlightProvider } from "@/lib/flights/dharmawisataAffiliateFlightProvider"
 import { getFlightCardMeta, type FlightCatalogCardMeta } from "@/lib/flights/dummyFlightCatalog"
 import type { AffiliateFlightOffer } from "@/lib/flights/affiliateTypes"
 
@@ -89,7 +89,7 @@ export async function buildFlightCatalogItems({
   priceBands,
   isFlightTripMode,
 }: FlightCatalogBuildParams) {
-  const affiliateFlightSearchResult = await dummyAffiliateFlightProvider.searchFlights({
+  const affiliateFlightSearchResult = await dharmawisataAffiliateFlightProvider.searchFlights({
     tripType: isFlightTripMode(trip) ? trip : "round_trip",
     originCode: rawFrom.trim().split(/\s+/)[0] || "",
     destinationCode: rawTo.trim().split(/\s+/)[0] || "",
