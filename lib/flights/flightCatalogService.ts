@@ -33,6 +33,17 @@ export type FlightCatalogBuildResult = {
   source: FlightCatalogDataSource
 }
 
+function logFlightCatalogDecision(
+  message: string,
+  details: Record<string, unknown>,
+) {
+  console.info({
+    scope: "flight-catalog-service",
+    message,
+    ...details,
+  })
+}
+
 function parseFlightPrice(value: string) {
   const digits = value.replace(/[^\d]/g, "")
   return Number(digits || "0")
@@ -164,6 +175,19 @@ export async function buildFlightCatalogItems({
   priceBands,
   isFlightTripMode,
 }: FlightCatalogBuildParams): Promise<FlightCatalogBuildResult> {
+  const requestSummary = {
+    trip,
+    rawFrom,
+    rawTo,
+    depart,
+    returnDate,
+    cabin,
+    sort,
+    airlineFilterCount: airlines.length,
+    departWindowFilterCount: departWindows.length,
+    transitFilterCount: transitTypes.length,
+    priceBandFilterCount: priceBands.length,
+  }
   const affiliateFlightSearchResult = await dharmawisataAffiliateFlightProvider.searchFlights({
     tripType: isFlightTripMode(trip) ? trip : "round_trip",
     originCode: rawFrom.trim().split(/\s+/)[0] || "",
@@ -180,6 +204,13 @@ export async function buildFlightCatalogItems({
     affiliateFlightSearchResult.offers.length > 0
       ? "live"
       : "fallback"
+
+  logFlightCatalogDecision("catalog-source-selected", {
+    ...requestSummary,
+    providerKey: affiliateFlightSearchResult.providerKey,
+    upstreamOfferCount: affiliateFlightSearchResult.offers.length,
+    source,
+  })
 
   const baseResults =
     affiliateFlightSearchResult.offers.length > 0
@@ -217,6 +248,13 @@ export async function buildFlightCatalogItems({
       }
       return parseFlightPrice(left.meta.price) - parseFlightPrice(right.meta.price) || parseFlightTime(left.meta.departure) - parseFlightTime(right.meta.departure)
     })
+
+  logFlightCatalogDecision("catalog-items-filtered", {
+    ...requestSummary,
+    source,
+    baseResultCount: baseResults.length,
+    finalItemCount: itemsResult.length,
+  })
 
   return {
     items: itemsResult,

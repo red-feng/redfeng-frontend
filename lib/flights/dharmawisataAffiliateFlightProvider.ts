@@ -294,6 +294,30 @@ function getPayloadAirlineAccessCode(payload: unknown) {
   return isRecord(payload) ? asString(payload.airlineAccessCode) : ""
 }
 
+function logDharmawisataEvent(
+  level: "info" | "warn" | "error",
+  message: string,
+  details: Record<string, unknown>,
+) {
+  const payload = {
+    scope: "dharmawisata-flight-provider",
+    message,
+    ...details,
+  }
+
+  if (level === "error") {
+    console.error(payload)
+    return
+  }
+
+  if (level === "warn") {
+    console.warn(payload)
+    return
+  }
+
+  console.info(payload)
+}
+
 export class DharmawisataAffiliateFlightProvider implements AffiliateFlightProvider {
   readonly providerKey = "dharmawisata-h2h"
   readonly salesModel = "affiliate" as const
@@ -393,15 +417,31 @@ export class DharmawisataAffiliateFlightProvider implements AffiliateFlightProvi
 
   async searchFlights(params: AffiliateFlightSearchParams): Promise<AffiliateFlightSearchResult> {
     const searchPath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_SEARCH_PATH")
+    const requestSummary = {
+      tripType: params.tripType,
+      originCode: params.originCode,
+      destinationCode: params.destinationCode,
+      departDate: params.departDate,
+      returnDate: params.returnDate || "",
+      cabinClass: params.cabinClass,
+      adults: params.passengers.adults,
+      children: params.passengers.children,
+      infants: params.passengers.infants,
+    }
 
     if (!isDharmawisataConfigured() || !searchPath) {
+      logDharmawisataEvent("warn", "provider-not-configured-using-dummy", {
+        ...requestSummary,
+        configured: isDharmawisataConfigured(),
+        hasSearchPath: Boolean(searchPath),
+      })
       return dummyAffiliateFlightProvider.searchFlights(params)
     }
 
     try {
       const credentials = getDharmawisataCredentials()
       const accessToken = await this.resolveAccessToken()
-      const { journeys } = await this.collectLowFareJourneys(
+      const { journeys, fallbackFailureMessage } = await this.collectLowFareJourneys(
         params,
         credentials.userId,
         accessToken,
@@ -414,7 +454,19 @@ export class DharmawisataAffiliateFlightProvider implements AffiliateFlightProvi
         )
         .filter((offer): offer is AffiliateFlightOffer => Boolean(offer))
 
+      logDharmawisataEvent("info", "live-search-completed", {
+        ...requestSummary,
+        journeyCount: journeys.length,
+        offerCount: offers.length,
+        fallbackFailureMessage,
+      })
+
       if (offers.length === 0) {
+        logDharmawisataEvent("warn", "no-live-offers-using-dummy", {
+          ...requestSummary,
+          journeyCount: journeys.length,
+          fallbackFailureMessage,
+        })
         return dummyAffiliateFlightProvider.searchFlights(params)
       }
 
@@ -423,7 +475,11 @@ export class DharmawisataAffiliateFlightProvider implements AffiliateFlightProvi
         salesModel: this.salesModel,
         offers,
       }
-    } catch {
+    } catch (error) {
+      logDharmawisataEvent("error", "live-search-threw-using-dummy", {
+        ...requestSummary,
+        error: error instanceof Error ? error.message : String(error),
+      })
       return dummyAffiliateFlightProvider.searchFlights(params)
     }
   }
