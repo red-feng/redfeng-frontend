@@ -1,10 +1,10 @@
 import AdminProductWorkspace from "@/app/components/AdminProductWorkspace"
+import Link from "next/link"
 import {
   dharmawisataPartnerAirlines,
   dharmawisataReferenceAirports,
-  dharmawisataVerifiedLiveRoutes,
-  getDharmawisataCatalogStatusSummary,
 } from "@/lib/flights/dharmawisataSupplierCatalog"
+import { loadDharmawisataCoverageSummary } from "@/lib/flights/dharmawisataSupplierCoverage"
 
 function getStatusBadgeClasses(status: string) {
   if (status === "uat_live_verified") {
@@ -22,8 +22,8 @@ function formatStatusLabel(status: string) {
   return "Reference Only"
 }
 
-export default function AdminFlightsWorkspacePage() {
-  const supplierCatalogSummary = getDharmawisataCatalogStatusSummary()
+export default async function AdminFlightsWorkspacePage() {
+  const supplierCatalogSummary = await loadDharmawisataCoverageSummary()
   const airlineLabelByCode = new Map(
     dharmawisataPartnerAirlines.map((airline) => [airline.code, airline.name]),
   )
@@ -94,7 +94,7 @@ export default function AdminFlightsWorkspacePage() {
               </p>
             </div>
             <span className="rounded-[12px] border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-              UAT only
+              {supplierCatalogSummary.source === "database" ? "DB-backed" : "Fallback data"}
             </span>
           </div>
 
@@ -110,7 +110,7 @@ export default function AdminFlightsWorkspacePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f6eee7]">
-                {dharmawisataVerifiedLiveRoutes.map((route) => (
+                {supplierCatalogSummary.verifiedRoutes.map((route) => (
                   <tr key={`${route.originCode}-${route.destinationCode}`} className="align-top">
                     <td className="py-4 pr-4">
                       <p className="font-semibold text-slate-900">
@@ -176,6 +176,19 @@ export default function AdminFlightsWorkspacePage() {
               <li>Availability live bersifat sensitif terhadap kombinasi rute, tanggal, dan airline. Route reference yang banyak tidak berarti semua tanggal punya fare live.</li>
               <li>Jika token production sudah diberikan, panel ini bisa dinaikkan dari UAT menjadi production verification tanpa mengubah struktur dashboard.</li>
             </ul>
+          </div>
+
+          <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+            <h2 className="text-base font-semibold text-slate-950">Coverage Supplier</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Buka halaman coverage untuk melihat daftar maskapai, airport referensi, dan route verification dengan format yang lebih lengkap.
+            </p>
+            <Link
+              href="/admin/pesawat/coverage"
+              className="mt-4 inline-flex items-center justify-center rounded-[14px] border border-[#ecd9c2] bg-[#fff7ef] px-4 py-2.5 text-sm font-semibold text-orange-600 transition hover:border-orange-200 hover:bg-orange-50"
+            >
+              Buka coverage supplier
+            </Link>
           </div>
         </div>
       </div>
