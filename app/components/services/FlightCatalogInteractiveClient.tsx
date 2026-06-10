@@ -235,6 +235,26 @@ function matchesFlightField(query: string, ...candidates: string[]) {
   return tokens.every((token) => haystack.includes(token))
 }
 
+function extractAirportCode(value: string) {
+  const normalized = value.replace(/\s+/g, " ").trim()
+  const trailingCodeMatch = normalized.match(/\(([A-Z]{3})\)$/)
+  if (trailingCodeMatch) return trailingCodeMatch[1]
+
+  const leadingCodeMatch = normalized.match(/^([A-Z]{3})\b/)
+  if (leadingCodeMatch) return leadingCodeMatch[1]
+
+  return ""
+}
+
+function matchesFlightEndpointField(query: string, ...candidates: string[]) {
+  if (matchesFlightField(query, ...candidates)) return true
+
+  const airportCode = extractAirportCode(query)
+  if (!airportCode) return false
+
+  return matchesFlightField(airportCode, ...candidates)
+}
+
 function matchesFlightTripMode(tripMode: FlightTripMode, item: FlightItem) {
   if (tripMode === "multi_city") {
     return item.meta.tripSupport.includes("multi_city")
@@ -961,8 +981,8 @@ export default function FlightCatalogInteractiveClient({
         state.transitTypes.length === 0 ||
         state.transitTypes.some((type) => (type === "direct" ? isDirect : !isDirect))
       const matchesPrice = state.priceBands.length === 0 || state.priceBands.some((band) => matchesPriceBand(parseFlightPrice(item.meta.price), band))
-      const matchesFrom = matchesFlightField(state.from, item.title, item.location, item.meta.origin, item.meta.routeCode)
-      const matchesTo = matchesFlightField(state.to, item.title, item.location, item.meta.destination, item.meta.routeCode)
+      const matchesFrom = matchesFlightEndpointField(state.from, item.title, item.location, item.meta.origin, item.meta.routeCode)
+      const matchesTo = matchesFlightEndpointField(state.to, item.title, item.location, item.meta.destination, item.meta.routeCode)
       const matchesVia = matchesFlightVia(state.via, state.tripMode, item)
       const matchesTripMode = matchesFlightTripMode(state.tripMode, item)
       const matchesDepartDate = matchesFlightDate(state.depart, item)
