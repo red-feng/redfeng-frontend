@@ -97,6 +97,35 @@ function buildHighlights(segment: UnknownRecord) {
   return highlights
 }
 
+function normalizeDharmawisataCabinClass(
+  rawCabin: unknown,
+  rawFlightClass: unknown,
+  requestedCabinClass: string,
+) {
+  const cabin = asString(rawCabin).trim()
+  if (cabin) return cabin
+
+  const flightClass = asString(rawFlightClass).trim()
+  const normalizedFlightClass = flightClass.toLowerCase()
+
+  if (
+    normalizedFlightClass.includes("economy") ||
+    normalizedFlightClass.includes("business") ||
+    normalizedFlightClass.includes("first") ||
+    normalizedFlightClass.includes("premium")
+  ) {
+    return flightClass
+  }
+
+  // Dharmawisata low-fare payload often sends booking-class letters like P/O,
+  // not an actual cabin label. In that case, keep the user's requested cabin.
+  if (flightClass.length > 0 && flightClass.length <= 2) {
+    return requestedCabinClass || "Economy"
+  }
+
+  return requestedCabinClass || "Economy"
+}
+
 function mapJourneyToOffer(
   journey: unknown,
   index: number,
@@ -140,7 +169,11 @@ function mapJourneyToOffer(
     originCode,
     destinationCode,
     airlineName,
-    cabinClass: asString(availableDetail.cabin || availableDetail.flightClass, params.cabinClass || "Economy"),
+    cabinClass: normalizeDharmawisataCabinClass(
+      availableDetail.cabin,
+      availableDetail.flightClass,
+      params.cabinClass || "Economy",
+    ),
     segments,
     departureTime: formatTime(rawDepartureTime),
     arrivalTime: formatTime(rawArrivalTime),
@@ -200,7 +233,11 @@ function mapOffer(offer: unknown, index: number, params: AffiliateFlightSearchPa
     originCode,
     destinationCode,
     airlineName,
-    cabinClass: asString(offer.cabinClass ?? offer.cabin, params.cabinClass || "Economy"),
+    cabinClass: normalizeDharmawisataCabinClass(
+      offer.cabinClass ?? offer.cabin,
+      isRecord(offer) ? offer.flightClass : "",
+      params.cabinClass || "Economy",
+    ),
     segments,
     departureTime,
     arrivalTime,
