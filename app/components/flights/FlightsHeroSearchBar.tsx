@@ -18,7 +18,7 @@ export default function FlightsHeroSearchBar({
   locale: Locale
   buttonLabel: string
 }) {
-  const [tripType, setTripType] = useState<"round_trip" | "one_way" | "multi_city">("round_trip")
+  const [tripType, setTripType] = useState<"round_trip" | "one_way" | "multi_city">("one_way")
   const copy = {
     id: {
       roundTrip: "Pulang Pergi",
@@ -29,14 +29,14 @@ export default function FlightsHeroSearchBar({
       depart: "Tanggal Berangkat",
       return: "Tanggal Pulang",
       passengers: "Penumpang & Kelas",
-      fromValue: "Jakarta (CGK)",
-      fromSub: "Soekarno-Hatta Intl",
-      toValue: "Bali / Denpasar (DPS)",
-      toSub: "Ngurah Rai Intl",
-      departValue: "25 Mei 2026",
-      departSub: "Senin",
-      returnValue: "29 Mei 2026",
-      returnSub: "Jumat",
+      fromValue: "Surabaya (SUB)",
+      fromSub: "Juanda Intl",
+      toValue: "Jakarta (CGK)",
+      toSub: "Soekarno-Hatta Intl",
+      departValue: "24 Juni 2026",
+      departSub: "Rabu",
+      returnValue: "27 Juni 2026",
+      returnSub: "Sabtu",
       passengersValue: "1 Dewasa, Ekonomi",
       passengersSub: "Kabin fleksibel",
     },
@@ -49,14 +49,14 @@ export default function FlightsHeroSearchBar({
       depart: "Departure Date",
       return: "Return Date",
       passengers: "Passengers & Class",
-      fromValue: "Jakarta (CGK)",
-      fromSub: "Soekarno-Hatta Intl",
-      toValue: "Bali / Denpasar (DPS)",
-      toSub: "Ngurah Rai Intl",
-      departValue: "May 25, 2026",
-      departSub: "Monday",
-      returnValue: "May 29, 2026",
-      returnSub: "Friday",
+      fromValue: "Surabaya (SUB)",
+      fromSub: "Juanda Intl",
+      toValue: "Jakarta (CGK)",
+      toSub: "Soekarno-Hatta Intl",
+      departValue: "June 24, 2026",
+      departSub: "Wednesday",
+      returnValue: "June 27, 2026",
+      returnSub: "Saturday",
       passengersValue: "1 Adult, Economy",
       passengersSub: "Flexible cabin",
     },
@@ -96,8 +96,8 @@ export default function FlightsHeroSearchBar({
       <input type="hidden" name="from" value={copy.fromValue} />
       <input type="hidden" name="to" value={copy.toValue} />
       <input type="hidden" name="trip" value={tripType} />
-      <input type="hidden" name="depart" value="2026-05-25" />
-      <input type="hidden" name="return" value={tripType === "one_way" ? "" : "2026-05-29"} />
+      <input type="hidden" name="depart" value="2026-06-24" />
+      <input type="hidden" name="return" value={tripType === "one_way" ? "" : "2026-06-27"} />
       <input type="hidden" name="passengers" value={copy.passengersValue.split(",")[0] || copy.passengersValue} />
       <input type="hidden" name="cabin" value={locale === "en" ? "Economy" : locale === "zh" ? "经济舱" : "Economy"} />
       <input type="hidden" name="group" value={tripGroupValue} />

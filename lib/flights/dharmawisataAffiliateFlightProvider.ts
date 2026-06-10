@@ -7,8 +7,8 @@ import type {
 } from "@/lib/flights/affiliateTypes"
 import { dummyAffiliateFlightProvider } from "@/lib/flights/dummyAffiliateFlightProvider"
 import {
+  dharmawisataFormFetch,
   dharmawisataLogin,
-  dharmawisataJsonFetch,
   getDharmawisataAccessTokenOverride,
   getDharmawisataCredentials,
   getDharmawisataConfiguredPath,
@@ -16,6 +16,14 @@ import {
 } from "@/lib/dharmawisata/client"
 
 type UnknownRecord = Record<string, unknown>
+
+const DHARMAWISATA_AIRLINE_LABELS: Record<string, string> = {
+  QG: "Citilink",
+  QZ: "AirAsia",
+  XT: "AirAsia",
+  JT: "Lion Air",
+  ID: "Batik Air",
+}
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null
@@ -31,6 +39,12 @@ function asNumber(value: unknown, fallback = 0) {
 
 function asStringArray(value: unknown) {
   return Array.isArray(value) ? value.map((item) => asString(item)).filter(Boolean) : []
+}
+
+function getAirlineDisplayName(value: string, fallback = "Dharmawisata Partner") {
+  const normalized = value.trim().toUpperCase()
+  if (!normalized) return fallback
+  return DHARMAWISATA_AIRLINE_LABELS[normalized] || value
 }
 
 function formatTime(value: string) {
@@ -62,7 +76,9 @@ function mapSegment(segment: unknown, offer: UnknownRecord): AffiliateFlightSegm
     destinationCode: asString(detailSource.fdDestination ?? source.destinationCode ?? source.destination ?? offer.destinationCode),
     departureTime: formatTime(asString(detailSource.fdDepartTime ?? source.departureTime ?? source.departure ?? offer.departureTime)),
     arrivalTime: formatTime(asString(detailSource.fdArrivalTime ?? source.arrivalTime ?? source.arrival ?? offer.arrivalTime)),
-    marketingAirline: asString(detailSource.airlineCode ?? source.marketingAirline ?? source.airlineName ?? offer.airlineName),
+    marketingAirline: getAirlineDisplayName(
+      asString(detailSource.airlineCode ?? source.marketingAirline ?? source.airlineName ?? offer.airlineName),
+    ),
     operatingAirline: asString(source.operatingAirline),
     flightNumber: asString(detailSource.flightNumber ?? source.flightNumber),
   }
@@ -111,7 +127,9 @@ function mapJourneyToOffer(
     ? primarySegment.availableDetail[0]
     : {}
   const totalPrice = asNumber(journey.sumPrice ?? availableDetail.price)
-  const airlineName = asString(journey.airlineID || segments[0]?.marketingAirline, "Dharmawisata Partner")
+  const airlineName = getAirlineDisplayName(
+    asString(journey.airlineID || segments[0]?.marketingAirline),
+  )
 
   return {
     offerId: asString(journey.journeyReference, `dharmawisata-journey-${index + 1}`),
@@ -127,7 +145,7 @@ function mapJourneyToOffer(
     departureTime: formatTime(rawDepartureTime),
     arrivalTime: formatTime(rawArrivalTime),
     durationLabel: buildDurationLabel(rawDepartureTime, rawArrivalTime),
-    transitLabel: segments.length > 1 ? asString(journey.category, "Transit") : "Direct",
+    transitLabel: segments.length > 1 ? "Transit" : "Direct",
     availableDates: [params.departDate],
     maxPassengers: Math.max(1, params.passengers.adults + params.passengers.children + params.passengers.infants),
     price: {
@@ -219,6 +237,26 @@ function extractOffers(payload: unknown) {
   return []
 }
 
+function getPayloadStatus(payload: unknown) {
+  return isRecord(payload) ? asString(payload.status).toUpperCase() : ""
+}
+
+function getPayloadMessage(payload: unknown) {
+  return isRecord(payload) ? asString(payload.respMessage) : ""
+}
+
+function getPayloadAirlineIndex(payload: unknown) {
+  return isRecord(payload) ? asNumber(payload.airlineIndex, 0) : 0
+}
+
+function getPayloadTotalAirline(payload: unknown) {
+  return isRecord(payload) ? asNumber(payload.totalAirline, 0) : 0
+}
+
+function getPayloadAirlineAccessCode(payload: unknown) {
+  return isRecord(payload) ? asString(payload.airlineAccessCode) : ""
+}
+
 export class DharmawisataAffiliateFlightProvider implements AffiliateFlightProvider {
   readonly providerKey = "dharmawisata-h2h"
   readonly salesModel = "affiliate" as const
@@ -239,6 +277,83 @@ export class DharmawisataAffiliateFlightProvider implements AffiliateFlightProvi
     return this.accessTokenCache
   }
 
+  private async collectLowFareJourneys(params: AffiliateFlightSearchParams, userId: string, accessToken: string) {
+    const searchPath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_SEARCH_PATH")
+    const journeys: unknown[] = []
+    const seenReferences = new Set<string>()
+    const seenStates = new Set<string>()
+    let airlineAccessCode = ""
+    let fallbackFailureMessage = ""
+
+    for (let iteration = 0; iteration < 8; iteration += 1) {
+      const payload = await dharmawisataFormFetch({
+        path: searchPath,
+        method: "POST",
+        body: {
+          tripType: params.tripType === "round_trip" ? "RoundTrip" : "OneWay",
+          origin: params.originCode,
+          destination: params.destinationCode,
+          departDate: `${params.departDate}T00:00:00`,
+          returnDate: params.tripType === "round_trip" && params.returnDate ? `${params.returnDate}T00:00:00` : "0001-01-01T00:00:00",
+          paxAdult: params.passengers.adults,
+          paxChild: params.passengers.children,
+          paxInfant: params.passengers.infants,
+          promoCode: "",
+          airlineAccessCode,
+          cacheType: 2,
+          isShowEachAirline: true,
+          userID: userId,
+          accessToken,
+        },
+      })
+
+      const status = getPayloadStatus(payload)
+      const message = getPayloadMessage(payload)
+      const currentJourneys = extractOffers(payload)
+      const currentAirlineIndex = getPayloadAirlineIndex(payload)
+      const totalAirline = getPayloadTotalAirline(payload)
+      const nextAirlineAccessCode = getPayloadAirlineAccessCode(payload)
+      const stateKey = `${status}:${currentAirlineIndex}:${totalAirline}:${message}`
+
+      if (seenStates.has(stateKey)) break
+      seenStates.add(stateKey)
+
+      for (const journey of currentJourneys) {
+        const journeyReference =
+          isRecord(journey) && asString(journey.journeyReference)
+            ? asString(journey.journeyReference)
+            : JSON.stringify(journey)
+
+        if (seenReferences.has(journeyReference)) continue
+        seenReferences.add(journeyReference)
+        journeys.push(journey)
+      }
+
+      if (status === "SUCCESS" && totalAirline > 0 && currentAirlineIndex >= totalAirline) {
+        break
+      }
+
+      if (status !== "SUCCESS") {
+        fallbackFailureMessage = message
+        if (message.toLowerCase().includes("airline access code") && nextAirlineAccessCode) {
+          break
+        }
+      }
+
+      if (totalAirline === 0) {
+        fallbackFailureMessage = message
+        break
+      }
+
+      airlineAccessCode = ""
+    }
+
+    return {
+      journeys,
+      fallbackFailureMessage,
+    }
+  }
+
   async searchFlights(params: AffiliateFlightSearchParams): Promise<AffiliateFlightSearchResult> {
     const searchPath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_SEARCH_PATH")
 
@@ -249,25 +364,12 @@ export class DharmawisataAffiliateFlightProvider implements AffiliateFlightProvi
     try {
       const credentials = getDharmawisataCredentials()
       const accessToken = await this.resolveAccessToken()
-      const payload = await dharmawisataJsonFetch({
-        path: searchPath,
-        method: "POST",
-        body: {
-          tripType: params.tripType === "round_trip" ? "RoundTrip" : "OneWay",
-          origin: params.originCode,
-          destination: params.destinationCode,
-          departDate: params.departDate,
-          returnDate: params.tripType === "round_trip" ? params.returnDate : undefined,
-          paxAdult: params.passengers.adults,
-          paxChild: params.passengers.children,
-          paxInfant: params.passengers.infants,
-          cacheType: 2,
-          isShowEachAirline: false,
-          userID: credentials.userId,
-          accessToken,
-        },
-      })
-      const offers = extractOffers(payload)
+      const { journeys } = await this.collectLowFareJourneys(
+        params,
+        credentials.userId,
+        accessToken,
+      )
+      const offers = journeys
         .map((offer, index) =>
           isRecord(offer) && ("jiOrigin" in offer || "journeyReference" in offer)
             ? mapJourneyToOffer(offer, index, params)

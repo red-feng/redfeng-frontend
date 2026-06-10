@@ -47,6 +47,30 @@ function matchFlightPriceBand(price: number, band: string) {
   return true
 }
 
+function getItemRouteCode(item: DummyCatalogItem) {
+  return (
+    item.facts.find((fact) => fact.label.toLowerCase() === "route code")?.value ||
+    item.location.replace(/\s+/g, "")
+  )
+}
+
+function findAffiliateOfferForItem(
+  item: DummyCatalogItem,
+  offers: AffiliateFlightOffer[],
+) {
+  const itemRouteCode = getItemRouteCode(item).toUpperCase()
+
+  return (
+    offers.find((offer) => offer.sourceItemId === item.id) ||
+    offers.find((offer) => offer.routeCode.toUpperCase() === itemRouteCode) ||
+    offers.find(
+      (offer) =>
+        `${offer.originCode}-${offer.destinationCode}`.toUpperCase() === itemRouteCode,
+    ) ||
+    null
+  )
+}
+
 function mapAffiliateOfferToFlightCardMeta(offer: AffiliateFlightOffer, item: DummyCatalogItem): FlightCatalogCardMeta {
   return {
     airline: offer.airlineName,
@@ -100,17 +124,20 @@ export async function buildFlightCatalogItems({
     locale,
   })
 
-  const affiliateOfferBySourceItemId = new Map(
-    affiliateFlightSearchResult.offers.map((offer) => [offer.sourceItemId, offer] as const),
-  )
-
   return items
-    .map((item, index) => ({
-      item,
-      meta: affiliateOfferBySourceItemId.has(item.id)
-        ? mapAffiliateOfferToFlightCardMeta(affiliateOfferBySourceItemId.get(item.id) as AffiliateFlightOffer, item)
-        : getFlightCardMeta(item, index, locale),
-    }))
+    .map((item, index) => {
+      const affiliateOffer = findAffiliateOfferForItem(
+        item,
+        affiliateFlightSearchResult.offers,
+      )
+
+      return {
+        item,
+        meta: affiliateOffer
+          ? mapAffiliateOfferToFlightCardMeta(affiliateOffer, item)
+          : getFlightCardMeta(item, index, locale),
+      }
+    })
     .filter(({ meta }) => {
       const departureMinutes = parseFlightTime(meta.departure)
       const priceValue = parseFlightPrice(meta.price)

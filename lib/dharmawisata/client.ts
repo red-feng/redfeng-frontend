@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto"
+
 import { getOptionalEnv, getRequiredEnv } from "@/lib/env"
 
 export type DharmawisataCredentials = {
@@ -64,7 +66,7 @@ export function getDharmawisataCredentials() {
 }
 
 export function getDharmawisataSecurityCode() {
-  return getOptionalEnv("DHARMAWISATA_H2H_SECURITY_CODE") || getDharmawisataCredentials().password
+  return getOptionalEnv("DHARMAWISATA_H2H_SECURITY_CODE").trim()
 }
 
 export function getDharmawisataAccessTokenOverride() {
@@ -121,8 +123,64 @@ export async function dharmawisataJsonFetch({
   return response.json()
 }
 
-function buildDharmawisataLoginToken() {
-  return Math.floor(Date.now() / 1000).toString()
+export async function dharmawisataFormFetch({
+  path = "",
+  method = "POST",
+  headers,
+  body,
+  cache = "no-store",
+  next,
+}: Omit<DharmawisataRequestOptions, "body"> & {
+  body?: Record<string, string | number | boolean | null | undefined>
+}) {
+  const params = new URLSearchParams()
+
+  for (const [key, value] of Object.entries(body || {})) {
+    if (value === undefined || value === null) continue
+    params.set(key, String(value))
+  }
+
+  const response = await dharmawisataFetch({
+    path,
+    method,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+      ...headers,
+    },
+    body: params,
+    cache,
+    next,
+  })
+
+  if (!response.ok) {
+    throw new Error(`Dharmawisata request failed with status ${response.status}`)
+  }
+
+  return response.json()
+}
+
+function md5(value: string) {
+  return createHash("md5").update(value).digest("hex")
+}
+
+function padDateSegment(value: number) {
+  return String(value).padStart(2, "0")
+}
+
+export function buildDharmawisataLoginToken(date = new Date()) {
+  const year = date.getFullYear()
+  const month = padDateSegment(date.getMonth() + 1)
+  const day = padDateSegment(date.getDate())
+  const hours = padDateSegment(date.getHours())
+  const minutes = padDateSegment(date.getMinutes())
+  const seconds = padDateSegment(date.getSeconds())
+
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+}
+
+export function buildDharmawisataSecurityCode(token: string, password: string) {
+  return md5(`${token}${md5(password)}`)
 }
 
 export function getDharmawisataAuthPayload(
@@ -143,13 +201,17 @@ export async function dharmawisataLogin(
 ): Promise<DharmawisataAuthResponse> {
   const loginPath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_LOGIN_PATH")
   const credentials = getDharmawisataCredentials()
+  const token = buildDharmawisataLoginToken()
+  const securityCode =
+    getDharmawisataSecurityCode() ||
+    buildDharmawisataSecurityCode(token, credentials.password)
 
-  return dharmawisataJsonFetch({
+  return dharmawisataFormFetch({
     path: loginPath || "/Session/Login",
     method: "POST",
     body: {
-      token: buildDharmawisataLoginToken(),
-      securityCode: getDharmawisataSecurityCode(),
+      token,
+      securityCode,
       language: options?.language ?? 1,
       userID: credentials.userId,
     },

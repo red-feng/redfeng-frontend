@@ -93,6 +93,22 @@ const extraDummyFlightItems: DummyCatalogItem[] = [
     ],
   },
   {
+    id: "flight-sub-cgk",
+    title: "Surabaya - Jakarta Live Search Anchor",
+    location: "SUB - CGK",
+    region: "Domestik",
+    group: "Sekali jalan",
+    image: "/home-assets/card-flight.png",
+    availabilityNote: "Anchor route untuk validasi hasil live Dharmawisata pada koridor domestik yang aktif.",
+    statusNote: "Disiapkan khusus untuk menjembatani default demo live SUB ke CGK di katalog pesawat.",
+    highlights: ["Live route anchor", "Domestic trunk", "Dharmawisata test lane"],
+    facts: [
+      { label: "Route code", value: "SUB-CGK" },
+      { label: "Cabin", value: "Economy" },
+      { label: "Window", value: "Morning" },
+    ],
+  },
+  {
     id: "flight-cgk-yia",
     title: "Jakarta - Yogyakarta Weekend Connector",
     location: "CGK - YIA",
