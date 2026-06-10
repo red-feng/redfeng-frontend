@@ -21,6 +21,18 @@ export type FlightCatalogBuildParams = {
   isFlightTripMode: (value: string) => value is FlightTripMode
 }
 
+export type FlightCatalogResultItem = {
+  item: DummyCatalogItem
+  meta: FlightCatalogCardMeta
+}
+
+export type FlightCatalogDataSource = "live" | "fallback"
+
+export type FlightCatalogBuildResult = {
+  items: FlightCatalogResultItem[]
+  source: FlightCatalogDataSource
+}
+
 function parseFlightPrice(value: string) {
   const digits = value.replace(/[^\d]/g, "")
   return Number(digits || "0")
@@ -71,6 +83,45 @@ function findAffiliateOfferForItem(
   )
 }
 
+function findTemplateItemForOffer(
+  offer: AffiliateFlightOffer,
+  items: DummyCatalogItem[],
+) {
+  return (
+    items.find((item) => findAffiliateOfferForItem(item, [offer])) ||
+    items.find((item) => {
+      const itemRouteCode = getItemRouteCode(item).toUpperCase()
+      return itemRouteCode.includes(offer.originCode.toUpperCase()) || itemRouteCode.includes(offer.destinationCode.toUpperCase())
+    }) ||
+    items[0] ||
+    null
+  )
+}
+
+function buildItemFromAffiliateOffer(
+  offer: AffiliateFlightOffer,
+  templateItem: DummyCatalogItem | null,
+): DummyCatalogItem {
+  const routeCode = `${offer.originCode}-${offer.destinationCode}`
+
+  return {
+    id: `live-${offer.offerId}`,
+    title: templateItem?.title || `${offer.airlineName} ${routeCode}`,
+    location: `${offer.originCode} - ${offer.destinationCode}`,
+    region: templateItem?.region || "Live route",
+    group: templateItem?.group || (offer.tripType === "round_trip" ? "Pulang pergi" : offer.tripType === "multi_city" ? "Multi kota" : "Sekali jalan"),
+    image: templateItem?.image || "/home-assets/card-flight.png",
+    availabilityNote: templateItem?.availabilityNote || "Data jadwal live dari supplier affiliate.",
+    statusNote: templateItem?.statusNote || `Offer live ${offer.airlineName} untuk koridor ${routeCode}.`,
+    highlights: templateItem?.highlights?.length ? templateItem.highlights : offer.highlights,
+    facts: [
+      { label: "Route code", value: routeCode },
+      { label: "Cabin", value: offer.cabinClass },
+      { label: "Flight", value: offer.segments.map((segment) => segment.flightNumber).filter(Boolean).join(", ") || offer.airlineName },
+    ],
+  }
+}
+
 function mapAffiliateOfferToFlightCardMeta(offer: AffiliateFlightOffer, item: DummyCatalogItem): FlightCatalogCardMeta {
   return {
     airline: offer.airlineName,
@@ -112,7 +163,7 @@ export async function buildFlightCatalogItems({
   transitTypes,
   priceBands,
   isFlightTripMode,
-}: FlightCatalogBuildParams) {
+}: FlightCatalogBuildParams): Promise<FlightCatalogBuildResult> {
   const affiliateFlightSearchResult = await dharmawisataAffiliateFlightProvider.searchFlights({
     tripType: isFlightTripMode(trip) ? trip : "round_trip",
     originCode: rawFrom.trim().split(/\s+/)[0] || "",
@@ -124,20 +175,29 @@ export async function buildFlightCatalogItems({
     locale,
   })
 
-  return items
-    .map((item, index) => {
-      const affiliateOffer = findAffiliateOfferForItem(
-        item,
-        affiliateFlightSearchResult.offers,
-      )
+  const source: FlightCatalogDataSource =
+    affiliateFlightSearchResult.providerKey === "dharmawisata-h2h" &&
+    affiliateFlightSearchResult.offers.length > 0
+      ? "live"
+      : "fallback"
 
-      return {
-        item,
-        meta: affiliateOffer
-          ? mapAffiliateOfferToFlightCardMeta(affiliateOffer, item)
-          : getFlightCardMeta(item, index, locale),
-      }
-    })
+  const baseResults =
+    affiliateFlightSearchResult.offers.length > 0
+      ? affiliateFlightSearchResult.offers.map((offer) => {
+          const templateItem = findTemplateItemForOffer(offer, items)
+          const item = buildItemFromAffiliateOffer(offer, templateItem)
+
+          return {
+            item,
+            meta: mapAffiliateOfferToFlightCardMeta(offer, item),
+          }
+        })
+      : items.map((item, index) => ({
+          item,
+          meta: getFlightCardMeta(item, index, locale),
+        }))
+
+  const itemsResult = baseResults
     .filter(({ meta }) => {
       const departureMinutes = parseFlightTime(meta.departure)
       const priceValue = parseFlightPrice(meta.price)
@@ -157,4 +217,9 @@ export async function buildFlightCatalogItems({
       }
       return parseFlightPrice(left.meta.price) - parseFlightPrice(right.meta.price) || parseFlightTime(left.meta.departure) - parseFlightTime(right.meta.departure)
     })
+
+  return {
+    items: itemsResult,
+    source,
+  }
 }

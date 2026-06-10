@@ -130,6 +130,7 @@ type FlightCopy = {
   chooseLabel: string
   fareLabel: string
   supportHint: string
+  fallbackHint: string
   emptyTitle: string
   emptyBody: string
 }
@@ -738,6 +739,7 @@ function CatalogDesktopFieldShell({ label, children }: { label: string; children
 
 export default function FlightCatalogInteractiveClient({
   items,
+  dataSource,
   emptyKeyword,
   searchPlaceholder,
   serviceCatalogHref,
@@ -748,6 +750,7 @@ export default function FlightCatalogInteractiveClient({
   initialState,
 }: {
   items: FlightItem[]
+  dataSource: "live" | "fallback"
   emptyKeyword: string
   searchPlaceholder: string
   serviceCatalogHref: string
@@ -790,6 +793,19 @@ export default function FlightCatalogInteractiveClient({
     transit: false,
     price: false,
   })
+  const activeSupportHint = dataSource === "fallback" ? copy.fallbackHint : copy.supportHint
+  const activeFareLabel =
+    dataSource === "fallback"
+      ? locale === "en"
+        ? "Fallback fare"
+        : locale === "zh"
+          ? "后备票价"
+          : "Fare cadangan"
+      : locale === "en"
+        ? "Live fare"
+        : locale === "zh"
+          ? "实时票价"
+          : "Fare live"
 
   useEffect(() => {
     const query = buildQuery(state)
@@ -2431,13 +2447,15 @@ export default function FlightCatalogInteractiveClient({
                         <path d="M8 13.2 3.3 8.6A2.9 2.9 0 0 1 7.4 4.5L8 5l.6-.5a2.9 2.9 0 0 1 4.1 4.1Z" />
                       </svg>
                     </button>
-                    <p className="text-[12px] text-slate-500">{copy.priceLabel}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{activeFareLabel}</p>
+                    <p className="mt-1 text-[12px] text-slate-500">{copy.priceLabel}</p>
                     <p className="mt-2 text-[16px] font-semibold tracking-[-0.02em] text-[#ef5b2a]">{formatCompactPrice(parseFlightPrice(meta.price), locale, liveFlightRates)}</p>
                     <p className="mt-1 text-[11px] text-slate-400">/pax</p>
                     <div className="mt-5 space-y-2">
                       <Link href={supportHref} className="block rounded-[12px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] py-2.5 text-center text-[15px] font-semibold text-white shadow-[0_14px_28px_-18px_rgba(239,68,35,0.58)] transition hover:brightness-105">
                         {copy.chooseLabel}
                       </Link>
+                      <p className="text-[11px] leading-5 text-slate-500">{activeSupportHint}</p>
                     </div>
                   </div>
                 </div>

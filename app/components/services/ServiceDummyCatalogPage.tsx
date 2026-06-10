@@ -248,8 +248,9 @@ export default async function ServiceDummyCatalogPage({
           priceBands: flightPriceBands,
           isFlightTripMode,
         })
-      : []
-  const flightItems = slug === "pesawat" ? affiliateFlightSearchResult : []
+      : { items: [], source: "fallback" as const }
+  const flightItems = slug === "pesawat" ? affiliateFlightSearchResult.items : []
+  const flightDataSource = slug === "pesawat" ? affiliateFlightSearchResult.source : "fallback"
 
 
   const copy = {
@@ -373,7 +374,7 @@ export default async function ServiceDummyCatalogPage({
             allDepartWindows: "All times",
             allTransitTypes: "All transit options",
             allPriceBands: "All prices",
-            flightsFound: "sample flight options",
+            flightsFound: "flight options",
             sortLabel: "Sort by",
             sortBest: "Best choice",
             sortPrice: "Lowest price",
@@ -403,9 +404,9 @@ export default async function ServiceDummyCatalogPage({
             resetFilters: "Reset all",
             priceLabel: "Starting from",
             chooseLabel: "Choose",
-            fareLabel: "Dummy fare",
+            fareLabel: "Fare reference",
             supportHint: "Live checkout is not active yet. This layout is here to test result rhythm, filter behavior, and CTA priority.",
-            emptyTitle: "No matching dummy flights found",
+            emptyTitle: "No matching flights found",
             emptyBody: "Try widening the region or trip type to bring results back.",
           }
         : locale === "zh"
@@ -488,7 +489,7 @@ export default async function ServiceDummyCatalogPage({
               allDepartWindows: "Semua jam",
               allTransitTypes: "Semua transit",
               allPriceBands: "Semua harga",
-              flightsFound: "opsi penerbangan contoh",
+              flightsFound: "opsi penerbangan",
               sortLabel: "Urutkan",
               sortBest: "Pilihan terbaik",
               sortPrice: "Harga terendah",
@@ -518,11 +519,17 @@ export default async function ServiceDummyCatalogPage({
               resetFilters: "Reset semua",
               priceLabel: "Mulai dari",
               chooseLabel: "Pilih",
-              fareLabel: "Fare dummy",
+              fareLabel: "Referensi fare",
               supportHint: "Belum checkout live. Tata letak ini dipakai untuk menguji ritme hasil, filter, dan prioritas CTA.",
-              emptyTitle: "Belum ada penerbangan dummy yang cocok",
+              emptyTitle: "Belum ada penerbangan yang cocok",
               emptyBody: "Coba longgarkan region atau tipe perjalanan agar daftar hasil muncul lagi.",
             }
+    const flightFallbackHint =
+      locale === "en"
+        ? "Showing fallback catalog results because the live supplier is slow or did not return matching fares yet."
+        : locale === "zh"
+          ? "由于实时供应商响应较慢或暂未返回匹配票价，当前显示的是后备目录结果。"
+          : "Menampilkan hasil cadangan karena supplier live sedang lambat atau belum mengembalikan fare yang cocok."
 
     return (
       <div id="top" className="min-h-screen bg-[linear-gradient(180deg,#f6fbff_0%,#f9fbff_16%,#fffdfa_48%,#f3f6fb_100%)] pb-36 md:pb-0">
@@ -533,11 +540,12 @@ export default async function ServiceDummyCatalogPage({
             ...item,
             meta,
           }))}
+          dataSource={flightDataSource}
           emptyKeyword={catalog.emptyKeyword}
           searchPlaceholder={catalog.searchPlaceholder}
           serviceCatalogHref={service.catalogHref}
           supportHref={catalog.supportHref}
-          copy={flightCopy}
+          copy={{ ...flightCopy, fallbackHint: flightFallbackHint }}
           filterKeywordLabel={copy.filterKeyword}
           locale={locale}
           initialState={{
@@ -589,7 +597,7 @@ export default async function ServiceDummyCatalogPage({
         cabinLabel: "Kabin",
         allRegions: "Semua region",
         allGroups: "Semua tipe",
-        flightsFound: "opsi penerbangan contoh",
+        flightsFound: "opsi penerbangan",
         sortLabel: "Urutkan",
         sortBest: "Pilihan terbaik",
         sortPrice: "Harga terendah",
@@ -622,12 +630,12 @@ export default async function ServiceDummyCatalogPage({
         priceMid: "1.5 jt - 3 jt",
         pricePremium: "Di atas 3 jt",
         resetFilters: "Reset semua",
-        resultIntro: "Hasil contoh",
+        resultIntro: "Hasil pencarian",
         priceLabel: "Mulai dari",
         chooseLabel: "Pilih",
-        fareLabel: "Fare dummy",
+        fareLabel: "Referensi fare",
         supportHint: "Belum checkout live. Tata letak ini dipakai untuk menguji ritme hasil, filter, dan prioritas CTA.",
-        emptyTitle: "Belum ada penerbangan dummy yang cocok",
+        emptyTitle: "Belum ada penerbangan yang cocok",
         emptyBody: "Coba longgarkan region atau tipe perjalanan agar daftar hasil muncul lagi.",
       },
       en: {
@@ -644,7 +652,7 @@ export default async function ServiceDummyCatalogPage({
         cabinLabel: "Cabin",
         allRegions: "All regions",
         allGroups: "All trip types",
-        flightsFound: "sample flight options",
+        flightsFound: "flight options",
         sortLabel: "Sort by",
         sortBest: "Best choice",
         sortPrice: "Lowest price",
@@ -677,12 +685,12 @@ export default async function ServiceDummyCatalogPage({
         priceMid: "1.5m - 3m",
         pricePremium: "Above 3m",
         resetFilters: "Reset all",
-        resultIntro: "Sample results",
+        resultIntro: "Search results",
         priceLabel: "Starting from",
         chooseLabel: "Choose",
-        fareLabel: "Dummy fare",
+        fareLabel: "Fare reference",
         supportHint: "Live checkout is not active yet. This layout is here to test result rhythm, filter behavior, and CTA priority.",
-        emptyTitle: "No matching dummy flights found",
+        emptyTitle: "No matching flights found",
         emptyBody: "Try widening the region or trip type to bring results back.",
       },
       zh: {

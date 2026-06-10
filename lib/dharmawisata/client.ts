@@ -26,6 +26,7 @@ export type DharmawisataRequestOptions = {
   headers?: HeadersInit
   body?: BodyInit | null
   cache?: RequestCache
+  timeoutMs?: number
   next?: {
     revalidate?: number | false
     tags?: string[]
@@ -73,22 +74,31 @@ export function getDharmawisataAccessTokenOverride() {
   return getOptionalEnv("DHARMAWISATA_H2H_ACCESS_TOKEN").trim()
 }
 
+export function getDharmawisataTimeoutMs() {
+  const configured = Number(getOptionalEnv("DHARMAWISATA_H2H_TIMEOUT_MS", "8000"))
+  if (!Number.isFinite(configured) || configured <= 0) return 8000
+  return configured
+}
+
 export async function dharmawisataFetch({
   path = "",
   method = "GET",
   headers,
   body,
   cache = "no-store",
+  timeoutMs,
   next,
 }: DharmawisataRequestOptions = {}) {
   const config = getDharmawisataClientConfig()
   const url = joinPath(config.baseUrl, path)
+  const requestTimeoutMs = timeoutMs ?? getDharmawisataTimeoutMs()
 
   return fetch(url, {
     method,
     headers,
     body,
     cache,
+    signal: AbortSignal.timeout(requestTimeoutMs),
     next,
   })
 }
