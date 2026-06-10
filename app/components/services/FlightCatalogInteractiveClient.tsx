@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Fragment, type ReactNode } from "react"
 import {
@@ -158,6 +159,27 @@ type PriceCalendarCell = {
   day: number
   price: number | null
   isCurrentMonth: boolean
+}
+
+function buildFlightStateSignature(state: FlightFilterState) {
+  return JSON.stringify({
+    tripMode: state.tripMode,
+    q: state.q,
+    region: state.region,
+    group: state.group,
+    from: state.from,
+    via: state.via,
+    to: state.to,
+    depart: state.depart,
+    returnDate: state.returnDate,
+    passengers: state.passengers,
+    cabin: state.cabin,
+    sort: state.sort,
+    airlines: state.airlines,
+    departWindows: state.departWindows,
+    transitTypes: state.transitTypes,
+    priceBands: state.priceBands,
+  })
 }
 
 const FLIGHT_IDR_FALLBACK_RATES: Record<string, number> = {
@@ -780,6 +802,7 @@ export default function FlightCatalogInteractiveClient({
   locale: Locale
   initialState: FlightFilterState
 }) {
+  const router = useRouter()
   const [state, setState] = useState(initialState)
   const [draft, setDraft] = useState(initialState)
   const [heroFieldStates, setHeroFieldStates] = useState<Record<string, HeroSearchFieldData>>({})
@@ -801,6 +824,7 @@ export default function FlightCatalogInteractiveClient({
     return current ? new Date(current.getFullYear(), current.getMonth(), 1) : new Date()
   })
   const isScrolledRef = useRef(false)
+  const lastInitialStateSignatureRef = useRef(buildFlightStateSignature(initialState))
   const heroSearchSectionRef = useRef<HTMLElement | null>(null)
   const priceTableScrollRef = useRef<HTMLDivElement | null>(null)
   const summaryPriceTableScrollRef = useRef<HTMLDivElement | null>(null)
@@ -830,8 +854,24 @@ export default function FlightCatalogInteractiveClient({
   useEffect(() => {
     const query = buildQuery(state)
     const nextUrl = query ? `${serviceCatalogHref}?${query}` : serviceCatalogHref
-    window.history.replaceState(null, "", nextUrl)
-  }, [serviceCatalogHref, state])
+    const currentUrl = `${window.location.pathname}${window.location.search}`
+    if (currentUrl === nextUrl) return
+    router.replace(nextUrl, { scroll: false })
+  }, [router, serviceCatalogHref, state])
+
+  useEffect(() => {
+    const nextSignature = buildFlightStateSignature(initialState)
+    if (nextSignature === lastInitialStateSignatureRef.current) return
+
+    lastInitialStateSignatureRef.current = nextSignature
+    setState(initialState)
+    setDraft(initialState)
+    setHeroFieldStates({})
+    setRecommendationCalendarMonth(() => {
+      const current = parseIsoDateValue(initialState.depart)
+      return current ? new Date(current.getFullYear(), current.getMonth(), 1) : new Date()
+    })
+  }, [initialState])
 
   useEffect(() => {
     const syncScrollState = () => {
