@@ -20,6 +20,7 @@ import { buildFlightCatalogHref, isFlightTripMode, type FlightBaseSearchState, t
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import type { HeroPassengerState, HeroSearchFieldData, HeroSearchProviderKey } from "@/app/components/home/web/hero"
 import { servicePageConfigByLabel } from "@/app/components/services/serviceCatalog"
+import { dharmawisataReferenceAirports } from "@/lib/flights/dharmawisataSupplierCatalog"
 
 export default function WebHomeHeroSection({ locale }: { locale: Locale }) {
   const [activeTab, setActiveTab] = useState<HeroTabKey>("flight")
@@ -1868,71 +1869,11 @@ function buildShipPortChoices(label: string): HeroSearchFieldData[] {
   }))
 }
 
-const flightAirportMaster: Array<{ code: string; city: string; name: string }> = [
-  { code: "CGK", city: "Jakarta", name: "Soekarno Hatta International" },
-  { code: "HLP", city: "Jakarta", name: "Halim Perdanakusuma" },
-  { code: "DPS", city: "Denpasar", name: "Ngurah Rai International" },
-  { code: "SIN", city: "Singapore", name: "Changi Airport" },
-  { code: "KUL", city: "Kuala Lumpur", name: "Kuala Lumpur International" },
-  { code: "BKK", city: "Bangkok", name: "Suvarnabhumi Airport" },
-  { code: "DMK", city: "Bangkok", name: "Don Mueang International" },
-  { code: "HKG", city: "Hong Kong", name: "Hong Kong International" },
-  { code: "HND", city: "Tokyo", name: "Haneda Airport" },
-  { code: "NRT", city: "Tokyo", name: "Narita International" },
-  { code: "ICN", city: "Seoul", name: "Incheon International" },
-  { code: "PVG", city: "Shanghai", name: "Pudong International" },
-  { code: "SHA", city: "Shanghai", name: "Hongqiao International" },
-  { code: "PEK", city: "Beijing", name: "Capital International" },
-  { code: "PKX", city: "Beijing", name: "Daxing International" },
-  { code: "DXB", city: "Dubai", name: "Dubai International" },
-  { code: "DOH", city: "Doha", name: "Hamad International" },
-  { code: "SYD", city: "Sydney", name: "Kingsford Smith Airport" },
-  { code: "MEL", city: "Melbourne", name: "Tullamarine Airport" },
-  { code: "LHR", city: "London", name: "Heathrow Airport" },
-  { code: "CDG", city: "Paris", name: "Charles de Gaulle Airport" },
-  { code: "JFK", city: "New York", name: "John F. Kennedy International" },
-  { code: "LAX", city: "Los Angeles", name: "Los Angeles International" },
-  { code: "SFO", city: "San Francisco", name: "San Francisco International" },
-  { code: "SUB", city: "Surabaya", name: "Juanda International" },
-  { code: "YIA", city: "Yogyakarta", name: "Yogyakarta International" },
-  { code: "KNO", city: "Medan", name: "Kualanamu International" },
-  { code: "UPG", city: "Makassar", name: "Sultan Hasanuddin International" },
-  { code: "BPN", city: "Balikpapan", name: "Sultan Aji Muhammad Sulaiman" },
-  { code: "TPE", city: "Taipei", name: "Taoyuan International" },
-  { code: "KHH", city: "Kaohsiung", name: "Kaohsiung International" },
-  { code: "CAN", city: "Guangzhou", name: "Baiyun International" },
-  { code: "SZX", city: "Shenzhen", name: "Bao'an International" },
-  { code: "CTU", city: "Chengdu", name: "Tianfu International" },
-  { code: "XIY", city: "Xi'an", name: "Xianyang International" },
-  { code: "KIX", city: "Osaka", name: "Kansai International" },
-  { code: "ITM", city: "Osaka", name: "Itami Airport" },
-  { code: "NGO", city: "Nagoya", name: "Chubu Centrair International" },
-  { code: "FUK", city: "Fukuoka", name: "Fukuoka Airport" },
-  { code: "CTS", city: "Sapporo", name: "New Chitose Airport" },
-  { code: "GMP", city: "Seoul", name: "Gimpo International" },
-  { code: "PUS", city: "Busan", name: "Gimhae International" },
-  { code: "CJU", city: "Jeju", name: "Jeju International" },
-  { code: "HKT", city: "Phuket", name: "Phuket International" },
-  { code: "CNX", city: "Chiang Mai", name: "Chiang Mai International" },
-  { code: "SGN", city: "Ho Chi Minh City", name: "Tan Son Nhat International" },
-  { code: "HAN", city: "Hanoi", name: "Noi Bai International" },
-  { code: "DAD", city: "Da Nang", name: "Da Nang International" },
-  { code: "MNL", city: "Manila", name: "Ninoy Aquino International" },
-  { code: "CEB", city: "Cebu", name: "Mactan Cebu International" },
-  { code: "DEL", city: "New Delhi", name: "Indira Gandhi International" },
-  { code: "BOM", city: "Mumbai", name: "Chhatrapati Shivaji Maharaj International" },
-  { code: "BLR", city: "Bengaluru", name: "Kempegowda International" },
-  { code: "MAA", city: "Chennai", name: "Chennai International" },
-  { code: "AUH", city: "Abu Dhabi", name: "Zayed International" },
-  { code: "JED", city: "Jeddah", name: "King Abdulaziz International" },
-  { code: "RUH", city: "Riyadh", name: "King Khalid International" },
-  { code: "BNE", city: "Brisbane", name: "Brisbane Airport" },
-  { code: "PER", city: "Perth", name: "Perth Airport" },
-  { code: "AKL", city: "Auckland", name: "Auckland Airport" },
-  { code: "FRA", city: "Frankfurt", name: "Frankfurt Airport" },
-  { code: "AMS", city: "Amsterdam", name: "Schiphol Airport" },
-  { code: "IST", city: "Istanbul", name: "Istanbul Airport" },
-]
+const flightAirportMaster: Array<{ code: string; city: string; name: string }> = dharmawisataReferenceAirports.map((airport) => ({
+  code: airport.code,
+  city: airport.city,
+  name: airport.name,
+}))
 
 const trainStationMaster: Array<{ name: string; city: string; detail?: string }> = [
   { name: "Gambir", city: "Jakarta", detail: "Stasiun pusat" },

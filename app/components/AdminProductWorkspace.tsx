@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import type { ReactNode } from "react"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { getAccessibleInternalProducts, hasInternalProductAccess, type InternalProductType } from "@/lib/internal-product-access"
@@ -15,6 +16,7 @@ type AdminProductWorkspaceProps = {
   secondaryActionHref?: string
   secondaryActionLabel?: string
   preparedModules?: string[]
+  children?: ReactNode
 }
 
 export default async function AdminProductWorkspace({
@@ -28,6 +30,7 @@ export default async function AdminProductWorkspace({
   secondaryActionHref,
   secondaryActionLabel,
   preparedModules = ["Workspace", "Booking shortcut", "Operational queue", "Supplier / inventory"],
+  children,
 }: AdminProductWorkspaceProps) {
   const supabase = await createClient("admin")
   const adminSupabase = createAdminClient()
@@ -152,6 +155,8 @@ export default async function AdminProductWorkspace({
             </div>
           </div>
         </section>
+
+        {children ? <section className="space-y-5">{children}</section> : null}
       </div>
     </main>
   )

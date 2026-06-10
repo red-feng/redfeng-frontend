@@ -14,6 +14,10 @@ import { SwapIcon } from "@/app/components/home/shared/homeContent"
 import { buildFormFields, updateFieldState } from "@/app/components/home/web/WebHomeHeroSection"
 import HeroSearchField from "@/app/components/home/web/hero/HeroSearchField"
 import type { HeroPassengerState, HeroSearchFieldData } from "@/app/components/home/web/hero/heroSearchContent"
+import {
+  findDharmawisataVerifiedLiveRoute,
+  type SupplierAvailabilityStatus,
+} from "@/lib/flights/dharmawisataSupplierCatalog"
 import type { Locale } from "@/lib/i18n"
 import { formatPackageMoney, localeCurrencyMap, roundConvertedPrice } from "@/lib/package-pricing"
 
@@ -161,6 +165,14 @@ type PriceCalendarCell = {
   isCurrentMonth: boolean
 }
 
+type FlightSupplierStatus = {
+  availabilityStatus: SupplierAvailabilityStatus | "fallback_on_verified_route"
+  badgeLabel: string
+  badgeClassName: string
+  fareLabel: string
+  hint: string
+}
+
 function buildFlightStateSignature(state: FlightFilterState) {
   return JSON.stringify({
     tripMode: state.tripMode,
@@ -180,6 +192,67 @@ function buildFlightStateSignature(state: FlightFilterState) {
     transitTypes: state.transitTypes,
     priceBands: state.priceBands,
   })
+}
+
+function getFlightSupplierStatus(
+  item: FlightItem,
+  dataSource: "live" | "fallback",
+  departDate: string,
+  locale: Locale,
+): FlightSupplierStatus {
+  const verifiedRoute = findDharmawisataVerifiedLiveRoute(
+    item.meta.origin,
+    item.meta.destination,
+    departDate,
+  )
+
+  if (dataSource === "live") {
+    return {
+      availabilityStatus: verifiedRoute?.availabilityStatus || "uat_live_verified",
+      badgeLabel: locale === "en" ? "UAT Live" : locale === "zh" ? "UAT 实时" : "UAT Live",
+      badgeClassName: "border-emerald-200 bg-emerald-50 text-emerald-700",
+      fareLabel: locale === "en" ? "Live fare (UAT)" : locale === "zh" ? "实时票价（UAT）" : "Fare live (UAT)",
+      hint:
+        locale === "en"
+          ? "This fare is currently returned live from the Dharmawisata UAT supplier."
+          : locale === "zh"
+            ? "该票价目前由 Dharmawisata UAT 供应商实时返回。"
+            : "Fare ini sedang dikembalikan secara live dari supplier Dharmawisata UAT.",
+    }
+  }
+
+  if (verifiedRoute) {
+    return {
+      availabilityStatus: "fallback_on_verified_route",
+      badgeLabel:
+        locale === "en"
+          ? "Verified Route Fallback"
+          : locale === "zh"
+            ? "已验证航线回退"
+            : "Fallback di Rute Terverifikasi",
+      badgeClassName: "border-amber-200 bg-amber-50 text-amber-700",
+      fareLabel: locale === "en" ? "Fallback fare" : locale === "zh" ? "后备票价" : "Fare cadangan",
+      hint:
+        locale === "en"
+          ? "This route has been verified live in Dharmawisata UAT on selected dates, but this request is currently using fallback results."
+          : locale === "zh"
+            ? "该航线曾在指定日期通过 Dharmawisata UAT 实时验证，但本次请求当前使用回退结果。"
+            : "Rute ini pernah terverifikasi live di Dharmawisata UAT pada tanggal tertentu, tetapi request saat ini sedang memakai hasil fallback.",
+    }
+  }
+
+  return {
+    availabilityStatus: "reference_available",
+    badgeLabel: locale === "en" ? "Reference Only" : locale === "zh" ? "仅参考数据" : "Reference Only",
+    badgeClassName: "border-slate-200 bg-slate-50 text-slate-600",
+    fareLabel: locale === "en" ? "Fallback fare" : locale === "zh" ? "后备票价" : "Fare cadangan",
+    hint:
+      locale === "en"
+        ? "This route is available as supplier reference data, but live fare verification has not been confirmed in RedFeng yet."
+        : locale === "zh"
+          ? "该航线目前仅作为供应商参考数据提供，RedFeng 尚未确认实时票价验证。"
+          : "Rute ini baru tersedia sebagai data referensi supplier, dan fare live-nya belum terverifikasi di RedFeng.",
+  }
 }
 
 const FLIGHT_IDR_FALLBACK_RATES: Record<string, number> = {
@@ -2449,6 +2522,7 @@ export default function FlightCatalogInteractiveClient({
           ) : (
             filteredItems.map((item) => {
               const { meta } = item
+              const supplierStatus = getFlightSupplierStatus(item, dataSource, state.depart, locale)
               return (
               <article key={item.id} className="overflow-hidden rounded-[22px] border border-[#eef1f6] bg-white shadow-[0_20px_44px_-36px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-34px_rgba(15,23,42,0.22)]">
                 <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_250px]">
@@ -2507,7 +2581,12 @@ export default function FlightCatalogInteractiveClient({
                         <path d="M8 13.2 3.3 8.6A2.9 2.9 0 0 1 7.4 4.5L8 5l.6-.5a2.9 2.9 0 0 1 4.1 4.1Z" />
                       </svg>
                     </button>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{activeFareLabel}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{supplierStatus.fareLabel}</p>
+                      <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold ${supplierStatus.badgeClassName}`}>
+                        {supplierStatus.badgeLabel}
+                      </span>
+                    </div>
                     <p className="mt-1 text-[12px] text-slate-500">{copy.priceLabel}</p>
                     <p className="mt-2 text-[16px] font-semibold tracking-[-0.02em] text-[#ef5b2a]">{formatCompactPrice(parseFlightPrice(meta.price), locale, liveFlightRates)}</p>
                     <p className="mt-1 text-[11px] text-slate-400">/pax</p>
@@ -2515,7 +2594,7 @@ export default function FlightCatalogInteractiveClient({
                       <Link href={supportHref} className="block rounded-[12px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] py-2.5 text-center text-[15px] font-semibold text-white shadow-[0_14px_28px_-18px_rgba(239,68,35,0.58)] transition hover:brightness-105">
                         {copy.chooseLabel}
                       </Link>
-                      <p className="text-[11px] leading-5 text-slate-500">{activeSupportHint}</p>
+                      <p className="text-[11px] leading-5 text-slate-500">{supplierStatus.hint}</p>
                     </div>
                   </div>
                 </div>

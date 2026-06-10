@@ -8,6 +8,11 @@ import { HomeFooter, HomeNewsletterSection } from "@/app/components/home/shared/
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PromoPlacementImpressionBeacon from "@/app/components/promo/PromoPlacementImpressionBeacon"
 import FlightsLandingHeroSearchCard from "@/app/components/flights/FlightsLandingHeroSearchCard"
+import {
+  dharmawisataPartnerAirlines,
+  dharmawisataVerifiedLiveRoutes,
+  getDharmawisataCatalogStatusSummary,
+} from "@/lib/flights/dharmawisataSupplierCatalog"
 import { getMarketingPromosResolved } from "@/lib/marketing-content"
 import { getCurrentLocale } from "@/lib/locale"
 
@@ -22,6 +27,7 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
     limit: 4,
     requiredProductType: "flight",
   })
+  const supplierCatalogSummary = getDharmawisataCatalogStatusSummary()
 
   const baseCopy = {
     id: {
@@ -45,6 +51,7 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
       fromLabel: "Mulai dari",
       recommendationTitle: "Maskapai Partner RedFeng",
       newsletterCta: "Buka katalog penerbangan",
+      supplierStatusLine: "Status supplier saat ini: referensi maskapai dan rute tersedia, sedangkan fare live baru terverifikasi di environment UAT Dharmawisata.",
     },
     en: {
       eyebrow: "FLIGHT JOURNEYS",
@@ -67,6 +74,7 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
       fromLabel: "Starting from",
       recommendationTitle: "RedFeng Airline Partners",
       newsletterCta: "Open flight catalog",
+      supplierStatusLine: "Current supplier status: airline and route references are available, while live fares are only verified in Dharmawisata UAT.",
     },
     zh: {
       eyebrow: "FLIGHT JOURNEYS",
@@ -114,26 +122,21 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
           fromLabel: "起价",
           recommendationTitle: "RedFeng 航空伙伴",
           newsletterCta: "打开航班目录",
+          supplierStatusLine: "当前供应商状态：航司与航线参考数据已接入，但实时票价目前仅在 Dharmawisata UAT 环境完成验证。",
         }
       : baseCopy
 
   const destinations = [
-    { title: "Bali", price: "IDR 950.000", image: "/home-assets/dest-bali.png" },
-    { title: "Bangkok", price: "IDR 1.890.000", image: "/home-assets/dest-bangkok.png" },
-    { title: "Singapore", price: "IDR 1.250.000", image: "/home-assets/dest-singapore.png" },
-    { title: "Tokyo", price: "IDR 3.850.000", image: "/home-assets/dest-tokyo.png" },
-    { title: "Jakarta", price: "IDR 780.000", image: "/home-assets/dest-jakarta.png" },
-    { title: "Labuan Bajo", price: "IDR 1.450.000", image: "/home-assets/dest-labuanbajo.png" },
+    { title: "Surabaya", price: "IDR 351.000", image: "/home-assets/dest-jakarta.png" },
+    { title: "Medan", price: "IDR 538.000", image: "/home-assets/dest-bali.png" },
+    { title: "Jakarta", price: "IDR 351.000", image: "/home-assets/dest-jakarta.png" },
+    { title: "Bali", price: "Live on selected dates", image: "/home-assets/dest-bali.png" },
+    { title: "Labuan Bajo", price: "Supplier reference", image: "/home-assets/dest-labuanbajo.png" },
+    { title: "Singapore", price: "Supplier reference", image: "/home-assets/dest-singapore.png" },
   ]
 
-  const partners = [
-    { name: "Garuda Indonesia", image: "/home-assets/partner-garuda.png", isImage: true },
-    { name: "AirAsia" },
-    { name: "Lion Air" },
-    { name: "Batik Air" },
-    { name: "Citilink" },
-    { name: "Singapore Airlines" },
-  ]
+  const partners = dharmawisataPartnerAirlines.map((airline) => ({ name: airline.name }))
+  const verifiedLiveRouteLabel = dharmawisataVerifiedLiveRoutes.map((route) => `${route.originCode}-${route.destinationCode}`).join(" • ")
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#fff8ef_0%,#fffdf9_36%,#f8fafc_72%,#eff5fb_100%)] pb-36 md:pb-0">
@@ -204,6 +207,15 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
                 30% <span className="text-[13px] sm:text-[14px]">OFF</span>
               </p>
               <p className="mt-3 max-w-[220px] text-[12px] leading-[1.3] text-slate-500 sm:text-[13px]">{copy.offerLine}</p>
+              <p className="mt-2 max-w-[260px] text-[10px] font-semibold uppercase tracking-[0.2em] text-[#ef5b2a] sm:text-[11px]">
+                Verified live (UAT): {verifiedLiveRouteLabel}
+              </p>
+              <p className="mt-2 max-w-[260px] text-[11px] leading-[1.5] text-slate-500">
+                {copy.supplierStatusLine} {supplierCatalogSummary.airlineCount} airlines, {supplierCatalogSummary.airportCount} airports, {supplierCatalogSummary.verifiedRouteCount} verified live routes.
+              </p>
+              <p className="mt-2 max-w-[260px] text-[10px] font-medium uppercase tracking-[0.16em] text-slate-400">
+                Environment: {supplierCatalogSummary.environments.join(", ").toUpperCase()}
+              </p>
               <Link
                 href="/promo"
                 className="mt-5 inline-flex items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] px-5 py-3 text-[13px] font-semibold text-white shadow-[0_16px_32px_-18px_rgba(239,68,35,0.72)] transition hover:brightness-105"
@@ -274,20 +286,14 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
         <section className={`${homeLayoutLock.contentWidthClass} mt-12 rounded-[28px] border border-[#efe2d8] bg-white p-5 shadow-[0_18px_44px_-30px_rgba(15,23,42,0.12)] sm:p-6`}>
           <h2 className="text-[19px] font-bold leading-[1.1] tracking-[-0.035em] text-slate-950 sm:text-[24px]">{copy.recommendationTitle}</h2>
           <div className="mt-5 flex flex-wrap gap-4">
-            {partners.map((partner) =>
-              partner.isImage ? (
-                <div key={partner.name} className="flex h-16 min-w-[180px] items-center justify-center rounded-[22px] border border-[#f0dfd0] bg-white px-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-                  <Image src={partner.image!} alt={partner.name} width={120} height={30} className="h-auto w-[120px]" />
-                </div>
-              ) : (
-                <div
-                  key={partner.name}
-                  className="inline-flex min-h-[58px] items-center rounded-[18px] border border-[#f0dfd0] bg-[linear-gradient(180deg,#fffdfb_0%,#fff7ef_100%)] px-5 text-sm font-semibold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.05)]"
-                >
-                  {partner.name}
-                </div>
-              ),
-            )}
+            {partners.map((partner) => (
+              <div
+                key={partner.name}
+                className="inline-flex min-h-[58px] items-center rounded-[18px] border border-[#f0dfd0] bg-[linear-gradient(180deg,#fffdfb_0%,#fff7ef_100%)] px-5 text-sm font-semibold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.05)]"
+              >
+                {partner.name}
+              </div>
+            ))}
           </div>
         </section>
       </main>
