@@ -618,6 +618,7 @@ const extraDummyFlightItems: DummyCatalogItem[] = [
       { label: "Route code", value: "YIA-SIN" },
       { label: "Cabin", value: "Economy" },
       { label: "Window", value: "Afternoon" },
+    ],
   },
   {
     id: "flight-cgk-cgp",
