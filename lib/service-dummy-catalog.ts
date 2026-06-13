@@ -67,9 +67,9 @@ const extraDummyFlightItems: DummyCatalogItem[] = [
     region: "Domestik",
     group: "Sekali jalan",
     image: "/home-assets/card-flight.png",
-    availabilityNote: "Dummy route khusus untuk memastikan hero homepage ke katalog pesawat tersambung.",
-    statusNote: "Dipertahankan sebagai anchor test untuk pencarian default Jakarta Halim ke Denpasar.",
-    highlights: ["Halim departure", "Direct test route", "Homepage anchor"],
+    availabilityNote: "Rute referensi cadangan untuk memastikan hero homepage ke katalog pesawat tersambung.",
+    statusNote: "Dipertahankan sebagai anchor internal untuk pencarian Jakarta Halim ke Denpasar.",
+    highlights: ["Halim departure", "Reference route", "Homepage anchor"],
     facts: [
       { label: "Route code", value: "HLP-DPS" },
       { label: "Cabin", value: "Economy" },
@@ -83,9 +83,9 @@ const extraDummyFlightItems: DummyCatalogItem[] = [
     region: "Domestik",
     group: "Sekali jalan",
     image: "/home-assets/card-flight.png",
-    availabilityNote: "Dummy route tambahan untuk uji jalur domestik high-frequency.",
-    statusNote: "Cocok untuk validasi search hero ke katalog dengan koridor bisnis pendek.",
-    highlights: ["Early wave", "Business shuttle", "Frequent corridor"],
+    availabilityNote: "Rute ini sudah pernah mengembalikan fare live dari Dharmawisata UAT pada tanggal tertentu.",
+    statusNote: "Cocok untuk validasi search hero ke katalog dengan koridor domestik pendek.",
+    highlights: ["UAT verified route", "Citilink lane", "Frequent corridor"],
     facts: [
       { label: "Route code", value: "CGK-SUB" },
       { label: "Cabin", value: "Economy" },
@@ -100,8 +100,8 @@ const extraDummyFlightItems: DummyCatalogItem[] = [
     group: "Sekali jalan",
     image: "/home-assets/card-flight.png",
     availabilityNote: "Anchor route untuk validasi hasil live Dharmawisata pada koridor domestik yang aktif.",
-    statusNote: "Disiapkan khusus untuk menjembatani default demo live SUB ke CGK di katalog pesawat.",
-    highlights: ["Live route anchor", "Domestic trunk", "Dharmawisata test lane"],
+    statusNote: "Disiapkan khusus untuk menjembatani default live SUB ke CGK di katalog pesawat.",
+    highlights: ["UAT verified route", "Domestic trunk", "Dharmawisata lane"],
     facts: [
       { label: "Route code", value: "SUB-CGK" },
       { label: "Cabin", value: "Economy" },
@@ -147,9 +147,9 @@ const extraDummyFlightItems: DummyCatalogItem[] = [
     region: "Domestik",
     group: "Promo route",
     image: "/home-assets/card-flight.png",
-    availabilityNote: "Dummy fare lane untuk contoh traffic Sumatra dengan promo pressure.",
-    statusNote: "Membantu tes keyword route dan variasi group promo route.",
-    highlights: ["Promo lane", "Sumatra demand", "Economy saver"],
+    availabilityNote: "Rute ini sudah pernah mengembalikan fare live dari Dharmawisata UAT pada tanggal tertentu.",
+    statusNote: "Membantu tes keyword route dan variasi group promo route berbasis supplier.",
+    highlights: ["UAT verified route", "Sumatra demand", "Economy saver"],
     facts: [
       { label: "Route code", value: "CGK-KNO" },
       { label: "Cabin", value: "Economy" },
@@ -845,11 +845,30 @@ const extraDummyFlightItems: DummyCatalogItem[] = [
   },
 ]
 
+const supplierReferenceFlightItemIds = new Set([
+  "flight-cgk-sub",
+  "flight-sub-cgk",
+  "flight-cgk-kno",
+  "flight-cgk-upg",
+  "flight-sub-dps",
+  "flight-dps-lbj",
+  "flight-cgk-kul",
+  "flight-cgk-hkg",
+  "flight-cgk-icn",
+  "flight-cgk-pvg",
+  "flight-dps-sin",
+  "flight-sub-sin",
+  "flight-cgk-hnd-via-sin",
+  "flight-cgk-kix-via-kul",
+])
+
+const supplierReferenceFlightItems = extraDummyFlightItems.filter((item) => supplierReferenceFlightItemIds.has(item.id))
+
 const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
   pesawat: {
     slug: "pesawat",
     emptyKeyword: "rute atau maskapai",
-    searchPlaceholder: "Cari rute, kota, atau maskapai dummy",
+    searchPlaceholder: "Cari rute, kota, atau maskapai",
     supportHref: "/bantuan",
     promoHref: "/promo",
     visualTheme: {
@@ -862,18 +881,18 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
     },
     uiCopy: {
       id: {
-        searchNoun: "rute dan maskapai contoh",
+        searchNoun: "rute dan maskapai",
         resultTitle: "Hasil katalog rute",
-        resultNoun: "rute contoh",
+        resultNoun: "rute",
         keywordLabel: "Rute / maskapai",
         regionLabel: "Region terbang",
         groupLabel: "Tipe perjalanan",
         locationLabel: "Kode rute",
       },
       en: {
-        searchNoun: "sample routes and airlines",
+        searchNoun: "routes and airlines",
         resultTitle: "Route catalog results",
-        resultNoun: "sample routes",
+        resultNoun: "routes",
         keywordLabel: "Route / airline",
         regionLabel: "Flight region",
         groupLabel: "Trip type",
@@ -881,23 +900,7 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
       },
     },
     items: [
-      {
-        id: "flight-dps-kul",
-        title: "Bali - Kuala Lumpur Leisure Flow",
-        location: "DPS - KUL",
-        region: "Internasional",
-        group: "Promo route",
-        image: "/home-assets/promo-flight.png",
-        availabilityNote: "Dummy route untuk promo lintas destinasi favorit.",
-        statusNote: "Belum live, tapi sudah cocok untuk rule airline, cabin, dan departure window.",
-        highlights: ["Weekend peak", "Leisure demand", "Promo-friendly"],
-        facts: [
-          { label: "Route code", value: "DPS-KUL" },
-          { label: "Cabin", value: "Economy" },
-          { label: "Demand", value: "Leisure" },
-        ],
-      },
-      ...extraDummyFlightItems,
+      ...supplierReferenceFlightItems,
     ],
   },
   hotel: {

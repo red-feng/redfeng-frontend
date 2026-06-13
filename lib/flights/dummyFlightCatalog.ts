@@ -61,10 +61,10 @@ function inferFlightAvailableDates(routeCode: string, factMap: Map<string, strin
     .filter(Boolean)
 
   if (transitFact || routeSegments.length > 2) {
-    return ["2026-05-25", "2026-05-31", "2026-06-04", "2026-06-10"]
+    return ["2026-06-24", "2026-06-26", "2026-07-02", "2026-07-09"]
   }
 
-  return ["2026-05-25", "2026-05-28", "2026-05-29", "2026-06-04"]
+  return ["2026-06-24", "2026-06-26", "2026-07-02", "2026-07-09"]
 }
 
 export function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string): FlightCatalogCardMeta {
@@ -79,7 +79,7 @@ export function getFlightCardMeta(item: DummyCatalogItem, index: number, locale:
       seatNote: locale === "en" ? "Last 6 seats at this fare" : locale === "zh" ? "è¯¥ç¥¨ä»·ä»…å‰© 6 ä¸ªåº§ä½" : "Sisa 6 kursi di harga ini",
       maxPassengers: 1,
       tripSupport: ["one_way", "round_trip"],
-      availableDates: ["2026-05-25", "2026-05-26", "2026-05-27"],
+      availableDates: ["2026-06-24", "2026-06-26", "2026-07-02"],
     },
     {
       airline: "Singapore Airlines",
@@ -91,7 +91,7 @@ export function getFlightCardMeta(item: DummyCatalogItem, index: number, locale:
       seatNote: locale === "en" ? "Flexible business cabin" : locale === "zh" ? "çµæ´»å•†åŠ¡èˆ±ä½" : "Kabin business lebih fleksibel",
       maxPassengers: 2,
       tripSupport: ["one_way", "round_trip"],
-      availableDates: ["2026-05-25", "2026-05-28", "2026-05-29", "2026-06-04"],
+      availableDates: ["2026-06-24", "2026-06-26", "2026-07-02", "2026-07-09"],
     },
     {
       airline: "Batik Air",
@@ -103,7 +103,7 @@ export function getFlightCardMeta(item: DummyCatalogItem, index: number, locale:
       seatNote: locale === "en" ? "Popular for corporate travel" : locale === "zh" ? "é€‚åˆå·®æ—…éœ€æ±‚" : "Sering dipilih untuk corporate travel",
       maxPassengers: 3,
       tripSupport: ["round_trip"],
-      availableDates: ["2026-05-25", "2026-05-28", "2026-06-04", "2026-06-07"],
+      availableDates: ["2026-06-24", "2026-06-26", "2026-07-02", "2026-07-09"],
     },
     {
       airline: "AirAsia",
@@ -115,7 +115,7 @@ export function getFlightCardMeta(item: DummyCatalogItem, index: number, locale:
       seatNote: locale === "en" ? "Best price for weekend traffic" : locale === "zh" ? "å‘¨æœ«éœ€æ±‚çš„å¥½ä»·ä½" : "Harga terbaik untuk trafik akhir pekan",
       maxPassengers: 4,
       tripSupport: ["one_way", "multi_city"],
-      availableDates: ["2026-05-25", "2026-05-31", "2026-06-04", "2026-06-10"],
+      availableDates: ["2026-06-24", "2026-06-26", "2026-07-02", "2026-07-09"],
     },
   ]
   const preset = presetList[index % 4] as FlightCatalogPresetMeta
@@ -129,6 +129,51 @@ export function getFlightCardMeta(item: DummyCatalogItem, index: number, locale:
   const inferredTransit = inferFlightTransitLabel(routeCode, factMap, locale)
   const inferredAvailableDates = inferFlightAvailableDates(routeCode, factMap)
   const routeOverrides: Partial<FlightCatalogCardMeta> = (() => {
+    if (item.id === "flight-cgk-sub") {
+      return {
+        airline: "Citilink",
+        departure: "04:10",
+        arrival: "05:35",
+        duration: "1j 25m",
+        transit: locale === "en" ? "Direct" : locale === "zh" ? "直飞" : "Langsung",
+        price: "IDR 351.000",
+        seatNote: locale === "en" ? "Verified in Dharmawisata UAT on selected dates" : locale === "zh" ? "已在 Dharmawisata UAT 指定日期验证" : "Terverifikasi di Dharmawisata UAT pada tanggal tertentu",
+        maxPassengers: 1,
+        tripSupport: ["one_way", "round_trip"],
+        availableDates: ["2026-06-24", "2026-06-26"],
+      }
+    }
+
+    if (item.id === "flight-sub-cgk") {
+      return {
+        airline: "Citilink",
+        departure: "04:10",
+        arrival: "05:35",
+        duration: "1j 25m",
+        transit: locale === "en" ? "Direct" : locale === "zh" ? "直飞" : "Langsung",
+        price: "IDR 351.000",
+        seatNote: locale === "en" ? "Verified in Dharmawisata UAT on June 24, 2026" : locale === "zh" ? "已在 2026-06-24 通过 Dharmawisata UAT 验证" : "Terverifikasi di Dharmawisata UAT pada 24 Juni 2026",
+        maxPassengers: 1,
+        tripSupport: ["one_way", "round_trip"],
+        availableDates: ["2026-06-24"],
+      }
+    }
+
+    if (item.id === "flight-cgk-kno") {
+      return {
+        airline: "Citilink",
+        departure: "05:55",
+        arrival: "08:20",
+        duration: "2j 25m",
+        transit: locale === "en" ? "Direct" : locale === "zh" ? "直飞" : "Langsung",
+        price: "IDR 538.000",
+        seatNote: locale === "en" ? "Verified in Dharmawisata UAT on June 24, 2026" : locale === "zh" ? "已在 2026-06-24 通过 Dharmawisata UAT 验证" : "Terverifikasi di Dharmawisata UAT pada 24 Juni 2026",
+        maxPassengers: 1,
+        tripSupport: ["one_way", "round_trip"],
+        availableDates: ["2026-06-24"],
+      }
+    }
+
     if (item.id === "flight-cgk-dps") {
       return {
         airline: "Garuda Indonesia",
@@ -140,7 +185,7 @@ export function getFlightCardMeta(item: DummyCatalogItem, index: number, locale:
         seatNote: locale === "en" ? "Strong for one-way and round-trip Bali traffic" : locale === "zh" ? "é€‚åˆå·´åŽ˜å²›å•ç¨‹ä¸Žå¾€è¿”éœ€æ±‚" : "Kuat untuk trafik Bali sekali jalan maupun pulang-pergi",
         maxPassengers: 4,
         tripSupport: ["one_way", "round_trip"],
-        availableDates: ["2026-05-25", "2026-05-28", "2026-06-04", "2026-06-07"],
+        availableDates: ["2026-06-24", "2026-06-26", "2026-07-02", "2026-07-09"],
       }
     }
 
@@ -155,7 +200,7 @@ export function getFlightCardMeta(item: DummyCatalogItem, index: number, locale:
         seatNote: locale === "en" ? "Flexible business cabin" : locale === "zh" ? "çµæ´»å•†åŠ¡èˆ±ä½" : "Kabin business lebih fleksibel",
         maxPassengers: 2,
         tripSupport: ["one_way", "round_trip"],
-        availableDates: ["2026-05-25", "2026-05-28", "2026-05-29", "2026-06-04"],
+        availableDates: ["2026-06-24", "2026-06-26", "2026-07-02", "2026-07-09"],
       }
     }
 
@@ -167,10 +212,10 @@ export function getFlightCardMeta(item: DummyCatalogItem, index: number, locale:
         duration: "11j 30m",
         transit: locale === "en" ? "Transit via Singapore" : locale === "zh" ? "ç»æ–°åŠ å¡ä¸­è½¬" : "Transit via Singapore",
         price: "IDR 6.420.000",
-        seatNote: locale === "en" ? "Best dummy route for CGK - SIN - NRT flow" : locale === "zh" ? "æœ€é€‚åˆ CGK - SIN - NRT æµç¨‹çš„ç¤ºä¾‹èˆªçº¿" : "Rute dummy terbaik untuk flow CGK - SIN - NRT",
+        seatNote: locale === "en" ? "Fallback reference route for CGK - SIN - NRT flow" : locale === "zh" ? "CGK - SIN - NRT 参考航线" : "Rute referensi cadangan untuk flow CGK - SIN - NRT",
         maxPassengers: 2,
         tripSupport: ["multi_city", "one_way"],
-        availableDates: ["2026-06-04", "2026-06-07", "2026-06-10"],
+        availableDates: ["2026-06-24", "2026-06-26", "2026-07-02"],
       }
     }
 
@@ -185,7 +230,7 @@ export function getFlightCardMeta(item: DummyCatalogItem, index: number, locale:
         seatNote: locale === "en" ? "Popular for corporate travel" : locale === "zh" ? "é€‚åˆå·®æ—…éœ€æ±‚" : "Sering dipilih untuk corporate travel",
         maxPassengers: 3,
         tripSupport: ["one_way", "round_trip"],
-        availableDates: ["2026-05-25", "2026-05-28", "2026-06-04", "2026-06-07"],
+        availableDates: ["2026-06-24", "2026-06-26", "2026-07-02", "2026-07-09"],
       }
     }
 
@@ -200,7 +245,7 @@ export function getFlightCardMeta(item: DummyCatalogItem, index: number, locale:
         seatNote: locale === "en" ? "Best price for weekend traffic" : locale === "zh" ? "å‘¨æœ«éœ€æ±‚çš„å¥½ä»·ä½" : "Harga terbaik untuk trafik akhir pekan",
         maxPassengers: 4,
         tripSupport: ["one_way", "round_trip"],
-        availableDates: ["2026-05-25", "2026-05-28", "2026-05-29", "2026-06-04"],
+        availableDates: ["2026-06-24", "2026-06-26", "2026-07-02", "2026-07-09"],
       }
     }
 
