@@ -9,6 +9,7 @@ import { calculateBookingAmounts, getFinanceSettings, resolveActiveCustomerPayme
 import { formatBookingCode } from "@/lib/merchant-code"
 import { getAccessibleInternalProducts, hasInternalProductAccess } from "@/lib/internal-product-access"
 import { getFlightLifecycleStatusLabel, getVisibleSupplierLabel, normalizeFlightIssueStatus, normalizeFlightLifecycleStatus, normalizeSupplierOrderStatus } from "@/lib/affiliate-suppliers"
+import { createDharmawisataFlightBooking, type DharmawisataPassenger } from "@/lib/flights/dharmawisataFlightBooking"
 
 function generateBookingCode() {
   const random = Math.floor(1000 + Math.random() * 9000)
@@ -33,6 +34,67 @@ function normalizeTripType(value: string | null | undefined) {
     return normalized
   }
   return "one_way"
+}
+
+function splitPersonName(value: string) {
+  const parts = value.trim().split(/\s+/).filter(Boolean)
+  if (parts.length <= 1) {
+    return {
+      firstName: parts[0] || "Passenger",
+      lastName: parts[0] || "Passenger",
+    }
+  }
+
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(" "),
+  }
+}
+
+function splitIndonesianPhone(value: string) {
+  const digits = value.replace(/\D/g, "")
+  const local = digits.startsWith("62") ? digits.slice(2) : digits.startsWith("0") ? digits.slice(1) : digits
+  const areaLength = local.length >= 10 ? 3 : 2
+
+  return {
+    countryCode: "62",
+    areaCode: local.slice(0, areaLength),
+    remainingPhoneNo: local.slice(areaLength),
+  }
+}
+
+function parsePassengerManifest(value: string, fallbackName: string, fallbackEmail: string) {
+  const lines = value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+  const sourceLines = lines.length > 0 ? lines : [fallbackName]
+
+  return sourceLines.map((line): DharmawisataPassenger => {
+    const columns = line.split("|").map((item) => item.trim()).filter(Boolean)
+    const rawTitle = String(columns[0] || "").toUpperCase()
+    const hasExplicitTitle = ["MR", "MRS", "MS", "MSTR", "MISS"].includes(rawTitle)
+    const title = hasExplicitTitle ? rawTitle : "MR"
+    const fullName = hasExplicitTitle ? columns[1] || fallbackName : columns[0] || fallbackName
+    const email = hasExplicitTitle ? columns[2] || fallbackEmail : columns[1] || fallbackEmail
+    const { firstName, lastName } = splitPersonName(fullName)
+
+    return {
+      title,
+      firstName,
+      lastName,
+      email,
+      type: "Adult",
+    }
+  })
+}
+
+function normalizeDateTimeForDb(value: string | null | undefined) {
+  if (!value) return null
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return null
+  return parsed.toISOString()
 }
 
 async function ensureFlightAdmin() {
@@ -68,6 +130,9 @@ export async function createFlightBooking(formData: FormData) {
   const actor = await ensureFlightAdmin()
   const customerName = String(formData.get("customer_name") || "").trim()
   const customerEmail = String(formData.get("customer_email") || "").trim().toLowerCase()
+  const customerPhone = String(formData.get("customer_phone") || "").trim()
+  const contactTitle = String(formData.get("contact_title") || "MR").trim().toUpperCase()
+  const passengerManifest = String(formData.get("passenger_manifest") || "").trim()
   const pickupDate = String(formData.get("pickup_date") || "").trim()
   const airlineName = String(formData.get("airline_name") || "").trim()
   const airlineCode = String(formData.get("airline_code") || "").trim().toUpperCase()
@@ -84,6 +149,9 @@ export async function createFlightBooking(formData: FormData) {
   const supplierOrderId = String(formData.get("supplier_order_id") || "").trim()
   const supplierReference = String(formData.get("supplier_reference") || "").trim()
   const fareReferenceId = String(formData.get("fare_reference_id") || "").trim()
+  const airlineAccessCode = String(formData.get("airline_access_code") || fareReferenceId).trim()
+  const searchKey = String(formData.get("search_key") || "").trim()
+  const detailSchedule = String(formData.get("detail_schedule") || "").trim()
   const fareRecheckedAt = String(formData.get("fare_rechecked_at") || "").trim()
   const bookingHoldExpiresAt = String(formData.get("booking_hold_expires_at") || "").trim()
   const pnrCode = String(formData.get("pnr_code") || "").trim().toUpperCase()
@@ -99,6 +167,10 @@ export async function createFlightBooking(formData: FormData) {
 
   if (!customerName || !customerEmail || !pickupDate) {
     backToFlightCreate("Nama customer, email customer, dan tanggal keberangkatan wajib diisi.", "error")
+  }
+
+  if (!customerPhone) {
+    backToFlightCreate("Nomor telepon customer wajib diisi untuk booking Pesawat Dharmawisata.", "error")
   }
 
   if (!airlineName || !flightNumber || !originAirportCode || !destinationAirportCode || !departureAt) {
@@ -284,6 +356,131 @@ export async function createFlightBooking(formData: FormData) {
     backToFlightCreate(detailError.message || "Gagal menyimpan detail booking Pesawat.", "error")
   }
 
+  const contactName = splitPersonName(customerName)
+  const contactPhone = splitIndonesianPhone(customerPhone)
+  const passengers = parsePassengerManifest(passengerManifest, customerName, customerEmail)
+  const bookingApiResult = await createDharmawisataFlightBooking({
+    bookingId: booking.id,
+    airlineId: airlineCode,
+    airlineCode,
+    flightNumber,
+    originAirportCode,
+    destinationAirportCode,
+    tripType,
+    departureAt,
+    arrivalAt,
+    returnAt,
+    flightClass: cabinClass,
+    detailSchedule,
+    searchKey,
+    airlineAccessCode,
+    contactTitle,
+    contactFirstName: contactName.firstName,
+    contactLastName: contactName.lastName,
+    contactCountryCodePhone: contactPhone.countryCode,
+    contactAreaCodePhone: contactPhone.areaCode,
+    contactRemainingPhoneNo: contactPhone.remainingPhoneNo,
+    contactEmail: customerEmail,
+    paxAdult: passengerCount,
+    paxChild: 0,
+    paxInfant: 0,
+    passengers,
+  })
+
+  let redirectMessage = "Booking Pesawat berhasil dibuat."
+
+  if (bookingApiResult.ok) {
+    const holdExpiresAt = normalizeDateTimeForDb(bookingApiResult.timeLimit) || normalizeDateTimeForDb(bookingHoldExpiresAt)
+    const apiSupplierReference = bookingApiResult.referenceNo || bookingApiResult.bookingCodeAirline || supplierReference || null
+    const apiBookingCode = bookingApiResult.bookingCode || supplierOrderId || null
+    const apiLifecycleStatus = "booking_hold_created"
+
+    await actor.adminSupabase
+      .from("supplier_orders")
+      .update({
+        supplier_order_id: apiBookingCode,
+        supplier_reference: apiSupplierReference,
+        supplier_status: "confirmed",
+        response_payload: bookingApiResult.raw,
+        last_error: null,
+        submitted_at: new Date().toISOString(),
+        confirmed_at: new Date().toISOString(),
+        synced_at: new Date().toISOString(),
+        updated_by: actor.user.id,
+      })
+      .eq("id", supplierOrder.id)
+
+    await actor.adminSupabase
+      .from("bookings")
+      .update({
+        supplier_booking_reference: apiSupplierReference,
+        supplier_order_status: "confirmed",
+      })
+      .eq("id", booking.id)
+
+    await actor.adminSupabase
+      .from("flight_booking_details")
+      .update({
+        lifecycle_status: apiLifecycleStatus,
+        pnr_code: bookingApiResult.bookingCodeAirline || pnrCode || null,
+        supplier_confirmation_code: bookingApiResult.referenceNo || bookingApiResult.bookingCode || null,
+        fare_reference_id: bookingApiResult.airlineAccessCode || fareReferenceId || null,
+        booking_hold_expires_at: holdExpiresAt,
+        supplier_raw_reference: bookingApiResult.raw,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("booking_id", booking.id)
+
+    await actor.adminSupabase.from("supplier_order_events").insert({
+      supplier_order_id: supplierOrder.id,
+      actor_id: actor.user.id,
+      actor_role: actor.role,
+      event_type: "flight_booking_hold_created_via_dharmawisata",
+      summary: "Booking/hold Pesawat berhasil dibuat lewat API Dharmawisata.",
+      metadata: {
+        productType: "flight",
+        lifecycleStatus: apiLifecycleStatus,
+        bookingCode: bookingApiResult.bookingCode,
+        bookingDate: bookingApiResult.bookingDate,
+        referenceNo: bookingApiResult.referenceNo,
+        bookingCodeAirline: bookingApiResult.bookingCodeAirline,
+        timeLimit: bookingApiResult.timeLimit,
+      },
+    })
+
+    redirectMessage = "Booking Pesawat berhasil dibuat dan hold Dharmawisata berhasil dicatat."
+  } else if (!bookingApiResult.skipped) {
+    await actor.adminSupabase
+      .from("supplier_orders")
+      .update({
+        supplier_status: "failed",
+        response_payload: bookingApiResult.raw,
+        last_error: bookingApiResult.message,
+        synced_at: new Date().toISOString(),
+        updated_by: actor.user.id,
+      })
+      .eq("id", supplierOrder.id)
+
+    await actor.adminSupabase.from("supplier_order_events").insert({
+      supplier_order_id: supplierOrder.id,
+      actor_id: actor.user.id,
+      actor_role: actor.role,
+      event_type: "flight_booking_hold_failed",
+      summary: "Booking/hold Pesawat lewat API Dharmawisata gagal.",
+      metadata: {
+        productType: "flight",
+        lifecycleStatus,
+        message: bookingApiResult.message,
+      },
+    })
+
+    redirectMessage = `Booking Pesawat tersimpan, tetapi hold Dharmawisata gagal: ${bookingApiResult.message}`
+  } else if (bookingApiResult.mode === "manual_incomplete_data") {
+    redirectMessage = `Booking Pesawat tersimpan untuk proses manual. ${bookingApiResult.message}`
+  } else {
+    redirectMessage = "Booking Pesawat berhasil dibuat. Endpoint booking Dharmawisata belum dikonfigurasi, jadi hold masih manual."
+  }
+
   await actor.adminSupabase.from("supplier_order_events").insert({
     supplier_order_id: supplierOrder.id,
     actor_id: actor.user.id,
@@ -341,5 +538,5 @@ export async function createFlightBooking(formData: FormData) {
   revalidatePath("/admin/pesawat")
   revalidatePath(`/admin/bookings/${booking.id}`)
 
-  redirect(`/admin/bookings/${booking.id}?success=${encodeURIComponent("Booking Pesawat berhasil dibuat.")}`)
+  redirect(`/admin/bookings/${booking.id}?success=${encodeURIComponent(redirectMessage)}`)
 }

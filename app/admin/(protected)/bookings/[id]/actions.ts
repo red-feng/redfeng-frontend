@@ -69,6 +69,35 @@ function readBookingDetailFilters(formData: FormData) {
   return params
 }
 
+function readNestedString(value: unknown, keys: string[]) {
+  const visit = (current: unknown): string | null => {
+    if (!current || typeof current !== "object") return null
+    if (Array.isArray(current)) {
+      for (const item of current) {
+        const found = visit(item)
+        if (found) return found
+      }
+      return null
+    }
+
+    const record = current as Record<string, unknown>
+    for (const key of keys) {
+      const direct = record[key]
+      if (typeof direct === "string" && direct.trim()) return direct.trim()
+      if (typeof direct === "number") return String(direct)
+    }
+
+    for (const child of Object.values(record)) {
+      const found = visit(child)
+      if (found) return found
+    }
+
+    return null
+  }
+
+  return visit(value)
+}
+
 function backToBookingDetailWithState(bookingId: string, type: "success" | "error", message: string, formData: FormData): never {
   const portal = resolvePortal(formData)
   const { bookingDetailPath } = resolvePortalPaths(portal)
@@ -296,7 +325,7 @@ async function getFlightBookingForAction(bookingId: string, formData: FormData) 
 
   const { data: supplierOrder } = await adminSupabase
     .from("supplier_orders")
-    .select("id, supplier_order_id, supplier_reference, supplier_status")
+    .select("id, supplier_order_id, supplier_reference, supplier_status, response_payload")
     .eq("booking_id", bookingId)
     .eq("product_type", "flight")
     .order("created_at", { ascending: false })
@@ -306,6 +335,7 @@ async function getFlightBookingForAction(bookingId: string, formData: FormData) 
       supplier_order_id: string | null
       supplier_reference: string | null
       supplier_status: string | null
+      response_payload: Record<string, unknown> | null
     }>()
 
   return {
@@ -471,7 +501,7 @@ export async function requestFlightTicketIssue(formData: FormData) {
   const issueResult = await issueDharmawisataFlightTicket({
     bookingId,
     bookingCode: booking.booking_code,
-    bookingDate: booking.created_at,
+    bookingDate: readNestedString(supplierOrder?.response_payload, ["bookingDate"]) || booking.created_at,
     supplierOrderId: supplierOrder?.supplier_order_id || supplierOrder?.id || null,
     supplierReference:
       supplierOrder?.supplier_reference ||
@@ -482,7 +512,7 @@ export async function requestFlightTicketIssue(formData: FormData) {
     pnrCode: flightDetail.pnr_code,
     airlineId: flightDetail.airline_code,
     fareReferenceId: flightDetail.fare_reference_id,
-    airlineAccessCode: flightDetail.fare_reference_id,
+    airlineAccessCode: readNestedString(supplierOrder?.response_payload, ["airlineAccessCode"]) || flightDetail.fare_reference_id,
     originAirportCode: flightDetail.origin_airport_code,
     destinationAirportCode: flightDetail.destination_airport_code,
     tripType: flightDetail.trip_type,

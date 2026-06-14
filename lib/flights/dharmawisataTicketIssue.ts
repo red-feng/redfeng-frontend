@@ -130,7 +130,7 @@ function normalizeDharmawisataTripType(value: string | null | undefined) {
 
 function buildIssuePayload(input: DharmawisataTicketIssueInput, accessToken: string) {
   const credentials = getDharmawisataCredentials()
-  const externalBookingCode = input.supplierReference || input.pnrCode || input.bookingCode || undefined
+  const externalBookingCode = input.supplierOrderId || input.supplierReference || input.pnrCode || input.bookingCode || undefined
 
   return {
     userID: credentials.userId,

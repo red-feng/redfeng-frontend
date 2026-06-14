@@ -212,12 +212,42 @@ export default async function AdminCreateFlightBookingPage({
                   <TextInput name="customer_email" type="email" required placeholder="bayu@email.com" />
                 </div>
                 <div>
+                  <FieldLabel>Nomor telepon customer</FieldLabel>
+                  <TextInput name="customer_phone" required placeholder="081234567890" />
+                </div>
+                <div>
+                  <FieldLabel>Title kontak</FieldLabel>
+                  <select
+                    name="contact_title"
+                    defaultValue="MR"
+                    className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  >
+                    <option value="MR">MR</option>
+                    <option value="MRS">MRS</option>
+                    <option value="MS">MS</option>
+                    <option value="MSTR">MSTR</option>
+                    <option value="MISS">MISS</option>
+                  </select>
+                </div>
+                <div>
                   <FieldLabel>Tanggal berangkat</FieldLabel>
                   <TextInput name="pickup_date" type="date" required />
                 </div>
                 <div>
                   <FieldLabel>Jumlah penumpang</FieldLabel>
                   <TextInput name="passenger_count" type="number" min={1} defaultValue={1} required />
+                </div>
+                <div className="md:col-span-2">
+                  <FieldLabel>Manifest penumpang untuk Dharmawisata</FieldLabel>
+                  <textarea
+                    name="passenger_manifest"
+                    rows={3}
+                    placeholder={"MR | Bayu Kusumo | bayu@email.com\nMS | Sari Kusumo | sari@email.com"}
+                    className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    Isi satu baris per penumpang. Jika jumlah baris kurang dari jumlah penumpang, auto-booking Dharmawisata akan dilewati dan booking tetap masuk manual.
+                  </p>
                 </div>
               </section>
 
@@ -252,6 +282,18 @@ export default async function AdminCreateFlightBookingPage({
                 <div>
                   <FieldLabel>Fare / journey reference</FieldLabel>
                   <TextInput name="fare_reference_id" placeholder="Journey ref / fare key dari hasil recheck" />
+                </div>
+                <div>
+                  <FieldLabel>Airline access code</FieldLabel>
+                  <TextInput name="airline_access_code" placeholder="Airline access code dari hasil schedule/recheck" />
+                </div>
+                <div>
+                  <FieldLabel>Search key</FieldLabel>
+                  <TextInput name="search_key" placeholder="Wajib untuk maskapai tertentu seperti Sriwijaya" />
+                </div>
+                <div>
+                  <FieldLabel>Detail schedule</FieldLabel>
+                  <TextInput name="detail_schedule" placeholder="Detail schedule dari response Dharmawisata" />
                 </div>
                 <div>
                   <FieldLabel>Waktu fare recheck</FieldLabel>

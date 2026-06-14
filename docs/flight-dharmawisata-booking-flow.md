@@ -58,6 +58,10 @@ Dokumen ini menurunkan skema Bus & Travel Booking ke produk Pesawat dengan guard
   - Jika `DHARMAWISATA_H2H_ISSUE_PATH` sudah diisi, action login/call API Dharmawisata, menyimpan raw response ke `supplier_orders.response_payload`, lalu otomatis memindahkan booking ke `issued` atau `issue_failed`.
   - Help Page UAT Dharmawisata mengonfirmasi endpoint issue resmi: `POST /h2h/Airline/Issued`.
   - Endpoint `POST /h2h/Airline/BookingIssued` juga ada, tetapi itu memakai payload booking penuh dan tidak dipakai untuk flow Red Feng saat ini karena Red Feng memisahkan `Booking/Hold` dan `Issued`.
+- Form create booking Pesawat sudah disambungkan ke adapter `POST /h2h/Airline/Booking`:
+  - Jika `DHARMAWISATA_H2H_BOOKING_PATH` belum diisi, form tetap membuat booking internal Red Feng dan supplier hold dilakukan manual.
+  - Jika data wajib Dharmawisata belum lengkap, booking tetap tersimpan untuk proses manual dan action memberi pesan field mana yang kurang.
+  - Jika API booking sukses, `supplier_orders.supplier_order_id` menyimpan `bookingCode`, `supplier_orders.supplier_reference` menyimpan `referenceNo`/`bookingCodeAirline`, dan `flight_booking_details.booking_hold_expires_at` memakai `timeLimit` jika bisa diparse.
 
 ## Batas Aman
 
@@ -66,7 +70,9 @@ Status `issued` tidak boleh dipilih saat create booking. Issue tetap dilakukan s
 Isi env berikut saat endpoint resmi dari Dharmawisata sudah dikonfirmasi:
 
 ```env
+DHARMAWISATA_H2H_BOOKING_PATH=/Airline/Booking
+DHARMAWISATA_H2H_BOOKING_DETAIL_PATH=/Airline/BookingDetail
 DHARMAWISATA_H2H_ISSUE_PATH=/Airline/Issued
 ```
 
-Path di atas berasal dari Help Page UAT Dharmawisata: `POST Airline/Issued`. Setelah env ini terpasang, gate `Request Ticket Issue` akan menjadi auto-issue, sementara `Mark Issued` dan `Mark Issue Failed` tetap tersedia sebagai override/follow up manual.
+Path di atas berasal dari Help Page UAT Dharmawisata. Setelah env ini terpasang, create booking bisa mencoba auto-hold ke `Airline/Booking`, lalu gate `Request Ticket Issue` akan auto-issue via `Airline/Issued`. `Mark Issued` dan `Mark Issue Failed` tetap tersedia sebagai override/follow up manual.
