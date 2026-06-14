@@ -2,7 +2,7 @@ import type { ReactNode } from "react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { createFlightBooking } from "@/app/admin/(protected)/pesawat/actions"
-import { getFlightIssueStatusLabel, getVisibleSupplierLabel, getVisibleSupplierReference, type FlightIssueStatus } from "@/lib/affiliate-suppliers"
+import { getFlightLifecycleStatusLabel, getVisibleSupplierLabel, getVisibleSupplierReference, type FlightLifecycleStatus } from "@/lib/affiliate-suppliers"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { getAccessibleInternalProducts, hasInternalProductAccess } from "@/lib/internal-product-access"
@@ -25,16 +25,11 @@ type SupplierRow = {
   contact_email: string | null
 }
 
-const FLIGHT_ISSUE_STATUSES: FlightIssueStatus[] = [
-  "pending_confirmation",
-  "confirmed",
-  "ticketing",
-  "issued",
-  "issue_failed",
-  "reschedule_requested",
-  "cancel_requested",
-  "cancelled",
-  "refunded",
+const INITIAL_FLIGHT_LIFECYCLE_STEPS: FlightLifecycleStatus[] = [
+  "fare_recheck_required",
+  "fare_rechecked",
+  "booking_hold_created",
+  "pending_payment",
 ]
 
 function formatSupplierMeta(supplier: SupplierRow, channelStatus: "active" | "pilot" | null) {
@@ -161,7 +156,7 @@ export default async function AdminCreateFlightBookingPage({
                 Buat booking Pesawat
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-                Form ini menulis transaksi ke <code>bookings</code>, lalu menghubungkannya ke <code>supplier_orders</code> dan <code>flight_booking_details</code>. Tim operasional cukup bekerja dengan label partner internal yang netral, tanpa perlu melihat identitas brand supplier asli.
+                Form ini menulis transaksi ke <code>bookings</code>, lalu menghubungkannya ke <code>supplier_orders</code> dan <code>flight_booking_details</code>. Flow pesawat dipisah dari bus: fare direcheck, booking/hold dicatat, customer bayar, baru ticketing/issue dilakukan setelah pembayaran valid.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -202,7 +197,7 @@ export default async function AdminCreateFlightBookingPage({
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Booking form</p>
               <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">Data transaksi dan penerbangan</h2>
               <p className="text-sm leading-6 text-slate-500">
-                Mulai dari data minimum dulu. Field supplier order, PNR, dan status issue tiket bisa diisi bertahap saat order bergerak.
+                Mulai dari data minimum dulu. Status issue tiket selalu dimulai dari menunggu konfirmasi; ticketing dan issued baru dilakukan setelah pembayaran customer valid.
               </p>
             </div>
 
@@ -253,6 +248,19 @@ export default async function AdminCreateFlightBookingPage({
                 <div>
                   <FieldLabel>Supplier reference</FieldLabel>
                   <TextInput name="supplier_reference" placeholder="Ref eksternal / confirmation code awal" />
+                </div>
+                <div>
+                  <FieldLabel>Fare / journey reference</FieldLabel>
+                  <TextInput name="fare_reference_id" placeholder="Journey ref / fare key dari hasil recheck" />
+                </div>
+                <div>
+                  <FieldLabel>Waktu fare recheck</FieldLabel>
+                  <TextInput name="fare_rechecked_at" type="datetime-local" />
+                </div>
+                <div className="md:col-span-2">
+                  <FieldLabel>Batas hold booking</FieldLabel>
+                  <TextInput name="booking_hold_expires_at" type="datetime-local" />
+                  <p className="mt-2 text-xs text-slate-500">Isi jika supplier memberikan batas waktu hold/booking sebelum payment dan issue tiket.</p>
                 </div>
               </section>
 
@@ -330,19 +338,10 @@ export default async function AdminCreateFlightBookingPage({
                   <FieldLabel>PNR code</FieldLabel>
                   <TextInput name="pnr_code" placeholder="Mis. ABC123" />
                 </div>
-                <div>
-                  <FieldLabel>Status issue tiket</FieldLabel>
-                  <select
-                    name="issue_status"
-                    defaultValue="pending_confirmation"
-                    className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
-                  >
-                    {FLIGHT_ISSUE_STATUSES.map((status) => (
-                      <option key={status} value={status}>
-                        {getFlightIssueStatusLabel(status)}
-                      </option>
-                    ))}
-                  </select>
+                <div className="rounded-[18px] border border-amber-200 bg-amber-50 px-4 py-3">
+                  <input type="hidden" name="issue_status" value="pending_confirmation" />
+                  <p className="text-sm font-semibold text-amber-900">Issue tiket: menunggu konfirmasi</p>
+                  <p className="mt-2 text-xs leading-5 text-amber-800">Admin tidak memilih issued saat membuat booking. Ticketing dilakukan setelah payment bank transfer terverifikasi.</p>
                 </div>
                 <div>
                   <FieldLabel>Subtotal booking</FieldLabel>
@@ -409,12 +408,36 @@ export default async function AdminCreateFlightBookingPage({
               <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950">Yang akan tercatat</h2>
               <div className="mt-5 space-y-3">
                 {[
-                  "Tabel bookings untuk master transaksi Red Feng.",
-                  "Tabel supplier_orders untuk referensi order ke partner reservasi dan biaya supplier.",
-                  "Tabel flight_booking_details untuk data rute, cabin, trip type, jadwal, dan status issue tiket.",
+                  "Tabel bookings untuk master transaksi Red Feng dengan status pending_payment.",
+                  "Tabel supplier_orders untuk referensi order/hold ke partner reservasi dan biaya supplier.",
+                  "Tabel flight_booking_details untuk rute, cabin, fare reference, hold expiry, lifecycle, dan status issue tiket.",
                 ].map((item) => (
                   <div key={item} className="rounded-[18px] border border-[#f1e6dc] bg-[#fffdfa] px-4 py-3 text-sm leading-6 text-slate-600">
                     {item}
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-[24px] border border-[#eee3d9] bg-white p-5 shadow-[0_18px_44px_rgba(15,23,42,0.05)]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Lifecycle Pesawat</p>
+              <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950">Urutan sebelum issued</h2>
+              <div className="mt-5 space-y-3">
+                {INITIAL_FLIGHT_LIFECYCLE_STEPS.map((status, index) => (
+                  <div key={status} className="flex gap-3 rounded-[18px] border border-[#f1e6dc] bg-[#fffdfa] px-4 py-3">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-xs font-semibold text-orange-700">{index + 1}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">{getFlightLifecycleStatusLabel(status)}</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        {status === "fare_recheck_required"
+                          ? "Cari dan validasi fare sebelum customer diarahkan bayar."
+                          : status === "fare_rechecked"
+                            ? "Simpan fare/journey reference dari hasil supplier."
+                            : status === "booking_hold_created"
+                              ? "Catat order/hold/PNR jika supplier sudah memberikan referensi."
+                              : "Customer bayar via bank transfer; issue tiket menunggu verifikasi admin."}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>

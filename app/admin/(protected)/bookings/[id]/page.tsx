@@ -2,7 +2,16 @@
 import { notFound } from "next/navigation"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
-import { getSupplierOrderStatusLabel, getVisibleSupplierLabel, getVisibleSupplierReference, normalizeSupplierOrderStatus } from "@/lib/affiliate-suppliers"
+import {
+  getFlightIssueStatusLabel,
+  getFlightLifecycleStatusLabel,
+  getSupplierOrderStatusLabel,
+  getVisibleSupplierLabel,
+  getVisibleSupplierReference,
+  normalizeFlightIssueStatus,
+  normalizeFlightLifecycleStatus,
+  normalizeSupplierOrderStatus,
+} from "@/lib/affiliate-suppliers"
 import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
@@ -102,6 +111,47 @@ type SupplierRow = {
   supplier_name: string | null
   internal_display_name: string | null
   internal_alias: string | null
+}
+
+type FlightBookingDetailRow = {
+  booking_id: string
+  airline_code: string | null
+  airline_name: string | null
+  flight_number: string | null
+  origin_airport_code: string | null
+  origin_airport_name: string | null
+  destination_airport_code: string | null
+  destination_airport_name: string | null
+  departure_at: string | null
+  arrival_at: string | null
+  return_at: string | null
+  cabin_class: string | null
+  trip_type: string | null
+  passenger_count: number | null
+  pnr_code: string | null
+  ticket_number: string | null
+  issue_status: string | null
+  lifecycle_status: string | null
+  fare_reference_id: string | null
+  fare_rechecked_at: string | null
+  booking_hold_expires_at: string | null
+  issue_requested_at: string | null
+  issued_at: string | null
+  issue_failed_at: string | null
+  customer_notified_at: string | null
+  baggage_summary: string | null
+  notes: string | null
+}
+
+type SupplierOrderRow = {
+  id: string
+  supplier_order_id: string | null
+  supplier_reference: string | null
+  supplier_status: string | null
+  submitted_at: string | null
+  confirmed_at: string | null
+  synced_at: string | null
+  last_error: string | null
 }
 
 type PayoutRow = {
@@ -545,6 +595,29 @@ export default async function AdminBookingDetailPage({
         .maybeSingle<SupplierRow>()
     : { data: null as SupplierRow | null }
 
+  const { data: flightDetail } =
+    booking.booking_product_type === "flight"
+      ? await adminSupabase
+          .from("flight_booking_details")
+          .select(
+            "booking_id, airline_code, airline_name, flight_number, origin_airport_code, origin_airport_name, destination_airport_code, destination_airport_name, departure_at, arrival_at, return_at, cabin_class, trip_type, passenger_count, pnr_code, ticket_number, issue_status, lifecycle_status, fare_reference_id, fare_rechecked_at, booking_hold_expires_at, issue_requested_at, issued_at, issue_failed_at, customer_notified_at, baggage_summary, notes",
+          )
+          .eq("booking_id", booking.id)
+          .maybeSingle<FlightBookingDetailRow>()
+      : { data: null as FlightBookingDetailRow | null }
+
+  const { data: supplierOrder } =
+    booking.booking_product_type === "flight"
+      ? await adminSupabase
+          .from("supplier_orders")
+          .select("id, supplier_order_id, supplier_reference, supplier_status, submitted_at, confirmed_at, synced_at, last_error")
+          .eq("booking_id", booking.id)
+          .eq("product_type", "flight")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle<SupplierOrderRow>()
+      : { data: null as SupplierOrderRow | null }
+
   const { data: payout } = await adminSupabase
     .from("payout_requests")
     .select("id, status, amount, gross_booking_amount, created_at, note")
@@ -594,6 +667,8 @@ export default async function AdminBookingDetailPage({
   const supplierLabel = supplier ? getVisibleSupplierLabel(supplier) : "-"
   const supplierReferenceLabel = supplier ? getVisibleSupplierReference(supplier) : "-"
   const supplierStatus = normalizeSupplierOrderStatus(booking.supplier_order_status)
+  const flightLifecycleStatus = normalizeFlightLifecycleStatus(flightDetail?.lifecycle_status)
+  const flightIssueStatus = normalizeFlightIssueStatus(flightDetail?.issue_status)
   const promoSnapshot = parsePromoSnapshot(booking.promo_snapshot)
   const displayDiscountAmount = Math.max(
     Number(promoSnapshot?.display_discount_amount ?? booking.promo_discount_amount ?? 0),
@@ -924,6 +999,88 @@ export default async function AdminBookingDetailPage({
             ) : null}
           </div>
         </section>
+
+        {flightDetail ? (
+          <section className="rounded-[24px] border border-[#d8e6f8] bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] p-5 shadow-[0_24px_70px_rgba(15,23,42,0.07)] sm:rounded-[32px] sm:p-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-sky-600">Flight lifecycle</p>
+                <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Gate pesawat sebelum ticket issued</h2>
+                <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-600">
+                  Flow ini mengikuti skema pesawat: fare direcheck, booking/hold dicatat, payment bank transfer diverifikasi, lalu admin melakukan ticketing dan issue.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-sky-700">
+                  {flightLifecycleStatus ? getFlightLifecycleStatusLabel(flightLifecycleStatus) : titleCaseStatus(flightDetail.lifecycle_status)}
+                </span>
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-amber-700">
+                  Issue: {flightIssueStatus ? getFlightIssueStatusLabel(flightIssueStatus) : titleCaseStatus(flightDetail.issue_status)}
+                </span>
+                {supplierOrder?.supplier_status ? (
+                  <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-slate-700">
+                    Supplier: {getSupplierOrderStatusLabel(normalizeSupplierOrderStatus(supplierOrder.supplier_status) || "pending_submission")}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-[20px] border border-sky-100 bg-white p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Rute</p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">
+                  {[flightDetail.origin_airport_code, flightDetail.destination_airport_code].filter(Boolean).join(" -> ") || "-"}
+                </p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  {[flightDetail.origin_airport_name, flightDetail.destination_airport_name].filter(Boolean).join(" ke ") || "-"}
+                </p>
+              </div>
+              <div className="rounded-[20px] border border-sky-100 bg-white p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Flight</p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">
+                  {[flightDetail.airline_code, flightDetail.flight_number].filter(Boolean).join(" ") || flightDetail.airline_name || "-"}
+                </p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  {flightDetail.cabin_class || "-"} | {flightDetail.passenger_count || 1} pax
+                </p>
+              </div>
+              <div className="rounded-[20px] border border-sky-100 bg-white p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Fare reference</p>
+                <p className="mt-2 break-words text-sm font-semibold text-slate-900">{flightDetail.fare_reference_id || "-"}</p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">Recheck: {formatDateTime(flightDetail.fare_rechecked_at)}</p>
+              </div>
+              <div className="rounded-[20px] border border-sky-100 bg-white p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Hold / PNR</p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">{flightDetail.pnr_code || supplierOrder?.supplier_reference || "-"}</p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">Hold sampai: {formatDateTime(flightDetail.booking_hold_expires_at)}</p>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-3">
+              <div className="rounded-[20px] border border-slate-200 bg-white p-4">
+                <p className="text-sm font-semibold text-slate-900">Payment gate</p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">Payment status: {resolvePaymentStatusLabel(booking.payment_status)}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">Issue tetap terkunci sampai admin memverifikasi transfer.</p>
+              </div>
+              <div className="rounded-[20px] border border-slate-200 bg-white p-4">
+                <p className="text-sm font-semibold text-slate-900">Supplier order</p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">Order ID: {supplierOrder?.supplier_order_id || "-"}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">Confirmed: {formatDateTime(supplierOrder?.confirmed_at || null)}</p>
+              </div>
+              <div className="rounded-[20px] border border-slate-200 bg-white p-4">
+                <p className="text-sm font-semibold text-slate-900">Ticket output</p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">Ticket: {flightDetail.ticket_number || "-"}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">Issued: {formatDateTime(flightDetail.issued_at)}</p>
+              </div>
+            </div>
+
+            {supplierOrder?.last_error || flightDetail.notes ? (
+              <div className="mt-5 rounded-[20px] border border-amber-200 bg-amber-50 p-4 text-sm leading-7 text-amber-900">
+                {supplierOrder?.last_error || flightDetail.notes}
+              </div>
+            ) : null}
+          </section>
+        ) : null}
 
         <section className="grid gap-4 sm:gap-6 xl:grid-cols-[0.95fr_1.05fr]">
           <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">

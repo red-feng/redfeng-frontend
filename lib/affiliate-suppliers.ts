@@ -29,6 +29,19 @@ export type FlightIssueStatus =
   | "cancelled"
   | "refunded"
 
+export type FlightLifecycleStatus =
+  | "fare_recheck_required"
+  | "fare_rechecked"
+  | "booking_hold_created"
+  | "pending_payment"
+  | "payment_uploaded"
+  | "payment_verified"
+  | "ticketing"
+  | "issued"
+  | "issue_failed"
+  | "cancelled"
+  | "refund_required"
+
 type SupplierVisibilityShape = {
   internal_display_name?: string | null
   internal_alias?: string | null
@@ -86,6 +99,26 @@ export function normalizeFlightIssueStatus(value: string | null | undefined): Fl
   return null
 }
 
+export function normalizeFlightLifecycleStatus(value: string | null | undefined): FlightLifecycleStatus | null {
+  const normalized = String(value || "").trim().toLowerCase()
+  if (
+    normalized === "fare_recheck_required" ||
+    normalized === "fare_rechecked" ||
+    normalized === "booking_hold_created" ||
+    normalized === "pending_payment" ||
+    normalized === "payment_uploaded" ||
+    normalized === "payment_verified" ||
+    normalized === "ticketing" ||
+    normalized === "issued" ||
+    normalized === "issue_failed" ||
+    normalized === "cancelled" ||
+    normalized === "refund_required"
+  ) {
+    return normalized
+  }
+  return null
+}
+
 export function getSupplierOrderStatusLabel(status: SupplierOrderStatus) {
   if (status === "not_applicable") return "Tidak berlaku"
   if (status === "pending_submission") return "Menunggu submit"
@@ -115,6 +148,23 @@ export function getFlightIssueStatusLabel(status: FlightIssueStatus) {
   if (status === "issue_failed") return "Issue gagal"
   if (status === "reschedule_requested") return "Reschedule diminta"
   if (status === "cancel_requested") return "Cancel diminta"
+  return status
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
+}
+
+export function getFlightLifecycleStatusLabel(status: FlightLifecycleStatus) {
+  if (status === "fare_recheck_required") return "Perlu recheck fare"
+  if (status === "fare_rechecked") return "Fare sudah direcheck"
+  if (status === "booking_hold_created") return "Booking/hold dibuat"
+  if (status === "pending_payment") return "Menunggu pembayaran"
+  if (status === "payment_uploaded") return "Bukti transfer diupload"
+  if (status === "payment_verified") return "Pembayaran terverifikasi"
+  if (status === "ticketing") return "Proses issue tiket"
+  if (status === "issued") return "Tiket issued"
+  if (status === "issue_failed") return "Issue gagal"
+  if (status === "refund_required") return "Perlu refund/follow up"
   return status
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))

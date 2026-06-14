@@ -8,7 +8,7 @@ import { createAdminAuditLog } from "@/lib/admin-audit"
 import { calculateBookingAmounts, getFinanceSettings, resolveActiveCustomerPaymentMethod } from "@/lib/finance/settings"
 import { formatBookingCode } from "@/lib/merchant-code"
 import { getAccessibleInternalProducts, hasInternalProductAccess } from "@/lib/internal-product-access"
-import { getVisibleSupplierLabel, normalizeFlightIssueStatus, normalizeSupplierOrderStatus } from "@/lib/affiliate-suppliers"
+import { getFlightLifecycleStatusLabel, getVisibleSupplierLabel, normalizeFlightIssueStatus, normalizeFlightLifecycleStatus, normalizeSupplierOrderStatus } from "@/lib/affiliate-suppliers"
 
 function generateBookingCode() {
   const random = Math.floor(1000 + Math.random() * 9000)
@@ -83,9 +83,13 @@ export async function createFlightBooking(formData: FormData) {
   const supplierId = String(formData.get("supplier_id") || "").trim()
   const supplierOrderId = String(formData.get("supplier_order_id") || "").trim()
   const supplierReference = String(formData.get("supplier_reference") || "").trim()
+  const fareReferenceId = String(formData.get("fare_reference_id") || "").trim()
+  const fareRecheckedAt = String(formData.get("fare_rechecked_at") || "").trim()
+  const bookingHoldExpiresAt = String(formData.get("booking_hold_expires_at") || "").trim()
   const pnrCode = String(formData.get("pnr_code") || "").trim().toUpperCase()
   const cabinClass = normalizeCabinClass(String(formData.get("cabin_class") || "economy"))
   const issueStatus = normalizeFlightIssueStatus(String(formData.get("issue_status") || "pending_confirmation")) || "pending_confirmation"
+  const requestedLifecycleStatus = normalizeFlightLifecycleStatus(String(formData.get("lifecycle_status") || ""))
   const notes = String(formData.get("notes") || "").trim()
   const passengerCount = Math.max(Number(formData.get("passenger_count") || 1), 1)
   const subtotalAmount = Math.max(Number(formData.get("subtotal_amount") || 0), 0)
@@ -150,10 +154,14 @@ export async function createFlightBooking(formData: FormData) {
   }
 
   const fulfillmentMode = supplier.integration_mode === "api" ? "affiliate_api" : "affiliate_manual"
+  const hasSupplierBookingReference = Boolean(supplierOrderId || supplierReference || pnrCode)
   const supplierOrderStatus =
     normalizeSupplierOrderStatus(
-      supplierOrderId || supplierReference ? "submitted" : "pending_submission",
+      hasSupplierBookingReference ? "confirmed" : "pending_submission",
     ) || "pending_submission"
+  const lifecycleStatus =
+    requestedLifecycleStatus ||
+    (hasSupplierBookingReference ? "booking_hold_created" : fareRecheckedAt || fareReferenceId ? "fare_rechecked" : "pending_payment")
 
   const settings = await getFinanceSettings(actor.adminSupabase as unknown as Parameters<typeof getFinanceSettings>[0])
   const priceBreakdown = calculateBookingAmounts(subtotalAmount, paymentMethod, settings)
@@ -177,7 +185,7 @@ export async function createFlightBooking(formData: FormData) {
       expiry_time: expiry.toISOString(),
       payment_type: paymentType,
       payment_status: "pending",
-      booking_status: "pending",
+      booking_status: "pending_payment",
       escrow_status: "pending_payment",
       display_currency: "IDR",
       display_subtotal_amount: priceBreakdown.subtotalAmount,
@@ -218,7 +226,16 @@ export async function createFlightBooking(formData: FormData) {
       supplier_cost_currency: "IDR",
       supplier_cost_recorded_at: new Date().toISOString(),
       submission_mode: supplier.integration_mode,
-      submitted_at: supplierOrderStatus === "submitted" ? new Date().toISOString() : null,
+      submitted_at: hasSupplierBookingReference ? new Date().toISOString() : null,
+      confirmed_at: supplierOrderStatus === "confirmed" ? new Date().toISOString() : null,
+      request_payload: {
+        flow: "flight_booking_lifecycle",
+        fareReferenceId: fareReferenceId || null,
+        fareRecheckedAt: fareRecheckedAt || null,
+        bookingHoldExpiresAt: bookingHoldExpiresAt || null,
+        lifecycleStatus,
+        paymentGate: "bank_transfer_before_issue",
+      },
       created_by: actor.user.id,
       updated_by: actor.user.id,
     })
@@ -248,6 +265,16 @@ export async function createFlightBooking(formData: FormData) {
     passenger_count: passengerCount,
     pnr_code: pnrCode || null,
     issue_status: issueStatus,
+    lifecycle_status: lifecycleStatus,
+    fare_reference_id: fareReferenceId || null,
+    fare_rechecked_at: fareRecheckedAt || null,
+    booking_hold_expires_at: bookingHoldExpiresAt || null,
+    supplier_raw_reference: {
+      supplierOrderId: supplierOrderId || null,
+      supplierReference: supplierReference || null,
+      pnrCode: pnrCode || null,
+      flow: "search_recheck_hold_payment_issue",
+    },
     notes: notes || null,
   })
 
@@ -256,6 +283,23 @@ export async function createFlightBooking(formData: FormData) {
     await actor.adminSupabase.from("bookings").delete().eq("id", booking.id)
     backToFlightCreate(detailError.message || "Gagal menyimpan detail booking Pesawat.", "error")
   }
+
+  await actor.adminSupabase.from("supplier_order_events").insert({
+    supplier_order_id: supplierOrder.id,
+    actor_id: actor.user.id,
+    actor_role: actor.role,
+    event_type: "flight_lifecycle_initialized",
+    summary: `Lifecycle pesawat dimulai: ${getFlightLifecycleStatusLabel(lifecycleStatus)}.`,
+    metadata: {
+      productType: "flight",
+      lifecycleStatus,
+      supplierOrderStatus,
+      fareReferenceId: fareReferenceId || null,
+      fareRecheckedAt: fareRecheckedAt || null,
+      bookingHoldExpiresAt: bookingHoldExpiresAt || null,
+      paymentGate: "bank_transfer_before_issue",
+    },
+  })
 
   await createAdminAuditLog({
     actorId: actor.user.id,
@@ -269,9 +313,14 @@ export async function createFlightBooking(formData: FormData) {
       supplierId: supplier.id,
       supplierLabel: visibleSupplierLabel,
       supplierOrderId,
-      supplierReference,
-      supplierOrderStatus,
-      customerEmail,
+        supplierReference,
+        supplierOrderStatus,
+        lifecycleStatus,
+        lifecycleLabel: getFlightLifecycleStatusLabel(lifecycleStatus),
+        fareReferenceId,
+        fareRecheckedAt: fareRecheckedAt || null,
+        bookingHoldExpiresAt: bookingHoldExpiresAt || null,
+        customerEmail,
       airlineName,
         airlineCode,
         flightNumber,
