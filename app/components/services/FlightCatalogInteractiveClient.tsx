@@ -81,6 +81,35 @@ type FlightFilterState = {
   priceBands: string[]
 }
 
+function buildFlightCheckoutHref(item: FlightItem, state: FlightFilterState, dataSource: string) {
+  const params = new URLSearchParams()
+  const meta = item.meta
+  const departDate = state.depart || meta.availableDates[0] || ""
+  const returnDate = state.tripMode === "round_trip" ? state.returnDate : ""
+
+  params.set("offer_id", item.id)
+  params.set("title", item.title)
+  params.set("airline", meta.airline)
+  params.set("flight_number", item.id.replace(/^live-/, "").toUpperCase())
+  params.set("origin", meta.origin)
+  params.set("destination", meta.destination)
+  params.set("route", meta.routeCode)
+  params.set("depart_date", departDate)
+  params.set("return_date", returnDate)
+  params.set("departure_time", meta.departure)
+  params.set("arrival_time", meta.arrival)
+  params.set("duration", meta.duration)
+  params.set("transit", meta.transit)
+  params.set("cabin", state.cabin || meta.cabin)
+  params.set("trip_type", state.tripMode)
+  params.set("passengers", state.passengers || "1")
+  params.set("price", String(parseFlightPrice(meta.price)))
+  params.set("fare_reference_id", item.id)
+  params.set("source", dataSource || "catalog")
+
+  return `/pesawat/checkout?${params.toString()}`
+}
+
 type FlightCopy = {
   searchSummary: string
   topTitle: string
@@ -2511,6 +2540,7 @@ export default function FlightCatalogInteractiveClient({
             filteredItems.map((item) => {
               const { meta } = item
               const supplierStatus = getFlightSupplierStatus(item, dataSource, state.depart, locale)
+              const checkoutHref = buildFlightCheckoutHref(item, state, dataSource)
               return (
               <article key={item.id} className="overflow-hidden rounded-[22px] border border-[#eef1f6] bg-white shadow-[0_20px_44px_-36px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-34px_rgba(15,23,42,0.22)]">
                 <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_250px]">
@@ -2579,7 +2609,7 @@ export default function FlightCatalogInteractiveClient({
                     <p className="mt-2 text-[16px] font-semibold tracking-[-0.02em] text-[#ef5b2a]">{formatCompactPrice(parseFlightPrice(meta.price), locale, liveFlightRates)}</p>
                     <p className="mt-1 text-[11px] text-slate-400">/pax</p>
                     <div className="mt-5 space-y-2">
-                      <Link href={supportHref} className="block rounded-[12px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] py-2.5 text-center text-[15px] font-semibold text-white shadow-[0_14px_28px_-18px_rgba(239,68,35,0.58)] transition hover:brightness-105">
+                      <Link href={checkoutHref || supportHref} className="block rounded-[12px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] py-2.5 text-center text-[15px] font-semibold text-white shadow-[0_14px_28px_-18px_rgba(239,68,35,0.58)] transition hover:brightness-105">
                         {copy.chooseLabel}
                       </Link>
                       <p className="text-[11px] leading-5 text-slate-500">{supplierStatus.hint}</p>
