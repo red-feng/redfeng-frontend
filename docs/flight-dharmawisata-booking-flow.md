@@ -47,7 +47,26 @@ Dokumen ini menurunkan skema Bus & Travel Booking ke produk Pesawat dengan guard
   - timestamp issue/customer notification
   - `supplier_raw_reference`
 - Halaman detail booking menampilkan panel Flight Lifecycle untuk booking `flight`.
+- Panel detail booking menyediakan gate admin:
+  - `Verify Payment`
+  - `Request Ticket Issue`
+  - `Mark Issued`
+  - `Mark Issue Failed`
+- Setiap gate menulis audit log dan `supplier_order_events`.
+- `Request Ticket Issue` sudah disambungkan ke adapter Dharmawisata:
+  - Jika `DHARMAWISATA_H2H_ISSUE_PATH` belum diisi, tombol tetap mencatat status `ticketing` untuk proses manual.
+  - Jika `DHARMAWISATA_H2H_ISSUE_PATH` sudah diisi, action login/call API Dharmawisata, menyimpan raw response ke `supplier_orders.response_payload`, lalu otomatis memindahkan booking ke `issued` atau `issue_failed`.
+  - Help Page UAT Dharmawisata mengonfirmasi endpoint issue resmi: `POST /h2h/Airline/Issued`.
+  - Endpoint `POST /h2h/Airline/BookingIssued` juga ada, tetapi itu memakai payload booking penuh dan tidak dipakai untuk flow Red Feng saat ini karena Red Feng memisahkan `Booking/Hold` dan `Issued`.
 
 ## Batas Aman
 
-Sampai endpoint issue Dharmawisata production/UAT dipasang ke action admin, status `issued` tidak boleh dipilih saat create booking. Issue dilakukan setelah payment verified melalui step terpisah.
+Status `issued` tidak boleh dipilih saat create booking. Issue tetap dilakukan setelah payment verified melalui step terpisah.
+
+Isi env berikut saat endpoint resmi dari Dharmawisata sudah dikonfirmasi:
+
+```env
+DHARMAWISATA_H2H_ISSUE_PATH=/Airline/Issued
+```
+
+Path di atas berasal dari Help Page UAT Dharmawisata: `POST Airline/Issued`. Setelah env ini terpasang, gate `Request Ticket Issue` akan menjadi auto-issue, sementara `Mark Issued` dan `Mark Issue Failed` tetap tersedia sebagai override/follow up manual.

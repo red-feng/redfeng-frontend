@@ -20,7 +20,15 @@ import { formatPackageMoney } from "@/lib/package-pricing"
 import { getBookingProductLabel, resolveBookingProductType } from "@/lib/booking-products"
 import { getEscrowStatusTone, getJourneyStageTone, getPaymentStatusTone, normalizeStatus } from "@/lib/status-tones"
 import { handoffBookingToFinance } from "../actions"
-import { addBookingAdminNote, reopenBookingAdminNote, resolveBookingAdminNote } from "./actions"
+import {
+  addBookingAdminNote,
+  markFlightIssueFailed,
+  markFlightTicketIssued,
+  reopenBookingAdminNote,
+  requestFlightTicketIssue,
+  resolveBookingAdminNote,
+  verifyFlightPayment,
+} from "./actions"
 
 export const dynamic = "force-dynamic"
 
@@ -669,6 +677,30 @@ export default async function AdminBookingDetailPage({
   const supplierStatus = normalizeSupplierOrderStatus(booking.supplier_order_status)
   const flightLifecycleStatus = normalizeFlightLifecycleStatus(flightDetail?.lifecycle_status)
   const flightIssueStatus = normalizeFlightIssueStatus(flightDetail?.issue_status)
+  const isFlightBooking = booking.booking_product_type === "flight" && Boolean(flightDetail)
+  const isFlightPaymentVerified = normalizeStatus(booking.payment_status) === "paid"
+  const canVerifyFlightPayment = canExecuteAdminOps && isFlightBooking && !isFlightPaymentVerified
+  const canRequestFlightIssue =
+    canExecuteAdminOps &&
+    isFlightBooking &&
+    isFlightPaymentVerified &&
+    flightLifecycleStatus !== "ticketing" &&
+    flightLifecycleStatus !== "issued" &&
+    flightIssueStatus !== "issued"
+  const canMarkFlightIssued =
+    canExecuteAdminOps &&
+    isFlightBooking &&
+    isFlightPaymentVerified &&
+    (flightLifecycleStatus === "ticketing" || flightIssueStatus === "ticketing") &&
+    flightLifecycleStatus !== "issued" &&
+    flightIssueStatus !== "issued"
+  const canMarkFlightIssueFailed =
+    canExecuteAdminOps &&
+    isFlightBooking &&
+    isFlightPaymentVerified &&
+    (flightLifecycleStatus === "ticketing" || flightIssueStatus === "ticketing") &&
+    flightLifecycleStatus !== "issued" &&
+    flightIssueStatus !== "issued"
   const promoSnapshot = parsePromoSnapshot(booking.promo_snapshot)
   const displayDiscountAmount = Math.max(
     Number(promoSnapshot?.display_discount_amount ?? booking.promo_discount_amount ?? 0),
@@ -1023,6 +1055,86 @@ export default async function AdminBookingDetailPage({
                   </span>
                 ) : null}
               </div>
+            </div>
+
+            <div className="mt-6 rounded-[22px] border border-sky-100 bg-white p-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Admin flight gates</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Jalankan berurutan: verify payment, request ticket issue, lalu tandai issued atau issue failed berdasarkan hasil supplier.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {canVerifyFlightPayment ? (
+                    <form action={verifyFlightPayment}>
+                      <input type="hidden" name="portal" value={portal} />
+                      <input type="hidden" name="booking_id" value={booking.id} />
+                      <button className="rounded-[14px] bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-emerald-700">
+                        Verify Payment
+                      </button>
+                    </form>
+                  ) : null}
+
+                  {canRequestFlightIssue ? (
+                    <form action={requestFlightTicketIssue}>
+                      <input type="hidden" name="portal" value={portal} />
+                      <input type="hidden" name="booking_id" value={booking.id} />
+                      <button className="rounded-[14px] bg-sky-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-sky-700">
+                        Request Ticket Issue
+                      </button>
+                    </form>
+                  ) : null}
+                </div>
+              </div>
+
+              {canMarkFlightIssued || canMarkFlightIssueFailed ? (
+                <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                  {canMarkFlightIssued ? (
+                    <form action={markFlightTicketIssued} className="rounded-[18px] border border-emerald-100 bg-emerald-50 p-3">
+                      <input type="hidden" name="portal" value={portal} />
+                      <input type="hidden" name="booking_id" value={booking.id} />
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <input
+                          name="ticket_number"
+                          placeholder="Ticket number"
+                          defaultValue={flightDetail.ticket_number || ""}
+                          className="rounded-[12px] border border-emerald-200 bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-emerald-300"
+                        />
+                        <input
+                          name="pnr_code"
+                          placeholder="PNR"
+                          defaultValue={flightDetail.pnr_code || supplierOrder?.supplier_reference || ""}
+                          className="rounded-[12px] border border-emerald-200 bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-emerald-300"
+                        />
+                      </div>
+                      <button className="mt-3 rounded-[14px] bg-emerald-700 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-emerald-800">
+                        Mark Issued
+                      </button>
+                    </form>
+                  ) : null}
+
+                  {canMarkFlightIssueFailed ? (
+                    <form action={markFlightIssueFailed} className="rounded-[18px] border border-rose-100 bg-rose-50 p-3">
+                      <input type="hidden" name="portal" value={portal} />
+                      <input type="hidden" name="booking_id" value={booking.id} />
+                      <textarea
+                        name="issue_failed_reason"
+                        rows={3}
+                        placeholder="Alasan issue gagal / instruksi follow up"
+                        className="w-full rounded-[12px] border border-rose-200 bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-rose-300"
+                      />
+                      <button className="mt-3 rounded-[14px] bg-rose-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-rose-700">
+                        Mark Issue Failed
+                      </button>
+                    </form>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {!canExecuteAdminOps ? (
+                <p className="mt-3 text-xs leading-5 text-slate-500">Akun ini hanya bisa memonitor lifecycle, bukan menjalankan gate issue.</p>
+              ) : null}
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
