@@ -12,6 +12,7 @@ export type FlightCatalogBuildParams = {
   rawTo: string
   depart: string
   returnDate: string
+  passengers: string
   cabin: string
   sort: string
   airlines: string[]
@@ -52,6 +53,26 @@ function normalizeRequestedCabin(value: string) {
   if (normalized === "bisnis") return "Business"
   if (normalized === "kelas satu") return "First Class"
   return value
+}
+
+function extractPassengerCount(value: string, pattern: RegExp) {
+  const match = value.match(pattern)
+  if (!match) return 0
+  return Number.parseInt(match[1] || "0", 10) || 0
+}
+
+export function parseFlightPassengerMix(value: string) {
+  const normalized = value.toLowerCase()
+  const adults = extractPassengerCount(normalized, /(\d+)\s*(?:位)?\s*(?:dewasa|adult|adults|成人)/i)
+  const children = extractPassengerCount(normalized, /(\d+)\s*(?:位)?\s*(?:anak|child|children|儿童)/i)
+  const infants = extractPassengerCount(normalized, /(\d+)\s*(?:位)?\s*(?:bayi|infant|infants|婴儿)/i)
+  const fallbackAdultCount = Number.parseInt(normalized.match(/\d+/)?.[0] || "1", 10) || 1
+
+  return {
+    adults: Math.max(1, adults || fallbackAdultCount),
+    children: Math.max(0, children),
+    infants: Math.max(0, infants),
+  }
 }
 
 function logFlightCatalogDecision(
@@ -188,6 +209,7 @@ export async function buildFlightCatalogItems({
   rawTo,
   depart,
   returnDate,
+  passengers,
   cabin,
   sort,
   airlines,
@@ -202,6 +224,7 @@ export async function buildFlightCatalogItems({
     rawTo,
     depart,
     returnDate,
+    passengers,
     cabin,
     sort,
     airlineFilterCount: airlines.length,
@@ -212,6 +235,7 @@ export async function buildFlightCatalogItems({
   const originCode = extractAirportCode(rawFrom)
   const destinationCode = extractAirportCode(rawTo)
   const normalizedCabin = normalizeRequestedCabin(cabin)
+  const passengerMix = parseFlightPassengerMix(passengers)
   const affiliateFlightSearchResult = await dharmawisataAffiliateFlightProvider.searchFlights({
     tripType: isFlightTripMode(trip) ? trip : "round_trip",
     originCode,
@@ -219,7 +243,7 @@ export async function buildFlightCatalogItems({
     departDate: depart,
     returnDate: trip === "round_trip" ? returnDate : undefined,
     cabinClass: normalizedCabin as "Economy" | "Premium Economy" | "Business" | "First Class",
-    passengers: { adults: 1, children: 0, infants: 0 },
+    passengers: passengerMix,
     locale,
   })
 
@@ -234,6 +258,7 @@ export async function buildFlightCatalogItems({
     originCode,
     destinationCode,
     normalizedCabin,
+    passengerMix,
     providerKey: affiliateFlightSearchResult.providerKey,
     upstreamOfferCount: affiliateFlightSearchResult.offers.length,
     source,
@@ -281,6 +306,7 @@ export async function buildFlightCatalogItems({
     originCode,
     destinationCode,
     normalizedCabin,
+    passengerMix,
     source,
     baseResultCount: baseResults.length,
     finalItemCount: itemsResult.length,

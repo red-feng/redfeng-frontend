@@ -910,20 +910,6 @@ export default function FlightCatalogInteractiveClient({
     transit: false,
     price: false,
   })
-  const activeSupportHint = dataSource === "fallback" ? copy.fallbackHint : copy.supportHint
-  const activeFareLabel =
-    dataSource === "fallback"
-      ? locale === "en"
-        ? "Fallback fare"
-        : locale === "zh"
-          ? "后备票价"
-          : "Fare cadangan"
-      : locale === "en"
-        ? "Live fare"
-        : locale === "zh"
-          ? "实时票价"
-          : "Fare live"
-
   useEffect(() => {
     const query = buildQuery(state)
     const nextUrl = query ? `${serviceCatalogHref}?${query}` : serviceCatalogHref
@@ -937,6 +923,8 @@ export default function FlightCatalogInteractiveClient({
     if (nextSignature === lastInitialStateSignatureRef.current) return
 
     lastInitialStateSignatureRef.current = nextSignature
+    // Sync local draft state after a server navigation refreshes the search params.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setState(initialState)
     setDraft(initialState)
     setHeroFieldStates({})

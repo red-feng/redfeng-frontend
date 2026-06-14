@@ -48,9 +48,16 @@ function getAirlineDisplayName(value: string, fallback = "Dharmawisata Partner")
 }
 
 function formatTime(value: string) {
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) return value
-  return parsed.toISOString().slice(11, 16)
+  const normalized = value.trim()
+  const embeddedTimeMatch = normalized.match(/(?:T|\s)(\d{1,2}):(\d{2})(?::\d{2})?/)
+  const standaloneTimeMatch = normalized.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/)
+  const match = embeddedTimeMatch || standaloneTimeMatch
+
+  if (!match) return value
+
+  const hour = String(Number(match[1] || "0")).padStart(2, "0")
+  const minute = String(Number(match[2] || "0")).padStart(2, "0")
+  return `${hour}:${minute}`
 }
 
 function buildDurationLabel(startValue: string, endValue: string) {
@@ -374,7 +381,7 @@ export class DharmawisataAffiliateFlightProvider implements AffiliateFlightProvi
       const currentAirlineIndex = getPayloadAirlineIndex(payload)
       const totalAirline = getPayloadTotalAirline(payload)
       const nextAirlineAccessCode = getPayloadAirlineAccessCode(payload)
-      const stateKey = `${status}:${currentAirlineIndex}:${totalAirline}:${message}`
+      const stateKey = `${status}:${currentAirlineIndex}:${totalAirline}:${message}:${nextAirlineAccessCode}`
 
       if (seenStates.has(stateKey)) break
       seenStates.add(stateKey)
@@ -396,9 +403,6 @@ export class DharmawisataAffiliateFlightProvider implements AffiliateFlightProvi
 
       if (status !== "SUCCESS") {
         fallbackFailureMessage = message
-        if (message.toLowerCase().includes("airline access code") && nextAirlineAccessCode) {
-          break
-        }
       }
 
       if (totalAirline === 0) {
@@ -406,7 +410,11 @@ export class DharmawisataAffiliateFlightProvider implements AffiliateFlightProvi
         break
       }
 
-      airlineAccessCode = ""
+      if (!nextAirlineAccessCode) {
+        break
+      }
+
+      airlineAccessCode = nextAirlineAccessCode
     }
 
     return {
