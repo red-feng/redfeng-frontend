@@ -162,7 +162,7 @@ export async function createFlightBooking(formData: FormData) {
   const passengerCount = Math.max(Number(formData.get("passenger_count") || 1), 1)
   const subtotalAmount = Math.max(Number(formData.get("subtotal_amount") || 0), 0)
   const supplierCostAmount = Math.max(Number(formData.get("supplier_cost_amount") || 0), 0)
-  const paymentType = String(formData.get("payment_type") || "full").trim().toLowerCase() === "dp" ? "dp" : "full"
+  const paymentType = "full"
   const paymentMethod = resolveActiveCustomerPaymentMethod(String(formData.get("payment_method") || "bank_transfer"))
 
   if (!customerName || !customerEmail || !pickupDate) {
@@ -195,11 +195,12 @@ export async function createFlightBooking(formData: FormData) {
 
   const { data: supplier } = await actor.adminSupabase
     .from("suppliers")
-    .select("id, supplier_name, internal_display_name, internal_alias, integration_mode, status")
+    .select("id, supplier_code, supplier_name, internal_display_name, internal_alias, integration_mode, status")
     .eq("id", supplierId)
     .eq("status", "active")
     .maybeSingle<{
       id: string
+      supplier_code: string
       supplier_name: string
       internal_display_name: string | null
       internal_alias: string | null
@@ -253,6 +254,7 @@ export async function createFlightBooking(formData: FormData) {
         booking_code: bookingCode,
         customer_name: customerName,
         customer_email: customerEmail,
+        customer_phone: customerPhone,
       pickup_date: pickupDate,
       expiry_time: expiry.toISOString(),
       payment_type: paymentType,
@@ -272,8 +274,8 @@ export async function createFlightBooking(formData: FormData) {
       customer_admin_fee_percent: priceBreakdown.customerAdminFeePercent,
       customer_tax_percent: priceBreakdown.customerTaxPercent,
       total_amount: priceBreakdown.totalAmount,
-      final_payment_amount: priceBreakdown.finalPaymentAmount,
-      dp_amount: priceBreakdown.dpAmount,
+      final_payment_amount: priceBreakdown.totalAmount,
+      dp_amount: 0,
       payment_method: priceBreakdown.paymentMethod,
       adult_count: passengerCount,
       child_count: 0,
@@ -359,41 +361,64 @@ export async function createFlightBooking(formData: FormData) {
   const contactName = splitPersonName(customerName)
   const contactPhone = splitIndonesianPhone(customerPhone)
   const passengers = parsePassengerManifest(passengerManifest, customerName, customerEmail)
-  const bookingApiResult = await createDharmawisataFlightBooking({
-    bookingId: booking.id,
-    airlineId: airlineCode,
-    airlineCode,
-    flightNumber,
-    originAirportCode,
-    destinationAirportCode,
-    tripType,
-    departureAt,
-    arrivalAt,
-    returnAt,
-    flightClass: cabinClass,
-    detailSchedule,
-    searchKey,
-    airlineAccessCode,
-    contactTitle,
-    contactFirstName: contactName.firstName,
-    contactLastName: contactName.lastName,
-    contactCountryCodePhone: contactPhone.countryCode,
-    contactAreaCodePhone: contactPhone.areaCode,
-    contactRemainingPhoneNo: contactPhone.remainingPhoneNo,
-    contactEmail: customerEmail,
-    paxAdult: passengerCount,
-    paxChild: 0,
-    paxInfant: 0,
-    passengers,
-  })
+  const shouldAutoBookDharmawisata = supplier.supplier_code === "DHARMAWISATA_H2H" && supplier.integration_mode === "api"
+  const bookingApiResult = shouldAutoBookDharmawisata
+    ? await createDharmawisataFlightBooking({
+        bookingId: booking.id,
+        airlineId: airlineCode,
+        airlineCode,
+        flightNumber,
+        originAirportCode,
+        destinationAirportCode,
+        tripType,
+        departureAt,
+        arrivalAt,
+        returnAt,
+        flightClass: cabinClass,
+        detailSchedule,
+        searchKey,
+        airlineAccessCode,
+        contactTitle,
+        contactFirstName: contactName.firstName,
+        contactLastName: contactName.lastName,
+        contactCountryCodePhone: contactPhone.countryCode,
+        contactAreaCodePhone: contactPhone.areaCode,
+        contactRemainingPhoneNo: contactPhone.remainingPhoneNo,
+        contactEmail: customerEmail,
+        paxAdult: passengerCount,
+        paxChild: 0,
+        paxInfant: 0,
+        passengers,
+      })
+    : {
+        ok: false,
+        skipped: true,
+        mode: "manual_unconfigured" as const,
+        message: "Supplier yang dipilih bukan Dharmawisata API, jadi hold dilakukan manual.",
+        bookingCode: null,
+        bookingDate: null,
+        timeLimit: null,
+        referenceNo: null,
+        bookingCodeAirline: null,
+        airlineAccessCode: null,
+        raw: {
+          bookingMode: "manual_non_dharmawisata_supplier",
+          supplierCode: supplier.supplier_code,
+          integrationMode: supplier.integration_mode,
+        },
+      }
 
   let redirectMessage = "Booking Pesawat berhasil dibuat."
+  let effectiveLifecycleStatus = lifecycleStatus
+  let effectiveSupplierOrderStatus = supplierOrderStatus
 
   if (bookingApiResult.ok) {
     const holdExpiresAt = normalizeDateTimeForDb(bookingApiResult.timeLimit) || normalizeDateTimeForDb(bookingHoldExpiresAt)
     const apiSupplierReference = bookingApiResult.referenceNo || bookingApiResult.bookingCodeAirline || supplierReference || null
     const apiBookingCode = bookingApiResult.bookingCode || supplierOrderId || null
     const apiLifecycleStatus = "booking_hold_created"
+    effectiveLifecycleStatus = apiLifecycleStatus
+    effectiveSupplierOrderStatus = "confirmed"
 
     await actor.adminSupabase
       .from("supplier_orders")
@@ -450,6 +475,7 @@ export async function createFlightBooking(formData: FormData) {
 
     redirectMessage = "Booking Pesawat berhasil dibuat dan hold Dharmawisata berhasil dicatat."
   } else if (!bookingApiResult.skipped) {
+    effectiveSupplierOrderStatus = "failed"
     await actor.adminSupabase
       .from("supplier_orders")
       .update({
@@ -461,6 +487,13 @@ export async function createFlightBooking(formData: FormData) {
       })
       .eq("id", supplierOrder.id)
 
+    await actor.adminSupabase
+      .from("bookings")
+      .update({
+        supplier_order_status: "failed",
+      })
+      .eq("id", booking.id)
+
     await actor.adminSupabase.from("supplier_order_events").insert({
       supplier_order_id: supplierOrder.id,
       actor_id: actor.user.id,
@@ -469,7 +502,8 @@ export async function createFlightBooking(formData: FormData) {
       summary: "Booking/hold Pesawat lewat API Dharmawisata gagal.",
       metadata: {
         productType: "flight",
-        lifecycleStatus,
+        lifecycleStatus: effectiveLifecycleStatus,
+        supplierOrderStatus: effectiveSupplierOrderStatus,
         message: bookingApiResult.message,
       },
     })
@@ -486,11 +520,11 @@ export async function createFlightBooking(formData: FormData) {
     actor_id: actor.user.id,
     actor_role: actor.role,
     event_type: "flight_lifecycle_initialized",
-    summary: `Lifecycle pesawat dimulai: ${getFlightLifecycleStatusLabel(lifecycleStatus)}.`,
+    summary: `Lifecycle pesawat dimulai: ${getFlightLifecycleStatusLabel(effectiveLifecycleStatus)}.`,
     metadata: {
       productType: "flight",
-      lifecycleStatus,
-      supplierOrderStatus,
+      lifecycleStatus: effectiveLifecycleStatus,
+      supplierOrderStatus: effectiveSupplierOrderStatus,
       fareReferenceId: fareReferenceId || null,
       fareRecheckedAt: fareRecheckedAt || null,
       bookingHoldExpiresAt: bookingHoldExpiresAt || null,
@@ -510,24 +544,24 @@ export async function createFlightBooking(formData: FormData) {
       supplierId: supplier.id,
       supplierLabel: visibleSupplierLabel,
       supplierOrderId,
-        supplierReference,
-        supplierOrderStatus,
-        lifecycleStatus,
-        lifecycleLabel: getFlightLifecycleStatusLabel(lifecycleStatus),
-        fareReferenceId,
-        fareRecheckedAt: fareRecheckedAt || null,
-        bookingHoldExpiresAt: bookingHoldExpiresAt || null,
-        customerEmail,
+      supplierReference,
+      supplierOrderStatus: effectiveSupplierOrderStatus,
+      lifecycleStatus: effectiveLifecycleStatus,
+      lifecycleLabel: getFlightLifecycleStatusLabel(effectiveLifecycleStatus),
+      fareReferenceId,
+      fareRecheckedAt: fareRecheckedAt || null,
+      bookingHoldExpiresAt: bookingHoldExpiresAt || null,
+      customerEmail,
       airlineName,
-        airlineCode,
-        flightNumber,
-        originAirportCode,
-        destinationAirportCode,
-        tripType,
-        returnAt: returnAt || null,
-        passengerCount,
-        subtotalAmount: priceBreakdown.subtotalAmount,
-        supplierCostAmount,
+      airlineCode,
+      flightNumber,
+      originAirportCode,
+      destinationAirportCode,
+      tripType,
+      returnAt: returnAt || null,
+      passengerCount,
+      subtotalAmount: priceBreakdown.subtotalAmount,
+      supplierCostAmount,
       recordedSpreadAmount,
       totalAmount: priceBreakdown.totalAmount,
     },

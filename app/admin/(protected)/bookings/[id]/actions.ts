@@ -98,6 +98,10 @@ function readNestedString(value: unknown, keys: string[]) {
   return visit(value)
 }
 
+function asJsonRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
+}
+
 function backToBookingDetailWithState(bookingId: string, type: "success" | "error", message: string, formData: FormData): never {
   const portal = resolvePortal(formData)
   const { bookingDetailPath } = resolvePortalPaths(portal)
@@ -459,6 +463,7 @@ export async function requestFlightTicketIssue(formData: FormData) {
 
   const { adminSupabase, booking, flightDetail, supplierOrder } = await getFlightBookingForAction(bookingId, formData)
   const now = new Date().toISOString()
+  const previousSupplierResponsePayload = asJsonRecord(supplierOrder?.response_payload)
 
   if (String(booking.payment_status || "").toLowerCase() !== "paid") {
     backToBookingDetailWithState(bookingId, "error", "Payment harus verified sebelum request ticket issue.", formData)
@@ -485,9 +490,12 @@ export async function requestFlightTicketIssue(formData: FormData) {
         supplier_status: "submitted",
         submitted_at: now,
         response_payload: {
-          issueRequestMode: "manual_admin_gate",
-          requestedAt: now,
-          note: "Ready for Dharmawisata ticket issue after payment verification.",
+          ...previousSupplierResponsePayload,
+          issueRequest: {
+            issueRequestMode: "admin_gate",
+            requestedAt: now,
+            note: "Ready for Dharmawisata ticket issue after payment verification.",
+          },
         },
         updated_by: adminActor.user.id,
       })
@@ -601,7 +609,10 @@ export async function requestFlightTicketIssue(formData: FormData) {
         .from("supplier_orders")
         .update({
           supplier_status: "issued",
-          response_payload: issueResult.raw,
+          response_payload: {
+            ...previousSupplierResponsePayload,
+            issueResult: issueResult.raw,
+          },
           last_error: null,
           synced_at: issuedAt,
           updated_by: adminActor.user.id,
@@ -685,7 +696,10 @@ export async function requestFlightTicketIssue(formData: FormData) {
       .from("supplier_orders")
       .update({
         supplier_status: "failed",
-        response_payload: issueResult.raw,
+        response_payload: {
+          ...previousSupplierResponsePayload,
+          issueResult: issueResult.raw,
+        },
         last_error: failureMessage,
         synced_at: failedAt,
         updated_by: adminActor.user.id,

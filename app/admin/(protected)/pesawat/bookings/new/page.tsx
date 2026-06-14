@@ -394,16 +394,12 @@ export default async function AdminCreateFlightBookingPage({
                   <TextInput name="supplier_cost_amount" type="number" min={1} step={1000} required placeholder="Mis. 2350000" />
                   <p className="mt-2 text-xs text-slate-500">Field ini wajib diisi agar spread harga non-paket RedFeng bisa dihitung jujur dari harga jual dikurangi biaya supplier.</p>
                 </div>
-                <div>
-                  <FieldLabel>Jenis pembayaran</FieldLabel>
-                  <select
-                    name="payment_type"
-                    defaultValue="full"
-                    className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
-                  >
-                    <option value="full">Full payment</option>
-                    <option value="dp">DP</option>
-                  </select>
+                <div className="rounded-[18px] border border-sky-200 bg-sky-50 px-4 py-3">
+                  <input type="hidden" name="payment_type" value="full" />
+                  <p className="text-sm font-semibold text-sky-900">Jenis pembayaran: full payment</p>
+                  <p className="mt-2 text-xs leading-5 text-sky-800">
+                    Pesawat tidak memakai DP karena ticket issue hanya boleh berjalan setelah pembayaran customer lunas dan terverifikasi.
+                  </p>
                 </div>
                 <div className="md:col-span-2">
                   <FieldLabel>Metode pembayaran customer</FieldLabel>

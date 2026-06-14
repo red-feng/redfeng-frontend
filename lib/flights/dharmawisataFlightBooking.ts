@@ -191,6 +191,27 @@ function buildBookingPayload(input: DharmawisataFlightBookingInput, accessToken:
   }
 }
 
+function summarizeBookingRequest(
+  payload: ReturnType<typeof buildBookingPayload>,
+  passengerCount: number,
+) {
+  return {
+    airlineID: payload.airlineID,
+    origin: payload.origin,
+    destination: payload.destination,
+    tripType: payload.tripType,
+    departDate: payload.departDate,
+    returnDate: payload.returnDate,
+    paxAdult: payload.paxAdult,
+    paxChild: payload.paxChild,
+    paxInfant: payload.paxInfant,
+    scheduleCount: payload.schDeparts.length + payload.schReturns.length,
+    passengerCount,
+    hasSearchKey: Boolean(payload.searchKey),
+    hasAirlineAccessCode: Boolean(payload.airlineAccessCode),
+  }
+}
+
 async function fetchBookingDetail(raw: JsonRecord, accessToken: string) {
   const detailPath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_BOOKING_DETAIL_PATH")
   const bookingCode = pickString(raw, ["bookingCode"])
@@ -322,10 +343,7 @@ export async function createDharmawisataFlightBooking(
       airlineAccessCode: pickString(raw, ["airlineAccessCode"]) || input.airlineAccessCode || null,
       raw: {
         bookingMode: "api",
-        request: {
-          ...payload,
-          accessToken: "[redacted]",
-        },
+        request: summarizeBookingRequest(payload, input.passengers.length),
         response: rawWithDetail,
       },
     }
