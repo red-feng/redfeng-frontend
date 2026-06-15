@@ -21,6 +21,24 @@ function asPositiveInteger(value: unknown, fallback = 1) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
 }
 
+function extractPassengerCount(value: string, pattern: RegExp) {
+  const match = value.match(pattern)
+  return match ? Number.parseInt(match[1] || "0", 10) || 0 : 0
+}
+
+function parsePassengerMix(value: unknown) {
+  const normalized = asString(value).toLowerCase()
+  const fallbackAdultCount = asPositiveInteger(normalized.match(/\d+/)?.[0] || "", 1)
+  const adults = extractPassengerCount(normalized, /(\d+)\s*(?:dewasa|adult|adults)/i)
+  const children = extractPassengerCount(normalized, /(\d+)\s*(?:anak|child|children)/i)
+  const infants = extractPassengerCount(normalized, /(\d+)\s*(?:bayi|infant|infants)/i)
+
+  return {
+    adults: Math.max(1, adults || fallbackAdultCount),
+    children: Math.max(0, children + infants),
+  }
+}
+
 function asMoney(value: unknown) {
   const parsed = Number(String(value || "").replace(/[^\d.-]/g, ""))
   return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : 0
@@ -91,7 +109,8 @@ export async function POST(req: Request) {
     const departureAt = composeDateTime(body.depart_date, body.departure_time)
     const arrivalAt = maybeArrivalDateTime(body.depart_date, body.departure_time, body.arrival_time)
     const returnAt = asString(body.return_date) ? composeDateTime(body.return_date, body.departure_time) : null
-    const passengerCount = asPositiveInteger(body.passengers, 1)
+    const passengerMix = parsePassengerMix(body.passengers)
+    const passengerCount = passengerMix.adults + passengerMix.children
     const fareAmount = asMoney(body.price)
 
     if (!customerName || !customerEmail || !customerPhone) {
@@ -166,8 +185,8 @@ export async function POST(req: Request) {
         final_payment_amount: priceBreakdown.totalAmount,
         dp_amount: 0,
         payment_method: priceBreakdown.paymentMethod,
-        adult_count: passengerCount,
-        child_count: 0,
+        adult_count: passengerMix.adults,
+        child_count: passengerMix.children,
         user_id: user.id,
       })
       .select("id, booking_code")
@@ -190,6 +209,7 @@ export async function POST(req: Request) {
       duration: asString(body.duration),
       transit: asString(body.transit),
       passengerManifest: passengerManifest || null,
+      passengerMix,
     }
 
     const { data: supplierOrder, error: supplierOrderError } = await supabase

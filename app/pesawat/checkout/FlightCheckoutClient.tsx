@@ -32,8 +32,9 @@ function formatIdr(value: number) {
 }
 
 function getPassengerCount(value: string) {
-  const parsed = Number.parseInt(value, 10)
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
+  const matches = value.match(/\d+/g)
+  if (!matches) return 1
+  return matches.reduce((total, current) => total + Number(current || "0"), 0) || 1
 }
 
 function labelize(value: string) {
@@ -109,7 +110,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
           transit: data.transit,
           cabin: data.cabin,
           trip_type: data.tripType,
-          passengers: String(passengerCount),
+          passengers: data.passengers,
           price: data.price,
           fare_reference_id: data.fareReferenceId,
           source: data.source,

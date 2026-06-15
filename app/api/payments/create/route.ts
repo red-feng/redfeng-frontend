@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import midtransClient from "midtrans-client"
 import { createClient } from "@supabase/supabase-js"
 import { getRequiredEnv } from "@/lib/env"
 import { createClient as createServerClient } from "@/lib/supabase/server"
@@ -7,6 +6,7 @@ import { resolveActiveCustomerPaymentMethod } from "@/lib/finance/settings"
 import { deleteDraftBooking, isDraftBookingDeletable } from "@/lib/bookings/draft-cleanup"
 import { formatFinalPaymentDueLabel, isFinalPaymentOverdue } from "@/lib/booking/final-payment-deadline"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
+import { createMidtransSnapClient } from "@/lib/payments/midtrans"
 
 function resolveEnabledPayments(paymentMethod: string | null | undefined) {
   const normalizedMethod = resolveActiveCustomerPaymentMethod(paymentMethod)
@@ -24,6 +24,25 @@ function createOrderId(bookingCode: string | null | undefined, paymentType: stri
 type BookingParticipantRow = {
   participant_type: "adult" | "child"
   sequence_no: number
+}
+
+type FlightPaymentGateRow = {
+  lifecycle_status: string | null
+  booking_hold_expires_at: string | null
+}
+
+function normalizeStatus(value: string | null | undefined) {
+  return String(value || "").trim().toLowerCase()
+}
+
+function isFlightPaymentReadyStatus(value: string | null | undefined) {
+  return ["booking_hold_created", "pending_payment"].includes(normalizeStatus(value))
+}
+
+function isExpiredDateTime(value: string | null | undefined) {
+  if (!value) return false
+  const parsed = new Date(value)
+  return !Number.isNaN(parsed.getTime()) && parsed.getTime() <= Date.now()
 }
 
 function hasExpectedParticipants(
@@ -116,6 +135,22 @@ function getPaymentCreateCopy(locale: Locale) {
   return locale === "zh" ? paymentCreateCopyZh : paymentCreateCopy(locale)
 }
 
+function getFlightPaymentGateCopy(locale: Locale) {
+  if (locale === "en") {
+    return {
+      notReady: "Flight payment is not open yet. Red Feng must recheck fare and secure the supplier hold first.",
+      holdExpired: "The flight booking hold has expired. Please ask Red Feng to recheck the fare again.",
+      invalidAmount: "This booking does not have a valid payment amount yet.",
+    }
+  }
+
+  return {
+    notReady: "Pembayaran pesawat belum dibuka. Red Feng harus recheck fare dan mengunci hold supplier terlebih dahulu.",
+    holdExpired: "Hold booking pesawat sudah kedaluwarsa. Minta Red Feng melakukan recheck fare lagi.",
+    invalidAmount: "Booking ini belum memiliki nominal pembayaran yang valid.",
+  }
+}
+
 export async function POST(req: Request) {
   let activeLocale: Locale = "id"
   try {
@@ -174,6 +209,23 @@ export async function POST(req: Request) {
         { error: t.notOwner },
         { status: 403 }
       )
+    }
+
+    const flightGateCopy = getFlightPaymentGateCopy(activeLocale)
+    if (String(booking.booking_product_type || "").trim().toLowerCase() === "flight") {
+      const { data: flightDetail } = await supabase
+        .from("flight_booking_details")
+        .select("lifecycle_status, booking_hold_expires_at")
+        .eq("booking_id", booking.id)
+        .maybeSingle<FlightPaymentGateRow>()
+
+      if (!flightDetail || !isFlightPaymentReadyStatus(flightDetail.lifecycle_status)) {
+        return NextResponse.json({ error: flightGateCopy.notReady }, { status: 409 })
+      }
+
+      if (isExpiredDateTime(flightDetail.booking_hold_expires_at)) {
+        return NextResponse.json({ error: flightGateCopy.holdExpired }, { status: 409 })
+      }
     }
 
     const adultCount = Math.max(Number(booking.adult_count || 0), 0)
@@ -240,6 +292,10 @@ export async function POST(req: Request) {
       amount = booking.dp_amount
     }
 
+    if (!Number.isFinite(Number(amount)) || Number(amount) <= 0) {
+      return NextResponse.json({ error: flightGateCopy.invalidAmount }, { status: 400 })
+    }
+
     // ===============================
     // 3️⃣ Generate Order ID
     // ===============================
@@ -269,10 +325,7 @@ export async function POST(req: Request) {
     // ===============================
     // 5️⃣ Create Midtrans Snap
     // ===============================
-    const snap = new midtransClient.Snap({
-      isProduction: true,
-      serverKey: getRequiredEnv("MIDTRANS_SERVER_KEY")
-    })
+    const snap = createMidtransSnapClient()
 
     const parameter = {
       transaction_details: {

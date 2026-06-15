@@ -49,17 +49,21 @@ async function getOwnedBooking(bookingId: string) {
   if (!user) {
     return { user: null, booking: null as null, error: "Silakan login terlebih dahulu" }
   }
-  if (!user.email) {
-    return { user, booking: null as null, error: "Akun Anda belum memiliki email" }
-  }
-
   const { data: booking } = await adminSupabase
     .from("bookings")
-    .select("id, package_id, customer_email, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at, adult_count, child_count")
+    .select("id, package_id, customer_email, user_id, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at, adult_count, child_count")
     .eq("id", bookingId)
     .single()
 
-  if (!booking || booking.customer_email !== user.email) {
+  const signedInEmail = String(user.email || "").trim().toLowerCase()
+  const bookingOwnerEmail = String(booking?.customer_email || "").trim().toLowerCase()
+  const isOwnedBooking = Boolean(
+    booking &&
+      ((booking.user_id && booking.user_id === user.id) ||
+        (!booking.user_id && signedInEmail && bookingOwnerEmail === signedInEmail)),
+  )
+
+  if (!booking || !isOwnedBooking) {
     return { user, booking: null as null, error: "Booking ini bukan milik akun Anda" }
   }
 

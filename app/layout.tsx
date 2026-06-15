@@ -4,6 +4,7 @@ import Script from "next/script";
 import AppDisplayModeBridge from "@/app/components/AppDisplayModeBridge";
 import ServiceWorkerRegistrar from "@/app/components/ServiceWorkerRegistrar";
 import { getOptionalEnv } from "@/lib/env";
+import { getMidtransSnapScriptUrl } from "@/lib/payments/midtrans";
 import { getAppBaseUrl } from "@/lib/site-config";
 import "./globals.css";
 
@@ -71,7 +72,7 @@ export default function RootLayout({
 
         {midtransClientKey && (
           <Script
-            src="https://app.midtrans.com/snap/snap.js"
+            src={getMidtransSnapScriptUrl()}
             data-client-key={midtransClientKey}
             strategy="afterInteractive"
           />

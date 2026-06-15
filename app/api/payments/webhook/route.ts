@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import crypto from "crypto"
 import { createClient } from "@supabase/supabase-js"
+import type { SupabaseClient } from "@supabase/supabase-js"
 import { getRequiredEnv } from "@/lib/env"
 import { formatBookingCode, formatMerchantCode } from "@/lib/merchant-code"
 import { sendCustomerPaymentEmail } from "@/lib/payments/customerEmails"
@@ -85,6 +86,34 @@ function isSuccessfulMidtransStatus(status: string | null | undefined) {
   return ["settlement", "capture"].includes(normalizeStatus(status))
 }
 
+function isFlightBooking(booking: { booking_product_type?: string | null }) {
+  return normalizeStatus(booking.booking_product_type) === "flight"
+}
+
+async function markFlightPaymentVerified(
+  supabase: SupabaseClient,
+  bookingId: string,
+) {
+  const { data: flightDetail } = await supabase
+    .from("flight_booking_details")
+    .select("lifecycle_status")
+    .eq("booking_id", bookingId)
+    .maybeSingle<{ lifecycle_status: string | null }>()
+
+  const currentStatus = normalizeStatus(flightDetail?.lifecycle_status)
+  if (["ticketing", "issued", "issue_failed", "cancelled", "refund_required"].includes(currentStatus)) {
+    return
+  }
+
+  await supabase
+    .from("flight_booking_details")
+    .update({
+      lifecycle_status: "payment_verified",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("booking_id", bookingId)
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json()
@@ -117,7 +146,7 @@ export async function POST(req: Request) {
     const { data: booking } = await supabase
       .from("bookings")
       .select(
-        "id, package_id, booking_code, customer_name, customer_email, pickup_date, total_amount, dp_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, customer_admin_fee_percent, customer_tax_percent, final_payment_amount, payment_type, payment_status, booking_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at, display_currency, display_subtotal_amount, customer_locale",
+        "id, package_id, booking_product_type, booking_code, customer_name, customer_email, pickup_date, total_amount, dp_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, customer_admin_fee_percent, customer_tax_percent, final_payment_amount, payment_type, payment_status, booking_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at, display_currency, display_subtotal_amount, customer_locale",
       )
       .or(`booking_code.eq.${bookingCode},id.eq.${order_id}`)
       .maybeSingle()
@@ -186,7 +215,11 @@ export async function POST(req: Request) {
 
       await markTransactionPromoRedemptionsApplied(supabase, booking.id)
 
-      if (resolvedPaymentType !== "dp") {
+      if (isFlightBooking(booking)) {
+        await markFlightPaymentVerified(supabase, booking.id)
+      }
+
+      if (resolvedPaymentType !== "dp" && !isFlightBooking(booking)) {
         const queueResult = await queueBookingToFinance({
           adminSupabase: supabase,
           bookingId: booking.id,
@@ -198,17 +231,19 @@ export async function POST(req: Request) {
         }
       }
 
-      const { data: siblingDrafts } = await supabase
-        .from("bookings")
-        .select("id, payment_status, booking_status")
-        .eq("customer_email", booking.customer_email)
-        .eq("package_id", booking.package_id)
-        .eq("pickup_date", booking.pickup_date)
-        .neq("id", booking.id)
+      if (!isFlightBooking(booking)) {
+        const { data: siblingDrafts } = await supabase
+          .from("bookings")
+          .select("id, payment_status, booking_status")
+          .eq("customer_email", booking.customer_email)
+          .eq("package_id", booking.package_id)
+          .eq("pickup_date", booking.pickup_date)
+          .neq("id", booking.id)
 
-      for (const siblingDraft of siblingDrafts || []) {
-        if (isDraftBookingDeletable(siblingDraft)) {
-          await deleteDraftBooking(supabase, siblingDraft.id)
+        for (const siblingDraft of siblingDrafts || []) {
+          if (isDraftBookingDeletable(siblingDraft)) {
+            await deleteDraftBooking(supabase, siblingDraft.id)
+          }
         }
       }
 

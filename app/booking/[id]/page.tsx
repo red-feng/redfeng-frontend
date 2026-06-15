@@ -43,6 +43,7 @@ type BookingDetailRow = {
   exchange_rate_date?: string | null
   booking_status: string | null
   payment_status: string | null
+  booking_product_type?: string | null
   package_id: string | null
   escrow_status: string | null
   merchant_arrived_at: string | null
@@ -51,6 +52,12 @@ type BookingDetailRow = {
   promo_code?: string | null
   promo_discount_amount?: number | null
   promo_snapshot?: Record<string, unknown> | null
+  user_id?: string | null
+}
+
+type FlightPaymentGateRow = {
+  lifecycle_status: string | null
+  booking_hold_expires_at: string | null
 }
 
 type BookingPromoSnapshot = {
@@ -134,6 +141,16 @@ function titleCaseStatus(value: string | null) {
 
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
+}
+
+function isFlightPaymentReadyStatus(value: string | null | undefined) {
+  return ["booking_hold_created", "pending_payment"].includes(normalizeStatus(value || null))
+}
+
+function isExpiredDateTime(value: string | null | undefined) {
+  if (!value) return false
+  const parsed = new Date(value)
+  return !Number.isNaN(parsed.getTime()) && parsed.getTime() <= Date.now()
 }
 
 function parsePromoSnapshot(value: unknown): BookingPromoSnapshot | null {
@@ -567,11 +584,19 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
   const { data: booking, error } = await adminSupabase
     .from("bookings")
-    .select("id, booking_code, customer_name, customer_email, customer_phone, pickup_date, adult_count, child_count, payment_type, dp_amount, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, customer_admin_fee_percent, customer_tax_percent, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at, promo_code, promo_discount_amount, promo_snapshot")
+    .select("id, booking_code, customer_name, customer_email, customer_phone, pickup_date, adult_count, child_count, payment_type, dp_amount, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, customer_admin_fee_percent, customer_tax_percent, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, booking_product_type, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at, promo_code, promo_discount_amount, promo_snapshot, user_id")
     .eq("id", id)
     .single<BookingDetailRow>()
 
-  if (error || !booking || !user.email || booking.customer_email !== user.email) {
+  const signedInEmail = String(user.email || "").trim().toLowerCase()
+  const bookingOwnerEmail = String(booking?.customer_email || "").trim().toLowerCase()
+  const isOwnedBooking = Boolean(
+    booking &&
+      ((booking.user_id && booking.user_id === user.id) ||
+        (!booking.user_id && signedInEmail && bookingOwnerEmail === signedInEmail)),
+  )
+
+  if (error || !booking || !isOwnedBooking) {
     return <div className="p-10">{t.bookingNotFound}</div>
   }
 
@@ -583,6 +608,21 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     .order("sequence_no", { ascending: true })
 
   const participants = (participantRows as BookingParticipantRow[] | null) || []
+  const isFlightBooking = normalizeStatus(booking.booking_product_type || null) === "flight"
+  const { data: flightPaymentGate } = isFlightBooking
+    ? await adminSupabase
+        .from("flight_booking_details")
+        .select("lifecycle_status, booking_hold_expires_at")
+        .eq("booking_id", booking.id)
+        .maybeSingle<FlightPaymentGateRow>()
+    : { data: null }
+  const canOpenFlightPayment =
+    !isFlightBooking ||
+    Boolean(
+      flightPaymentGate &&
+        isFlightPaymentReadyStatus(flightPaymentGate.lifecycle_status) &&
+        !isExpiredDateTime(flightPaymentGate.booking_hold_expires_at),
+    )
   const adultCount = Math.max(Number(booking.adult_count || 0), 0)
   const childCount = Math.max(Number(booking.child_count || 0), 0)
   const expectedParticipantCount = adultCount + childCount
@@ -601,7 +641,8 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const isRemainingPaymentOverdue =
     normalizeStatus(booking.payment_status) === "dp_paid" &&
     isFinalPaymentOverdue(booking.pickup_date || null)
-  const canStartInitialPayment = ["pending", "unpaid", ""].includes(normalizeStatus(booking.payment_status))
+  const canStartInitialPayment =
+    ["pending", "unpaid", ""].includes(normalizeStatus(booking.payment_status)) && canOpenFlightPayment
   const phase = resolveJourneyPhase(booking, locale)
   const openedFromCheckout = resolvedSearchParams.from_checkout === "1"
   const normalizedPaymentType = normalizeStatus(booking.payment_type) === "dp" ? "dp" : "full"

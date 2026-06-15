@@ -115,7 +115,7 @@ export default async function BookingParticipantsPage({
 
   const { data: booking } = await adminSupabase
     .from("bookings")
-    .select("id, booking_code, customer_name, customer_email, adult_count, child_count")
+    .select("id, booking_code, customer_name, customer_email, adult_count, child_count, user_id")
     .eq("id", id)
     .maybeSingle<{
       id: string
@@ -124,9 +124,18 @@ export default async function BookingParticipantsPage({
       customer_email: string | null
       adult_count: number | null
       child_count: number | null
+      user_id: string | null
     }>()
 
-  if (!booking || booking.customer_email !== user.email) {
+  const signedInEmail = String(user.email || "").trim().toLowerCase()
+  const bookingOwnerEmail = String(booking?.customer_email || "").trim().toLowerCase()
+  const isOwnedBooking = Boolean(
+    booking &&
+      ((booking.user_id && booking.user_id === user.id) ||
+        (!booking.user_id && signedInEmail && bookingOwnerEmail === signedInEmail)),
+  )
+
+  if (!booking || !isOwnedBooking) {
     return <div className="p-10">{t.bookingNotFound}</div>
   }
 

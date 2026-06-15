@@ -1,16 +1,4 @@
-import midtransClient from "midtrans-client"
-import { getOptionalEnv, getRequiredEnv } from "@/lib/env"
-
-function isMidtransProduction() {
-  return getOptionalEnv("MIDTRANS_IS_PRODUCTION", "true").toLowerCase() !== "false"
-}
-
-function createMidtransSnapClient() {
-  return new midtransClient.Snap({
-    isProduction: isMidtransProduction(),
-    serverKey: getRequiredEnv("MIDTRANS_SERVER_KEY"),
-  })
-}
+import { createMidtransSnapClient } from "@/lib/payments/midtrans"
 
 export async function getMidtransTransactionStatus(transactionIdOrOrderId: string) {
   const client = createMidtransSnapClient()
