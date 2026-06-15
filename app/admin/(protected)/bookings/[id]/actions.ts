@@ -381,6 +381,141 @@ function revalidateBookingDetailPaths(bookingId: string, portal: BookingPortal) 
   revalidatePath(auditLogPath)
 }
 
+function normalizeDateTimeForDb(value: string | null | undefined) {
+  if (!value) return null
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return null
+  return parsed.toISOString()
+}
+
+export async function markFlightFareRechecked(formData: FormData) {
+  const portal = resolvePortal(formData)
+  const adminActor = await ensureAdmin(portal)
+  const bookingId = String(formData.get("booking_id") || "").trim()
+  const fareReferenceId = String(formData.get("fare_reference_id") || "").trim()
+  const supplierReference = String(formData.get("supplier_reference") || "").trim().toUpperCase()
+  const bookingHoldExpiresAt = normalizeDateTimeForDb(String(formData.get("booking_hold_expires_at") || "").trim())
+  const note = String(formData.get("fare_recheck_note") || "").trim()
+
+  if (!bookingId) {
+    redirect(resolvePortalPaths(portal).bookingsPath)
+  }
+
+  const { adminSupabase, booking, flightDetail, supplierOrder } = await getFlightBookingForAction(bookingId, formData)
+  const now = new Date().toISOString()
+  const previousSupplierResponsePayload = asJsonRecord(supplierOrder?.response_payload)
+  const hasHoldReference = Boolean(supplierReference || bookingHoldExpiresAt)
+  const nextLifecycleStatus = hasHoldReference ? "booking_hold_created" : "pending_payment"
+  const nextSupplierStatus = hasHoldReference ? "confirmed" : "pending_submission"
+
+  if (String(booking.payment_status || "").toLowerCase() === "paid") {
+    backToBookingDetailWithState(bookingId, "error", "Fare recheck tidak perlu dibuka lagi karena payment sudah verified.", formData)
+  }
+
+  const { error: detailError } = await adminSupabase
+    .from("flight_booking_details")
+    .update({
+      lifecycle_status: nextLifecycleStatus,
+      fare_reference_id: fareReferenceId || flightDetail.fare_reference_id || null,
+      fare_rechecked_at: now,
+      booking_hold_expires_at: bookingHoldExpiresAt,
+      pnr_code: supplierReference || flightDetail.pnr_code || null,
+      notes: note || flightDetail.fare_reference_id ? note || null : "Fare direcheck admin dan payment gate dibuka.",
+      updated_at: now,
+    })
+    .eq("booking_id", bookingId)
+
+  if (detailError) {
+    backToBookingDetailWithState(bookingId, "error", detailError.message, formData)
+  }
+
+  const { error: bookingError } = await adminSupabase
+    .from("bookings")
+    .update({
+      booking_status: "pending_payment",
+      supplier_booking_reference: supplierReference || booking.supplier_booking_reference || null,
+      supplier_order_status: nextSupplierStatus,
+    })
+    .eq("id", bookingId)
+
+  if (bookingError) {
+    backToBookingDetailWithState(bookingId, "error", bookingError.message, formData)
+  }
+
+  if (supplierOrder?.id) {
+    const { error: supplierError } = await adminSupabase
+      .from("supplier_orders")
+      .update({
+        supplier_reference: supplierReference || supplierOrder.supplier_reference || null,
+        supplier_status: nextSupplierStatus,
+        confirmed_at: hasHoldReference ? now : null,
+        response_payload: {
+          ...previousSupplierResponsePayload,
+          fareRecheck: {
+            mode: "admin_gate",
+            recheckedAt: now,
+            fareReferenceId: fareReferenceId || flightDetail.fare_reference_id || null,
+            supplierReference: supplierReference || null,
+            bookingHoldExpiresAt,
+            lifecycleStatus: nextLifecycleStatus,
+            note: note || null,
+          },
+        },
+        last_error: null,
+        updated_by: adminActor.user.id,
+      })
+      .eq("id", supplierOrder.id)
+
+    if (supplierError) {
+      backToBookingDetailWithState(bookingId, "error", supplierError.message, formData)
+    }
+  }
+
+  await insertSupplierOrderEvent({
+    supplierOrderId: supplierOrder?.id,
+    actorId: adminActor.user.id,
+    actorRole: adminActor.role,
+    eventType: "flight_fare_rechecked",
+    summary: hasHoldReference
+      ? "Fare Pesawat direcheck dan booking/hold supplier dicatat."
+      : "Fare Pesawat direcheck dan payment gate dibuka.",
+    metadata: {
+      bookingId,
+      lifecycleStatus: nextLifecycleStatus,
+      supplierStatus: nextSupplierStatus,
+      fareReferenceId: fareReferenceId || flightDetail.fare_reference_id || null,
+      supplierReference: supplierReference || null,
+      bookingHoldExpiresAt,
+    },
+  })
+
+  await createAdminAuditLog({
+    actorId: adminActor.user.id,
+    actorRole: adminActor.role,
+    targetType: "booking",
+    targetId: bookingId,
+    action: "flight_fare_rechecked",
+    summary: `Fare Pesawat ${formatBookingCode(booking.booking_code, booking.id)} direcheck admin`,
+    metadata: {
+      productType: "flight",
+      lifecycleStatus: nextLifecycleStatus,
+      supplierStatus: nextSupplierStatus,
+      fareReferenceId: fareReferenceId || flightDetail.fare_reference_id || null,
+      supplierReference: supplierReference || null,
+    },
+  })
+
+  revalidateBookingDetailPaths(bookingId, portal)
+  backToBookingDetailWithState(
+    bookingId,
+    "success",
+    hasHoldReference
+      ? "Fare recheck dan booking/hold supplier tercatat. Payment dapat dibuka ke customer."
+      : "Fare recheck tercatat. Payment dapat dibuka ke customer.",
+    formData,
+  )
+}
+
 export async function verifyFlightPayment(formData: FormData) {
   const portal = resolvePortal(formData)
   const adminActor = await ensureAdmin(portal)

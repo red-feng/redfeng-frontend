@@ -22,6 +22,7 @@ import { getEscrowStatusTone, getJourneyStageTone, getPaymentStatusTone, normali
 import { handoffBookingToFinance } from "../actions"
 import {
   addBookingAdminNote,
+  markFlightFareRechecked,
   markFlightIssueFailed,
   markFlightTicketIssued,
   reopenBookingAdminNote,
@@ -679,7 +680,23 @@ export default async function AdminBookingDetailPage({
   const flightIssueStatus = normalizeFlightIssueStatus(flightDetail?.issue_status)
   const isFlightBooking = booking.booking_product_type === "flight" && Boolean(flightDetail)
   const isFlightPaymentVerified = normalizeStatus(booking.payment_status) === "paid"
-  const canVerifyFlightPayment = canExecuteAdminOps && isFlightBooking && !isFlightPaymentVerified
+  const canMarkFlightFareRechecked =
+    canExecuteAdminOps &&
+    isFlightBooking &&
+    !isFlightPaymentVerified &&
+    flightLifecycleStatus !== "booking_hold_created" &&
+    flightLifecycleStatus !== "pending_payment" &&
+    flightLifecycleStatus !== "payment_uploaded" &&
+    flightLifecycleStatus !== "payment_verified" &&
+    flightLifecycleStatus !== "ticketing" &&
+    flightLifecycleStatus !== "issued"
+  const canVerifyFlightPayment =
+    canExecuteAdminOps &&
+    isFlightBooking &&
+    !isFlightPaymentVerified &&
+    (flightLifecycleStatus === "pending_payment" ||
+      flightLifecycleStatus === "booking_hold_created" ||
+      flightLifecycleStatus === "payment_uploaded")
   const canRequestFlightIssue =
     canExecuteAdminOps &&
     isFlightBooking &&
@@ -1062,7 +1079,7 @@ export default async function AdminBookingDetailPage({
                 <div>
                   <p className="text-sm font-semibold text-slate-900">Admin flight gates</p>
                   <p className="mt-1 text-xs leading-5 text-slate-500">
-                    Jalankan berurutan: verify payment, request ticket issue, lalu tandai issued atau issue failed berdasarkan hasil supplier.
+                    Jalankan berurutan: recheck fare/open payment, verify payment, request ticket issue, lalu tandai issued atau issue failed berdasarkan hasil supplier.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -1087,6 +1104,44 @@ export default async function AdminBookingDetailPage({
                   ) : null}
                 </div>
               </div>
+
+              {canMarkFlightFareRechecked ? (
+                <form action={markFlightFareRechecked} className="mt-4 rounded-[18px] border border-sky-100 bg-sky-50 p-3">
+                  <input type="hidden" name="portal" value={portal} />
+                  <input type="hidden" name="booking_id" value={booking.id} />
+                  <div className="grid gap-2 lg:grid-cols-3">
+                    <input
+                      name="fare_reference_id"
+                      placeholder="Fare reference / access code"
+                      defaultValue={flightDetail.fare_reference_id || ""}
+                      className="rounded-[12px] border border-sky-200 bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-sky-300"
+                    />
+                    <input
+                      name="supplier_reference"
+                      placeholder="PNR / supplier reference"
+                      defaultValue={flightDetail.pnr_code || supplierOrder?.supplier_reference || ""}
+                      className="rounded-[12px] border border-sky-200 bg-white px-3 py-2 text-xs uppercase outline-none focus:ring-2 focus:ring-sky-300"
+                    />
+                    <input
+                      name="booking_hold_expires_at"
+                      type="datetime-local"
+                      className="rounded-[12px] border border-sky-200 bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-sky-300"
+                    />
+                  </div>
+                  <textarea
+                    name="fare_recheck_note"
+                    rows={2}
+                    placeholder="Catatan hasil recheck fare / instruksi payment untuk customer"
+                    className="mt-2 w-full rounded-[12px] border border-sky-200 bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-sky-300"
+                  />
+                  <button className="mt-3 rounded-[14px] bg-sky-700 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-sky-800">
+                    Recheck Fare & Buka Payment
+                  </button>
+                  <p className="mt-2 text-xs leading-5 text-sky-700">
+                    Jika PNR atau hold expiry diisi, booking dicatat sebagai hold supplier. Jika kosong, payment gate tetap dibuka setelah fare recheck.
+                  </p>
+                </form>
+              ) : null}
 
               {canMarkFlightIssued || canMarkFlightIssueFailed ? (
                 <div className="mt-4 grid gap-3 lg:grid-cols-2">
