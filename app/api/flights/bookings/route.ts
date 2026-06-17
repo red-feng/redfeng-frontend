@@ -16,6 +16,10 @@ function asString(value: unknown) {
   return String(value || "").trim()
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null
+}
+
 function asPositiveInteger(value: unknown, fallback = 1) {
   const parsed = Number.parseInt(String(value || ""), 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
@@ -88,6 +92,46 @@ function maybeArrivalDateTime(dateValue: unknown, departureTime: unknown, arriva
   return arrivalDate.toISOString()
 }
 
+function calculateAgeFromBirthDate(value: unknown) {
+  const birthDate = asString(value)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return null
+
+  const parsed = new Date(`${birthDate}T00:00:00+07:00`)
+  if (Number.isNaN(parsed.getTime()) || parsed.getTime() > Date.now()) return null
+
+  const today = new Date()
+  let age = today.getFullYear() - parsed.getFullYear()
+  const monthDiff = today.getMonth() - parsed.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < parsed.getDate())) {
+    age -= 1
+  }
+
+  return Math.max(age, 0)
+}
+
+function parsePassengerDetails(value: unknown, expectedAdults: number) {
+  if (!Array.isArray(value)) return []
+
+  return value.slice(0, expectedAdults).map((item, index) => {
+    const passenger = asRecord(item) || {}
+    const firstName = asString(passenger.first_name ?? passenger.firstName)
+    const lastName = asString(passenger.last_name ?? passenger.lastName)
+    const fullName = [firstName, lastName].filter(Boolean).join(" ").trim()
+    const identityNumber = asString(passenger.identity_number ?? passenger.identityNumber)
+    const nationality = asString(passenger.nationality) || "Indonesia"
+    const age = calculateAgeFromBirthDate(passenger.birth_date ?? passenger.birthDate)
+
+    return {
+      participant_type: "adult" as const,
+      sequence_no: index + 1,
+      full_name: fullName,
+      identity_number: identityNumber,
+      nationality,
+      age,
+    }
+  })
+}
+
 export async function POST(req: Request) {
   try {
     const authSupabase = await createServerClient("customer")
@@ -112,6 +156,7 @@ export async function POST(req: Request) {
     const passengerMix = parsePassengerMix(body.passengers)
     const passengerCount = passengerMix.adults + passengerMix.children
     const fareAmount = asMoney(body.price)
+    const passengerDetails = parsePassengerDetails(body.passenger_details, passengerMix.adults)
 
     if (!customerName || !customerEmail || !customerPhone) {
       return NextResponse.json({ error: "Nama, email, dan nomor telepon wajib diisi." }, { status: 400 })
@@ -123,6 +168,16 @@ export async function POST(req: Request) {
 
     if (fareAmount <= 0) {
       return NextResponse.json({ error: "Harga penerbangan belum valid untuk dibuat booking." }, { status: 400 })
+    }
+
+    if (Array.isArray(body.passenger_details)) {
+      const incompletePassenger = passengerDetails.find(
+        (passenger) => !passenger.full_name || !passenger.identity_number || !passenger.nationality || passenger.age === null,
+      )
+
+      if (passengerDetails.length !== passengerMix.adults || incompletePassenger) {
+        return NextResponse.json({ error: "Data penumpang belum lengkap untuk checkout pesawat." }, { status: 400 })
+      }
     }
 
     const supabase = createAdminClient()
@@ -209,6 +264,13 @@ export async function POST(req: Request) {
       duration: asString(body.duration),
       transit: asString(body.transit),
       passengerManifest: passengerManifest || null,
+      passengerDetails: passengerDetails.map((passenger) => ({
+        sequenceNo: passenger.sequence_no,
+        fullName: passenger.full_name,
+        identityNumber: passenger.identity_number,
+        nationality: passenger.nationality,
+        age: passenger.age,
+      })),
       passengerMix,
     }
 
@@ -267,6 +329,29 @@ export async function POST(req: Request) {
       await supabase.from("supplier_orders").delete().eq("id", supplierOrder.id)
       await supabase.from("bookings").delete().eq("id", booking.id)
       return NextResponse.json({ error: detailError.message || "Gagal menyimpan detail penerbangan." }, { status: 500 })
+    }
+
+    if (passengerDetails.length > 0) {
+      const { error: participantError } = await supabase.from("booking_participants").insert(
+        passengerDetails.map((passenger) => ({
+          booking_id: booking.id,
+          participant_type: passenger.participant_type,
+          sequence_no: passenger.sequence_no,
+          full_name: passenger.full_name,
+          identity_number: passenger.identity_number,
+          nationality: passenger.nationality,
+          age: passenger.age ?? 0,
+        })),
+      )
+
+      if (participantError) {
+        await supabase.from("supplier_orders").delete().eq("id", supplierOrder.id)
+        await supabase.from("bookings").delete().eq("id", booking.id)
+        return NextResponse.json(
+          { error: participantError.message || "Gagal menyimpan data penumpang pesawat." },
+          { status: 500 },
+        )
+      }
     }
 
     return NextResponse.json({ booking_id: booking.id, booking_code: booking.booking_code })

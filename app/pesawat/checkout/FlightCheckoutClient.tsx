@@ -469,6 +469,16 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
           customer_email: email,
           customer_phone: normalizePhone(phone),
           passenger_manifest: manifest,
+          passenger_details: passengers.map((passenger) => ({
+            title: passenger.title,
+            first_name: passenger.firstName,
+            last_name: passenger.lastName,
+            birth_date: passenger.birthDate,
+            nationality: passenger.nationality,
+            identity_type: passenger.identityType,
+            identity_number: passenger.identityNumber,
+            type: "adult",
+          })),
         }),
       })
       const payload = await response.json()
