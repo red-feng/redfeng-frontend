@@ -230,6 +230,14 @@ export async function POST(req: Request) {
               escrow_status: "partial_hold",
             }
           : (() => {
+              if (isFlightBooking(booking)) {
+                return {
+                  payment_status: "paid",
+                  booking_status: "payment_verified",
+                  escrow_status: "payment_verified",
+                }
+              }
+
               if (booking.merchant_picked_up_at) {
                 return {
                   payment_status: "paid",

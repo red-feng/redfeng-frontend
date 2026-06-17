@@ -36,7 +36,7 @@ function normalizeStatus(value: string | null | undefined) {
 }
 
 function isFlightPaymentReadyStatus(value: string | null | undefined) {
-  return ["booking_hold_created", "pending_payment"].includes(normalizeStatus(value))
+  return normalizeStatus(value) === "booking_hold_created"
 }
 
 function isExpiredDateTime(value: string | null | undefined) {

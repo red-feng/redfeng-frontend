@@ -405,11 +405,15 @@ export async function markFlightFareRechecked(formData: FormData) {
   const now = new Date().toISOString()
   const previousSupplierResponsePayload = asJsonRecord(supplierOrder?.response_payload)
   const hasHoldReference = Boolean(supplierReference || bookingHoldExpiresAt)
-  const nextLifecycleStatus = hasHoldReference ? "booking_hold_created" : "pending_payment"
-  const nextSupplierStatus = hasHoldReference ? "confirmed" : "pending_submission"
+  const nextLifecycleStatus = "booking_hold_created"
+  const nextSupplierStatus = "confirmed"
 
   if (String(booking.payment_status || "").toLowerCase() === "paid") {
     backToBookingDetailWithState(bookingId, "error", "Fare recheck tidak perlu dibuka lagi karena payment sudah verified.", formData)
+  }
+
+  if (!hasHoldReference) {
+    backToBookingDetailWithState(bookingId, "error", "Isi PNR/supplier reference atau batas hold sebelum membuka payment Pesawat.", formData)
   }
 
   const { error: detailError } = await adminSupabase
