@@ -40,6 +40,15 @@ type PassengerForm = {
   identityNumber: string
 }
 
+type CheckoutDraft = {
+  contactFirstName: string
+  contactLastName: string
+  email: string
+  phone: string
+  sendEticket: boolean
+  passengers: PassengerForm[]
+}
+
 function createPassengerForm(index: number): PassengerForm {
   return {
     id: `passenger-${index}`,
@@ -51,6 +60,26 @@ function createPassengerForm(index: number): PassengerForm {
     identityType: "KTP",
     identityNumber: "",
   }
+}
+
+function isPassengerForm(value: unknown): value is PassengerForm {
+  if (!value || typeof value !== "object") return false
+  const passenger = value as Partial<PassengerForm>
+  return typeof passenger.id === "string"
+}
+
+function sanitizePassengerList(value: unknown, fallbackCount: number) {
+  if (!Array.isArray(value)) {
+    return Array.from({ length: fallbackCount }, (_, index) => createPassengerForm(index + 1))
+  }
+
+  const passengers = value.filter(isPassengerForm).map((passenger, index) => ({
+    ...createPassengerForm(index + 1),
+    ...passenger,
+    id: passenger.id || `passenger-${index + 1}`,
+  }))
+
+  return passengers.length ? passengers : Array.from({ length: fallbackCount }, (_, index) => createPassengerForm(index + 1))
 }
 
 function formatIdr(value: number) {
@@ -89,6 +118,31 @@ function normalizePhone(value: string) {
   if (trimmed.startsWith("+")) return trimmed.replace(/[^\d+]/g, "")
   const digits = trimmed.replace(/\D/g, "")
   return `+62${digits.replace(/^0+/, "")}`
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
+}
+
+function isValidPhone(value: string) {
+  return normalizePhone(value).replace(/\D/g, "").length >= 10
+}
+
+function isValidIdentity(passenger: PassengerForm) {
+  const digits = passenger.identityNumber.replace(/\D/g, "")
+  if (!passenger.identityNumber.trim()) return false
+  if (passenger.identityType.toLowerCase() === "ktp") return digits.length >= 16
+  return passenger.identityNumber.trim().length >= 6
+}
+
+function isPassengerComplete(passenger: PassengerForm) {
+  return Boolean(
+    passenger.firstName.trim() &&
+      passenger.lastName.trim() &&
+      passenger.birthDate &&
+      passenger.nationality.trim() &&
+      isValidIdentity(passenger),
+  )
 }
 
 function Icon({ name, className = "h-5 w-5" }: { name: IconName; className?: string }) {
@@ -214,11 +268,17 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
   const supabase = useMemo(() => createClient(), [])
   const currentPath = `${pathname}?${searchParams.toString()}`
   const initialPassengerCount = getPassengerCount(data.passengers)
+  const draftStorageKey = useMemo(
+    () => `redfeng-flight-checkout:${data.offerId || data.fareReferenceId || data.title || currentPath}`,
+    [currentPath, data.fareReferenceId, data.offerId, data.title],
+  )
 
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [checkingSession, setCheckingSession] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
+  const [submitted, setSubmitted] = useState(false)
+  const [draftReady, setDraftReady] = useState(false)
   const [contactFirstName, setContactFirstName] = useState("")
   const [contactLastName, setContactLastName] = useState("")
   const [email, setEmail] = useState("")
@@ -227,11 +287,24 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
   const [passengers, setPassengers] = useState<PassengerForm[]>(() =>
     Array.from({ length: initialPassengerCount }, (_, index) => createPassengerForm(index + 1)),
   )
+  const [openPassengerId, setOpenPassengerId] = useState(() => `passenger-1`)
   const passengerCount = passengers.length || 1
   const subtotal = data.price * passengerCount
   const taxAndFees = Math.round(subtotal * 0.1)
   const totalEstimate = subtotal + taxAndFees
   const passengerSummary = formatPassengerSummary(passengerCount)
+  const completePassengerCount = passengers.filter(isPassengerComplete).length
+  const manifestIsComplete = completePassengerCount === passengerCount
+  const contactName = [contactFirstName, contactLastName].filter(Boolean).join(" ").trim()
+  const contactNameError = submitted && !contactFirstName.trim() ? "Nama depan wajib diisi." : ""
+  const emailError =
+    submitted && !email.trim() ? "Email wajib diisi." : email.trim() && !isValidEmail(email) ? "Format email belum valid." : ""
+  const phoneError =
+    submitted && !phone.trim()
+      ? "Nomor telepon wajib diisi."
+      : phone.trim() && !isValidPhone(phone)
+        ? "Nomor telepon belum valid."
+        : ""
 
   useEffect(() => {
     let mounted = true
@@ -254,6 +327,44 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
     }
   }, [supabase])
 
+  useEffect(() => {
+    try {
+      const rawDraft = window.localStorage.getItem(draftStorageKey)
+      if (!rawDraft) {
+        setDraftReady(true)
+        return
+      }
+
+      const draft = JSON.parse(rawDraft) as Partial<CheckoutDraft>
+      setContactFirstName(typeof draft.contactFirstName === "string" ? draft.contactFirstName : "")
+      setContactLastName(typeof draft.contactLastName === "string" ? draft.contactLastName : "")
+      setEmail(typeof draft.email === "string" ? draft.email : "")
+      setPhone(typeof draft.phone === "string" ? draft.phone : "")
+      setSendEticket(typeof draft.sendEticket === "boolean" ? draft.sendEticket : true)
+      setPassengers(sanitizePassengerList(draft.passengers, initialPassengerCount))
+      setOpenPassengerId(sanitizePassengerList(draft.passengers, initialPassengerCount)[0]?.id || "passenger-1")
+    } catch {
+      window.localStorage.removeItem(draftStorageKey)
+    } finally {
+      setDraftReady(true)
+    }
+  }, [draftStorageKey, initialPassengerCount])
+
+  useEffect(() => {
+    if (!draftReady) return
+
+    const draft: CheckoutDraft = {
+      contactFirstName,
+      contactLastName,
+      email,
+      phone,
+      sendEticket,
+      passengers,
+    }
+
+    window.localStorage.setItem(draftStorageKey, JSON.stringify(draft))
+  }, [contactFirstName, contactLastName, draftReady, draftStorageKey, email, passengers, phone, sendEticket])
+
   function updatePassenger(id: string, patch: Partial<PassengerForm>) {
     setPassengers((currentPassengers) =>
       currentPassengers.map((passenger) => (passenger.id === id ? { ...passenger, ...patch } : passenger)),
@@ -261,16 +372,17 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
   }
 
   function addPassenger() {
-    setPassengers((currentPassengers) => [
-      ...currentPassengers,
-      createPassengerForm(currentPassengers.length + 1 + Date.now()),
-    ])
+    const nextPassenger = createPassengerForm(Date.now())
+    setPassengers((currentPassengers) => [...currentPassengers, nextPassenger])
+    setOpenPassengerId(nextPassenger.id)
   }
 
   function removePassenger(id: string) {
     setPassengers((currentPassengers) => {
       if (currentPassengers.length <= 1) return currentPassengers
-      return currentPassengers.filter((passenger) => passenger.id !== id)
+      const nextPassengers = currentPassengers.filter((passenger) => passenger.id !== id)
+      if (openPassengerId === id) setOpenPassengerId(nextPassengers[0]?.id || "passenger-1")
+      return nextPassengers
     })
   }
 
@@ -305,26 +417,25 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
 
   async function handleSubmit() {
     setError("")
+    setSubmitted(true)
 
     if (!isAuthenticated) {
       router.push(`/login?next=${encodeURIComponent(currentPath)}`)
       return
     }
 
-    const contactName = [contactFirstName, contactLastName].filter(Boolean).join(" ").trim()
     const manifest = buildPassengerManifest()
 
-    if (!contactFirstName.trim() || !email.trim() || !phone.trim()) {
-      setError("Nama depan, email, dan nomor telepon wajib diisi.")
+    if (!contactFirstName.trim() || !isValidEmail(email) || !isValidPhone(phone)) {
+      setError("Lengkapi data kontak dengan nama depan, email valid, dan nomor telepon aktif.")
       return
     }
 
-    const incompletePassengerIndex = passengers.findIndex(
-      (passenger) => !passenger.firstName.trim() || !passenger.lastName.trim(),
-    )
+    const incompletePassengerIndex = passengers.findIndex((passenger) => !isPassengerComplete(passenger))
 
     if (incompletePassengerIndex >= 0) {
-      setError(`Nama depan dan nama belakang Penumpang Dewasa ${incompletePassengerIndex + 1} wajib diisi.`)
+      setOpenPassengerId(passengers[incompletePassengerIndex]?.id || passengers[0]?.id || "passenger-1")
+      setError(`Lengkapi data Penumpang Dewasa ${incompletePassengerIndex + 1} sebelum mengajukan booking.`)
       return
     }
 
@@ -368,6 +479,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
         return
       }
 
+      window.localStorage.removeItem(draftStorageKey)
       router.push(`/booking/${payload.booking_id}`)
     } catch {
       setError("Server belum bisa membuat booking pesawat.")
@@ -419,8 +531,13 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                     value={contactFirstName}
                     onChange={(event) => setContactFirstName(event.target.value)}
                     placeholder="Contoh: Budi"
-                    className="h-12 w-full rounded-lg border border-orange-200 bg-white px-4 text-sm outline-none transition focus:border-[#ff4b00] focus:ring-2 focus:ring-orange-100"
+                    className={`h-12 w-full rounded-lg border bg-white px-4 text-sm outline-none transition focus:ring-2 ${
+                      contactNameError
+                        ? "border-red-300 focus:border-red-500 focus:ring-red-100"
+                        : "border-orange-200 focus:border-[#ff4b00] focus:ring-orange-100"
+                    }`}
                   />
+                  {contactNameError ? <p className="mt-1 text-xs font-semibold text-red-600">{contactNameError}</p> : null}
                 </label>
                 <label>
                   <FieldLabel>Nama belakang</FieldLabel>
@@ -433,7 +550,13 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                 </label>
                 <label>
                   <FieldLabel>Nomor telepon</FieldLabel>
-                  <div className="flex h-12 overflow-hidden rounded-lg border border-orange-200 bg-white focus-within:border-[#ff4b00] focus-within:ring-2 focus-within:ring-orange-100">
+                  <div
+                    className={`flex h-12 overflow-hidden rounded-lg border bg-white focus-within:ring-2 ${
+                      phoneError
+                        ? "border-red-300 focus-within:border-red-500 focus-within:ring-red-100"
+                        : "border-orange-200 focus-within:border-[#ff4b00] focus-within:ring-orange-100"
+                    }`}
+                  >
                     <div className="flex items-center gap-2 border-r border-orange-100 px-3 text-sm font-semibold text-neutral-700">
                       <span className="h-3 w-5 rounded-sm bg-gradient-to-b from-red-500 from-50% to-white to-50%" />
                       +62
@@ -445,6 +568,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                       className="min-w-0 flex-1 px-4 text-sm outline-none"
                     />
                   </div>
+                  {phoneError ? <p className="mt-1 text-xs font-semibold text-red-600">{phoneError}</p> : null}
                 </label>
                 <label>
                   <FieldLabel>Email</FieldLabel>
@@ -453,8 +577,13 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                     onChange={(event) => setEmail(event.target.value)}
                     type="email"
                     placeholder="Contoh: budisantoso@email.com"
-                    className="h-12 w-full rounded-lg border border-orange-200 bg-white px-4 text-sm outline-none transition focus:border-[#ff4b00] focus:ring-2 focus:ring-orange-100"
+                    className={`h-12 w-full rounded-lg border bg-white px-4 text-sm outline-none transition focus:ring-2 ${
+                      emailError
+                        ? "border-red-300 focus:border-red-500 focus:ring-red-100"
+                        : "border-orange-200 focus:border-[#ff4b00] focus:ring-orange-100"
+                    }`}
                   />
+                  {emailError ? <p className="mt-1 text-xs font-semibold text-red-600">{emailError}</p> : null}
                 </label>
               </div>
               <label className="mt-4 flex items-center gap-3 text-sm text-neutral-600">
@@ -466,6 +595,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                 />
                 E-ticket akan dikirim ke email ini
               </label>
+              <p className="mt-3 text-xs font-semibold text-green-700">Draft tersimpan otomatis di perangkat ini.</p>
             </div>
           </div>
 
@@ -480,111 +610,164 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
               </div>
             </div>
 
-            <div className="mt-5 space-y-5">
-              {passengers.map((passenger, index) => (
-                <div key={passenger.id} className="rounded-lg border border-orange-100 bg-white">
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-t-lg bg-orange-50 px-4 py-3">
-                    <p className="flex items-center gap-3 text-sm font-bold text-neutral-900">
-                      <Icon name="user" className="h-4 w-4 text-[#ff4b00]" />
-                      Penumpang Dewasa {index + 1}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => copyContactToPassenger(passenger.id)}
-                        className="rounded-lg border border-[#ff4b00] bg-white px-3 py-2 text-xs font-bold text-[#ff4b00] transition hover:bg-orange-50"
-                      >
-                        Salin dari Kontak
-                      </button>
-                      {passengers.length > 1 ? (
-                        <button
-                          type="button"
-                          onClick={() => removePassenger(passenger.id)}
-                          className="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50"
+            <div className="mt-5 space-y-4">
+              {passengers.map((passenger, index) => {
+                const isOpen = openPassengerId === passenger.id
+                const complete = isPassengerComplete(passenger)
+                const firstNameError = submitted && !passenger.firstName.trim() ? "Nama depan wajib diisi." : ""
+                const lastNameError = submitted && !passenger.lastName.trim() ? "Nama belakang wajib diisi." : ""
+                const birthDateError = submitted && !passenger.birthDate ? "Tanggal lahir wajib diisi." : ""
+                const identityError =
+                  submitted && !passenger.identityNumber.trim()
+                    ? "Nomor identitas wajib diisi."
+                    : passenger.identityNumber.trim() && !isValidIdentity(passenger)
+                      ? "Nomor identitas belum valid."
+                      : ""
+
+                return (
+                  <div key={passenger.id} className="overflow-hidden rounded-lg border border-orange-100 bg-white">
+                    <button
+                      type="button"
+                      onClick={() => setOpenPassengerId(isOpen ? "" : passenger.id)}
+                      className="flex w-full flex-wrap items-center justify-between gap-3 bg-orange-50 px-4 py-3 text-left"
+                      aria-expanded={isOpen}
+                    >
+                      <span className="flex min-w-0 items-center gap-3 text-sm font-bold text-neutral-900">
+                        <Icon name="user" className="h-4 w-4 shrink-0 text-[#ff4b00]" />
+                        <span>Penumpang Dewasa {index + 1}</span>
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+                            complete ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                          }`}
                         >
-                          Hapus
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <div className="grid gap-4 md:grid-cols-[130px_1fr_1fr]">
-                      <label>
-                        <FieldLabel>Gelar</FieldLabel>
-                        <select
-                          value={passenger.title}
-                          onChange={(event) => updatePassenger(passenger.id, { title: event.target.value })}
-                          className="h-12 w-full rounded-lg border border-orange-200 bg-white px-3 text-sm outline-none focus:border-[#ff4b00] focus:ring-2 focus:ring-orange-100"
-                        >
-                          <option>MR</option>
-                          <option>MRS</option>
-                          <option>MS</option>
-                        </select>
-                      </label>
-                      <label>
-                        <FieldLabel>Nama depan sesuai identitas</FieldLabel>
-                        <input
-                          value={passenger.firstName}
-                          onChange={(event) => updatePassenger(passenger.id, { firstName: event.target.value })}
-                          placeholder="Contoh: Budi"
-                          className="h-12 w-full rounded-lg border border-orange-200 bg-white px-4 text-sm outline-none focus:border-[#ff4b00] focus:ring-2 focus:ring-orange-100"
-                        />
-                      </label>
-                      <label>
-                        <FieldLabel>Nama belakang sesuai identitas</FieldLabel>
-                        <input
-                          value={passenger.lastName}
-                          onChange={(event) => updatePassenger(passenger.id, { lastName: event.target.value })}
-                          placeholder="Contoh: Santoso"
-                          className="h-12 w-full rounded-lg border border-orange-200 bg-white px-4 text-sm outline-none focus:border-[#ff4b00] focus:ring-2 focus:ring-orange-100"
-                        />
-                      </label>
-                    </div>
-                    <div className="mt-4 grid gap-4 md:grid-cols-[1fr_1fr_1.6fr]">
-                      <label>
-                        <FieldLabel>Tanggal lahir</FieldLabel>
-                        <input
-                          value={passenger.birthDate}
-                          onChange={(event) => updatePassenger(passenger.id, { birthDate: event.target.value })}
-                          type="date"
-                          className="h-12 w-full rounded-lg border border-orange-200 bg-white px-4 text-sm outline-none focus:border-[#ff4b00] focus:ring-2 focus:ring-orange-100"
-                        />
-                      </label>
-                      <label>
-                        <FieldLabel>Kewarganegaraan</FieldLabel>
-                        <select
-                          value={passenger.nationality}
-                          onChange={(event) => updatePassenger(passenger.id, { nationality: event.target.value })}
-                          className="h-12 w-full rounded-lg border border-orange-200 bg-white px-3 text-sm outline-none focus:border-[#ff4b00] focus:ring-2 focus:ring-orange-100"
-                        >
-                          <option>Indonesia</option>
-                          <option>Singapore</option>
-                          <option>Malaysia</option>
-                        </select>
-                      </label>
-                      <label>
-                        <FieldLabel>No. identitas</FieldLabel>
-                        <div className="flex h-12 overflow-hidden rounded-lg border border-orange-200 bg-white focus-within:border-[#ff4b00] focus-within:ring-2 focus:ring-orange-100">
-                          <select
-                            value={passenger.identityType}
-                            onChange={(event) => updatePassenger(passenger.id, { identityType: event.target.value })}
-                            className="border-r border-orange-100 bg-white px-3 text-sm outline-none"
+                          {complete ? "Lengkap" : "Belum lengkap"}
+                        </span>
+                      </span>
+                      <span className="text-sm font-bold text-[#ff4b00]" aria-hidden="true">
+                        {isOpen ? "^" : "v"}
+                      </span>
+                    </button>
+                    {isOpen ? (
+                      <div className="p-4">
+                        <div className="flex flex-wrap justify-end gap-2 pb-4">
+                          <button
+                            type="button"
+                            onClick={() => copyContactToPassenger(passenger.id)}
+                            className="rounded-lg border border-[#ff4b00] bg-white px-3 py-2 text-xs font-bold text-[#ff4b00] transition hover:bg-orange-50"
                           >
-                            <option>KTP</option>
-                            <option>Paspor</option>
-                          </select>
-                          <input
-                            value={passenger.identityNumber}
-                            onChange={(event) => updatePassenger(passenger.id, { identityNumber: event.target.value })}
-                            placeholder="Contoh: 3171234567890001"
-                            className="min-w-0 flex-1 px-4 text-sm outline-none"
-                          />
+                            Salin dari Kontak
+                          </button>
+                          {passengers.length > 1 ? (
+                            <button
+                              type="button"
+                              onClick={() => removePassenger(passenger.id)}
+                              className="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50"
+                            >
+                              Hapus
+                            </button>
+                          ) : null}
                         </div>
-                      </label>
-                    </div>
+                        <div className="grid gap-4 md:grid-cols-[130px_1fr_1fr]">
+                          <label>
+                            <FieldLabel>Gelar</FieldLabel>
+                            <select
+                              value={passenger.title}
+                              onChange={(event) => updatePassenger(passenger.id, { title: event.target.value })}
+                              className="h-12 w-full rounded-lg border border-orange-200 bg-white px-3 text-sm outline-none focus:border-[#ff4b00] focus:ring-2 focus:ring-orange-100"
+                            >
+                              <option>MR</option>
+                              <option>MRS</option>
+                              <option>MS</option>
+                            </select>
+                          </label>
+                          <label>
+                            <FieldLabel>Nama depan sesuai identitas</FieldLabel>
+                            <input
+                              value={passenger.firstName}
+                              onChange={(event) => updatePassenger(passenger.id, { firstName: event.target.value })}
+                              placeholder="Contoh: Budi"
+                              className={`h-12 w-full rounded-lg border bg-white px-4 text-sm outline-none focus:ring-2 ${
+                                firstNameError
+                                  ? "border-red-300 focus:border-red-500 focus:ring-red-100"
+                                  : "border-orange-200 focus:border-[#ff4b00] focus:ring-orange-100"
+                              }`}
+                            />
+                            {firstNameError ? <p className="mt-1 text-xs font-semibold text-red-600">{firstNameError}</p> : null}
+                          </label>
+                          <label>
+                            <FieldLabel>Nama belakang sesuai identitas</FieldLabel>
+                            <input
+                              value={passenger.lastName}
+                              onChange={(event) => updatePassenger(passenger.id, { lastName: event.target.value })}
+                              placeholder="Contoh: Santoso"
+                              className={`h-12 w-full rounded-lg border bg-white px-4 text-sm outline-none focus:ring-2 ${
+                                lastNameError
+                                  ? "border-red-300 focus:border-red-500 focus:ring-red-100"
+                                  : "border-orange-200 focus:border-[#ff4b00] focus:ring-orange-100"
+                              }`}
+                            />
+                            {lastNameError ? <p className="mt-1 text-xs font-semibold text-red-600">{lastNameError}</p> : null}
+                          </label>
+                        </div>
+                        <div className="mt-4 grid gap-4 md:grid-cols-[1fr_1fr_1.6fr]">
+                          <label>
+                            <FieldLabel>Tanggal lahir</FieldLabel>
+                            <input
+                              value={passenger.birthDate}
+                              onChange={(event) => updatePassenger(passenger.id, { birthDate: event.target.value })}
+                              type="date"
+                              className={`h-12 w-full rounded-lg border bg-white px-4 text-sm outline-none focus:ring-2 ${
+                                birthDateError
+                                  ? "border-red-300 focus:border-red-500 focus:ring-red-100"
+                                  : "border-orange-200 focus:border-[#ff4b00] focus:ring-orange-100"
+                              }`}
+                            />
+                            {birthDateError ? <p className="mt-1 text-xs font-semibold text-red-600">{birthDateError}</p> : null}
+                          </label>
+                          <label>
+                            <FieldLabel>Kewarganegaraan</FieldLabel>
+                            <select
+                              value={passenger.nationality}
+                              onChange={(event) => updatePassenger(passenger.id, { nationality: event.target.value })}
+                              className="h-12 w-full rounded-lg border border-orange-200 bg-white px-3 text-sm outline-none focus:border-[#ff4b00] focus:ring-2 focus:ring-orange-100"
+                            >
+                              <option>Indonesia</option>
+                              <option>Singapore</option>
+                              <option>Malaysia</option>
+                            </select>
+                          </label>
+                          <label>
+                            <FieldLabel>No. identitas</FieldLabel>
+                            <div
+                              className={`flex h-12 overflow-hidden rounded-lg border bg-white focus-within:ring-2 ${
+                                identityError
+                                  ? "border-red-300 focus-within:border-red-500 focus-within:ring-red-100"
+                                  : "border-orange-200 focus-within:border-[#ff4b00] focus-within:ring-orange-100"
+                              }`}
+                            >
+                              <select
+                                value={passenger.identityType}
+                                onChange={(event) => updatePassenger(passenger.id, { identityType: event.target.value })}
+                                className="border-r border-orange-100 bg-white px-3 text-sm outline-none"
+                              >
+                                <option>KTP</option>
+                                <option>Paspor</option>
+                              </select>
+                              <input
+                                value={passenger.identityNumber}
+                                onChange={(event) => updatePassenger(passenger.id, { identityNumber: event.target.value })}
+                                placeholder="Contoh: 3171234567890001"
+                                className="min-w-0 flex-1 px-4 text-sm outline-none"
+                              />
+                            </div>
+                            {identityError ? <p className="mt-1 text-xs font-semibold text-red-600">{identityError}</p> : null}
+                          </label>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
             <button
               type="button"
@@ -687,7 +870,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
             </div>
           ) : null}
 
-          <div className="flex flex-col gap-3 pb-8 sm:flex-row sm:items-center sm:justify-between">
+          <div className="sticky bottom-0 z-20 -mx-5 flex flex-col gap-3 border-t border-orange-100 bg-[#fffaf6]/95 px-5 py-3 shadow-[0_-8px_24px_rgba(255,75,0,0.07)] backdrop-blur sm:static sm:mx-0 sm:flex-row sm:items-center sm:justify-between sm:border-t-0 sm:bg-transparent sm:px-0 sm:pb-8 sm:pt-0 sm:shadow-none sm:backdrop-blur-0">
             <button
               type="button"
               onClick={() => router.back()}
@@ -702,7 +885,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
               disabled={checkingSession || submitting}
               className="h-14 rounded-lg bg-[#ff4b00] px-12 text-base font-bold text-white shadow-[0_10px_22px_rgba(255,75,0,0.25)] transition hover:bg-[#e64400] disabled:cursor-not-allowed disabled:bg-orange-200"
             >
-              {submitting ? "Menyimpan..." : isAuthenticated ? "Lanjut ke Pembayaran" : "Login untuk Booking"}
+              {submitting ? "Menyimpan..." : isAuthenticated ? "Ajukan Booking Pesawat" : "Login untuk Booking"}
             </button>
           </div>
         </section>
@@ -750,6 +933,44 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
             <button type="button" className="mt-5 text-sm font-bold text-[#ff4b00]">
               Lihat detail penerbangan v
             </button>
+            <div className="mt-5 space-y-3 border-t border-orange-100 pt-5 text-sm">
+              <div className="flex justify-between gap-4">
+                <span className="text-neutral-600">Penumpang</span>
+                <span className="font-bold text-neutral-900">{passengerSummary}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-neutral-600">Manifest</span>
+                <span className={`font-bold ${manifestIsComplete ? "text-green-600" : "text-amber-600"}`}>
+                  {completePassengerCount}/{passengerCount} lengkap
+                </span>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-orange-100 bg-white p-5 shadow-[0_8px_24px_rgba(255,75,0,0.07)]">
+            <h2 className="text-xl font-bold text-[#ff4b00]">Status Booking</h2>
+            <div className="mt-5 space-y-4">
+              {[
+                ["1", "Request booking", "Customer mengajukan data booking."],
+                ["2", "Recheck fare", "Admin validasi harga ke Dharmawisata."],
+                ["3", "Hold / PNR", "Seat di-hold jika fare valid."],
+                ["4", "Payment Midtrans", "Link payment dibuka setelah hold valid."],
+              ].map(([number, title, description], index) => (
+                <div key={number} className="flex gap-3">
+                  <span
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                      index === 0 ? "bg-[#ff4b00] text-white" : "bg-orange-100 text-[#ff4b00]"
+                    }`}
+                  >
+                    {number}
+                  </span>
+                  <div>
+                    <p className="text-sm font-bold text-neutral-900">{title}</p>
+                    <p className="mt-0.5 text-xs leading-5 text-neutral-600">{description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </section>
 
           <section className="rounded-lg border border-orange-100 bg-white p-5 shadow-[0_8px_24px_rgba(255,75,0,0.07)]">
