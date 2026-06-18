@@ -126,6 +126,75 @@ function getNightCount(checkin: string, checkout: string) {
   return getHotelStayNights(checkin, checkout)
 }
 
+const HOTEL_DEFAULT_CHECKIN = "2026-06-24"
+const HOTEL_DEFAULT_CHECKOUT = "2026-06-27"
+
+const HOTEL_STARTING_PRICE_BY_ID: Record<string, number> = {
+  "hotel-bali-resort": 1248000,
+  "hotel-jakarta-business": 930000,
+  "hotel-singapore-city": 2360000,
+  "hotel-tokyo-compact": 1680000,
+}
+
+function formatIdrCompact(value: number) {
+  return `IDR ${Math.max(value, 0).toLocaleString("id-ID")}`
+}
+
+function getHotelFactValue(item: DummyCatalogItem, label: string) {
+  return item.facts.find((fact) => fact.label.toLowerCase() === label.toLowerCase())?.value || ""
+}
+
+function getHotelStartingPrice(item: DummyCatalogItem) {
+  return HOTEL_STARTING_PRICE_BY_ID[item.id] || (item.region === "Asia" ? 1880000 : 980000)
+}
+
+function getHotelMaxGuests(item: DummyCatalogItem) {
+  const text = `${item.title} ${item.group} ${item.highlights.join(" ")}`.toLowerCase()
+  if (text.includes("compact") || text.includes("transit")) return 2
+  if (text.includes("family") || text.includes("resort")) return 4
+  return 3
+}
+
+function buildHotelInteractiveItems(
+  items: DummyCatalogItem[],
+  params: {
+    checkin: string
+    checkout: string
+  },
+) {
+  const checkin = params.checkin || HOTEL_DEFAULT_CHECKIN
+  const checkout = params.checkout || HOTEL_DEFAULT_CHECKOUT
+  const nights = Math.max(1, getNightCount(checkin, checkout) || getNightCount(HOTEL_DEFAULT_CHECKIN, HOTEL_DEFAULT_CHECKOUT))
+
+  return items.map((item) => {
+    const star = getHotelFactValue(item, "Star") || item.highlights.find((highlight) => highlight.toLowerCase().includes("star")) || "Hotel"
+    const stayCue = getHotelFactValue(item, "Stay cue") || item.group
+
+    return {
+      ...item,
+      meta: {
+        airline: item.title,
+        flightNumber: item.id.toUpperCase().replace(/[^A-Z0-9]/g, "-"),
+        departure: "14:00",
+        arrival: "12:00",
+        duration: `${nights} malam`,
+        transit: "Langsung",
+        price: formatIdrCompact(getHotelStartingPrice(item)),
+        seatNote: item.availabilityNote,
+        origin: item.location,
+        destination: item.group,
+        routeCode: item.location,
+        cabin: star,
+        tripLabel: stayCue,
+        highlightBadges: item.highlights,
+        maxPassengers: getHotelMaxGuests(item),
+        tripSupport: ["one_way", "round_trip"] as FlightTripMode[],
+        availableDates: Array.from(new Set([checkin, checkout, HOTEL_DEFAULT_CHECKIN, HOTEL_DEFAULT_CHECKOUT].filter(Boolean))),
+      },
+    }
+  })
+}
+
 function buildCatalogHref(
   baseHref: string,
   params: Record<string, string | string[] | undefined>,
@@ -349,6 +418,246 @@ export default async function ServiceDummyCatalogPage({
       locationLabel: "位置",
     },
   }[locale]
+
+  if (slug === "hotel" && resolvedSearchParams.interactive !== "legacy") {
+    const hotelCopy =
+      locale === "en"
+        ? {
+            searchSummary: "Stay summary",
+            topTitle: "A RedFeng hotel catalog with the same focused OTA flow",
+            topBody: "Hotel now uses the same catalog rhythm as flight: search summary on top, filters on the left, results in the middle, and clear price actions on every property card.",
+            refineSearch: "Refine stay",
+            roundTrip: "Stay Dates",
+            oneWay: "Flexible Stay",
+            multiCity: "Multi Area",
+            fromLabel: "Destination",
+            viaLabel: "Area",
+            toLabel: "Property type",
+            departLabel: "Check-in",
+            returnLabel: "Check-out",
+            passengerLabel: "Guests",
+            passengerClassLabel: "Guests & Rooms",
+            cabinLabel: "Room",
+            allRegions: "All regions",
+            allGroups: "All property types",
+            allAirlines: "All properties",
+            allDepartWindows: "All check-in times",
+            allTransitTypes: "All access",
+            allPriceBands: "All prices",
+            flightsFound: "hotel options",
+            sortLabel: "Sort by",
+            sortBest: "Best choice",
+            sortPrice: "Lowest price",
+            sortEarly: "Earliest check-in",
+            sortDepartLate: "Latest check-in",
+            sortArriveEarly: "Earliest check-out",
+            sortArriveLate: "Latest check-out",
+            refundTag: "Stay window ready",
+            baggageTag: "Room curated",
+            activeFilters: "Active filters",
+            leftTitle: "Filter results",
+            leftBody: "The hotel rail follows the flight catalog structure so users scan both products with the same mental model.",
+            regionBlock: "Region",
+            tripBlock: "Property type",
+            airlineBlock: "Property",
+            departWindowBlock: "Check-in time",
+            transitBlock: "Access",
+            priceBlock: "Price range",
+            departMorning: "Morning",
+            departAfternoon: "Afternoon",
+            departEvening: "Evening",
+            directOnly: "Main area",
+            transitAllowed: "Area / mixed",
+            priceBudget: "Below 1.5m",
+            priceMid: "1.5m - 3m",
+            pricePremium: "Above 3m",
+            resetFilters: "Reset all",
+            priceLabel: "Starting from",
+            chooseLabel: "Ask availability",
+            fareLabel: "Hotel reference",
+            supportHint: "Hotel checkout is not live yet. Red Feng can help validate availability manually.",
+            fallbackHint: "Showing curated hotel catalog results while live inventory is prepared.",
+            unitLabel: "/night",
+            emptyTitle: "No matching hotels found",
+            emptyBody: "Try widening the region, property type, or stay filters to bring results back.",
+          }
+        : locale === "zh"
+          ? {
+              searchSummary: "ä½å®¿æ‘˜è¦",
+              topTitle: "ä½¿ç”¨åŒæ · OTA ç»“æž„çš„ RedFeng é…’åº—ç›®å½•",
+              topBody: "é…’åº—ç›®å½•çŽ°åœ¨ä½¿ç”¨ä¸Žæœºç¥¨ç›®å½•ç›¸åŒçš„èŠ‚å¥ï¼šä¸Šæ–¹æœç´¢æ‘˜è¦ã€å·¦ä¾§ç­›é€‰ã€ä¸­é—´ç»“æžœï¼Œæ¯å¼ é…’åº—å¡ç‰‡éƒ½æœ‰æ¸…æ¥šçš„ä»·æ ¼ä¸Žæ“ä½œã€‚",
+              refineSearch: "è°ƒæ•´ä½å®¿",
+              roundTrip: "å…¥ä½æ—¥æœŸ",
+              oneWay: "çµæ´»ä½å®¿",
+              multiCity: "å¤šåŒºåŸŸ",
+              fromLabel: "ç›®çš„åœ°",
+              viaLabel: "åŒºåŸŸ",
+              toLabel: "é…’åº—ç±»åž‹",
+              departLabel: "å…¥ä½",
+              returnLabel: "é€€æˆ¿",
+              passengerLabel: "ä½å®¢",
+              passengerClassLabel: "ä½å®¢ä¸Žæˆ¿é—´",
+              cabinLabel: "æˆ¿é—´",
+              allRegions: "å…¨éƒ¨åŒºåŸŸ",
+              allGroups: "å…¨éƒ¨ç±»åž‹",
+              allAirlines: "å…¨éƒ¨é…’åº—",
+              allDepartWindows: "å…¨éƒ¨å…¥ä½æ—¶é—´",
+              allTransitTypes: "å…¨éƒ¨ä½ç½®",
+              allPriceBands: "å…¨éƒ¨ä»·æ ¼",
+              flightsFound: "ä¸ªé…’åº—é€‰é¡¹",
+              sortLabel: "æŽ’åº",
+              sortBest: "æŽ¨èä¼˜å…ˆ",
+              sortPrice: "æœ€ä½Žä»·æ ¼",
+              sortEarly: "æœ€æ—©å…¥ä½",
+              sortDepartLate: "æœ€æ™šå…¥ä½",
+              sortArriveEarly: "æœ€æ—©é€€æˆ¿",
+              sortArriveLate: "æœ€æ™šé€€æˆ¿",
+              refundTag: "ä½å®¿çª—å£",
+              baggageTag: "ç²¾é€‰æˆ¿åž‹",
+              activeFilters: "å½“å‰ç­›é€‰",
+              leftTitle: "ç­›é€‰ç»“æžœ",
+              leftBody: "é…’åº—ç­›é€‰åŒºä¿æŒä¸Žæœºç¥¨ç›®å½•ç›¸åŒçš„æ‰«è¯»æ–¹å¼ã€‚",
+              regionBlock: "åŒºåŸŸ",
+              tripBlock: "é…’åº—ç±»åž‹",
+              airlineBlock: "é…’åº—",
+              departWindowBlock: "å…¥ä½æ—¶é—´",
+              transitBlock: "ä½ç½®",
+              priceBlock: "ä»·æ ¼èŒƒå›´",
+              departMorning: "ä¸Šåˆ",
+              departAfternoon: "ä¸‹åˆ",
+              departEvening: "æ™šä¸Š",
+              directOnly: "ä¸»è¦åŒºåŸŸ",
+              transitAllowed: "åŒºåŸŸ / æ··åˆ",
+              priceBudget: "ä½ŽäºŽ 150 ä¸‡",
+              priceMid: "150 ä¸‡ - 300 ä¸‡",
+              pricePremium: "é«˜äºŽ 300 ä¸‡",
+              resetFilters: "é‡ç½®å…¨éƒ¨",
+              priceLabel: "èµ·ä»·",
+              chooseLabel: "è¯¢é—®åº“å­˜",
+              fareLabel: "é…’åº—å‚è€ƒ",
+              supportHint: "é…’åº—ç»“è´¦å°šæœªå¼€å¯ï¼ŒRed Feng å¯ååŠ©æ‰‹åŠ¨ç¡®è®¤åº“å­˜ã€‚",
+              fallbackHint: "å®žæ—¶é…’åº—åº“å­˜å‡†å¤‡ä¸­ï¼Œå½“å‰æ˜¾ç¤ºç²¾é€‰ç›®å½•ã€‚",
+              unitLabel: "/night",
+              emptyTitle: "æ²¡æœ‰åŒ¹é…çš„é…’åº—",
+              emptyBody: "è¯·æ”¾å®½åŒºåŸŸã€é…’åº—ç±»åž‹æˆ–ä½å®¿ç­›é€‰åŽå†è¯•ã€‚",
+            }
+          : {
+              searchSummary: "Ringkasan stay",
+              topTitle: "Katalog hotel RedFeng dengan alur OTA seperti katalog pesawat",
+              topBody: "Hotel sekarang memakai ritme katalog yang sama dengan pesawat: ringkasan pencarian di atas, filter di kiri, hasil di tengah, lalu harga dan aksi yang jelas di setiap card properti.",
+              refineSearch: "Ubah pencarian",
+              roundTrip: "Tanggal Menginap",
+              oneWay: "Stay Fleksibel",
+              multiCity: "Multi Area",
+              fromLabel: "Destinasi",
+              viaLabel: "Area",
+              toLabel: "Tipe properti",
+              departLabel: "Check-in",
+              returnLabel: "Check-out",
+              passengerLabel: "Tamu",
+              passengerClassLabel: "Tamu & Kamar",
+              cabinLabel: "Kamar",
+              allRegions: "Semua region",
+              allGroups: "Semua tipe properti",
+              allAirlines: "Semua properti",
+              allDepartWindows: "Semua jam check-in",
+              allTransitTypes: "Semua akses",
+              allPriceBands: "Semua harga",
+              flightsFound: "opsi hotel",
+              sortLabel: "Urutkan",
+              sortBest: "Pilihan terbaik",
+              sortPrice: "Harga terendah",
+              sortEarly: "Check-in paling awal",
+              sortDepartLate: "Check-in paling akhir",
+              sortArriveEarly: "Check-out paling awal",
+              sortArriveLate: "Check-out paling akhir",
+              refundTag: "Stay window siap",
+              baggageTag: "Room curated",
+              activeFilters: "Filter aktif",
+              leftTitle: "Saring hasil",
+              leftBody: "Panel kiri hotel mengikuti struktur katalog pesawat supaya user membaca dua produk ini dengan pola yang sama.",
+              regionBlock: "Region",
+              tripBlock: "Tipe properti",
+              airlineBlock: "Properti",
+              departWindowBlock: "Jam check-in",
+              transitBlock: "Akses",
+              priceBlock: "Rentang harga",
+              departMorning: "Pagi",
+              departAfternoon: "Siang - sore",
+              departEvening: "Malam",
+              directOnly: "Area utama",
+              transitAllowed: "Area / mixed",
+              priceBudget: "Di bawah 1.5 jt",
+              priceMid: "1.5 jt - 3 jt",
+              pricePremium: "Di atas 3 jt",
+              resetFilters: "Reset semua",
+              priceLabel: "Mulai dari",
+              chooseLabel: "Cek ketersediaan",
+              fareLabel: "Referensi hotel",
+              supportHint: "Checkout hotel belum live. Red Feng bisa bantu validasi availability secara manual.",
+              fallbackHint: "Menampilkan katalog hotel curated sambil menunggu inventory live disiapkan.",
+              unitLabel: "/malam",
+              emptyTitle: "Belum ada hotel yang cocok",
+              emptyBody: "Coba longgarkan region, tipe properti, atau filter stay agar daftar hasil muncul lagi.",
+            }
+    const hotelCheckinDate = hotelCheckin || HOTEL_DEFAULT_CHECKIN
+    const hotelCheckoutDate = hotelCheckout || HOTEL_DEFAULT_CHECKOUT
+    const hotelAdultsCount = Math.max(Number(hotelAdults || "2"), 1)
+    const hotelChildrenCount = Math.max(Number(hotelChildren || "0"), 0)
+    const hotelPassengerLabel = [
+      `${hotelAdultsCount} Dewasa`,
+      hotelChildrenCount ? `${hotelChildrenCount} Anak` : "",
+    ].filter(Boolean).join(", ")
+
+    return (
+      <div id="top" className="min-h-screen bg-[linear-gradient(180deg,#f6fbff_0%,#f9fbff_16%,#fffdfa_48%,#f3f6fb_100%)] pb-36 md:pb-0">
+        <PublicInstallPrompt locale={locale} />
+        <PublicHeader locale={locale} variant="default" />
+        <FlightCatalogInteractiveClient
+          items={buildHotelInteractiveItems(filteredItems, {
+            checkin: hotelCheckinDate,
+            checkout: hotelCheckoutDate,
+          })}
+          dataSource="fallback"
+          emptyKeyword={catalog.emptyKeyword}
+          searchPlaceholder={catalog.searchPlaceholder}
+          serviceCatalogHref={service.catalogHref}
+          supportHref={catalog.supportHref}
+          copy={hotelCopy}
+          filterKeywordLabel={copy.filterKeyword}
+          locale={locale}
+          resultHrefMode="support"
+          initialState={{
+            tripMode: hotelCheckout ? "round_trip" : "one_way",
+            q: keyword,
+            region: selectedRegion,
+            group: selectedGroup,
+            from: keyword,
+            via: "",
+            to: "",
+            depart: hotelCheckinDate,
+            returnDate: hotelCheckout ? hotelCheckoutDate : "",
+            passengers: hotelPassengerLabel,
+            cabin: "",
+            sort: flightSort,
+            airlines: flightAirlines,
+            departWindows: flightDepartWindows,
+            transitTypes: flightTransitTypes,
+            priceBands: flightPriceBands,
+          }}
+        />
+        <PublicStickyAction
+          locale={locale}
+          href="#top"
+          label={hotelCopy.refineSearch}
+          summary={hotelCopy.topTitle}
+          secondaryHref={catalog.promoHref}
+          secondaryLabel={copy.promoCta}
+        />
+        <PublicMobileNav locale={locale} />
+      </div>
+    )
+  }
 
   if (slug === "pesawat" && resolvedSearchParams.interactive !== "legacy") {
     const flightCopy =

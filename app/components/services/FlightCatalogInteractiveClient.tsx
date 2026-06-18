@@ -193,6 +193,7 @@ type FlightCopy = {
   fareLabel: string
   supportHint: string
   fallbackHint: string
+  unitLabel?: string
   emptyTitle: string
   emptyBody: string
 }
@@ -920,6 +921,7 @@ export default function FlightCatalogInteractiveClient({
   filterKeywordLabel,
   locale,
   initialState,
+  resultHrefMode = "flight_checkout",
 }: {
   items: FlightItem[]
   dataSource: "live" | "fallback"
@@ -931,6 +933,7 @@ export default function FlightCatalogInteractiveClient({
   filterKeywordLabel: string
   locale: Locale
   initialState: FlightFilterState
+  resultHrefMode?: "flight_checkout" | "support"
 }) {
   const router = useRouter()
   const [state, setState] = useState(initialState)
@@ -2568,7 +2571,8 @@ export default function FlightCatalogInteractiveClient({
             filteredItems.map((item) => {
               const { meta } = item
               const supplierStatus = getFlightSupplierStatus(item, dataSource, state.depart, locale)
-              const checkoutHref = buildFlightCheckoutHref(item, state, dataSource)
+              const resultHref =
+                resultHrefMode === "support" ? supportHref : buildFlightCheckoutHref(item, state, dataSource)
               return (
               <article key={item.id} className="overflow-hidden rounded-[22px] border border-[#eef1f6] bg-white shadow-[0_20px_44px_-36px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-34px_rgba(15,23,42,0.22)]">
                 <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_250px]">
@@ -2635,9 +2639,9 @@ export default function FlightCatalogInteractiveClient({
                     </div>
                     <p className="mt-1 text-[12px] text-slate-500">{copy.priceLabel}</p>
                     <p className="mt-2 text-[16px] font-semibold tracking-[-0.02em] text-[#ef5b2a]">{formatCompactPrice(parseFlightPrice(meta.price), locale, liveFlightRates)}</p>
-                    <p className="mt-1 text-[11px] text-slate-400">/pax</p>
+                    <p className="mt-1 text-[11px] text-slate-400">{copy.unitLabel || "/pax"}</p>
                     <div className="mt-5 space-y-2">
-                      <Link href={checkoutHref || supportHref} className="block rounded-[12px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] py-2.5 text-center text-[15px] font-semibold text-white shadow-[0_14px_28px_-18px_rgba(239,68,35,0.58)] transition hover:brightness-105">
+                      <Link href={resultHref} className="block rounded-[12px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] py-2.5 text-center text-[15px] font-semibold text-white shadow-[0_14px_28px_-18px_rgba(239,68,35,0.58)] transition hover:brightness-105">
                         {copy.chooseLabel}
                       </Link>
                       <p className="text-[11px] leading-5 text-slate-500">{supplierStatus.hint}</p>

@@ -283,6 +283,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
   const [error, setError] = useState("")
   const [submitted, setSubmitted] = useState(false)
   const [draftReady, setDraftReady] = useState(false)
+  const [showFlightDetails, setShowFlightDetails] = useState(false)
   const [contactFirstName, setContactFirstName] = useState("")
   const [contactLastName, setContactLastName] = useState("")
   const [email, setEmail] = useState("")
@@ -521,11 +522,15 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
               Pay
               <span aria-hidden="true">v</span>
             </button>
-            <button type="button" className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => router.push(isAuthenticated ? "/customer/dashboard" : `/login?next=${encodeURIComponent(currentPath)}`)}
+              className="flex items-center gap-2"
+            >
               <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/80">
                 <Icon name="user" className="h-4 w-4" />
               </span>
-              <span>Log in / Register</span>
+              <span>{isAuthenticated ? "Akun Saya" : "Log in / Register"}</span>
             </button>
           </div>
         </div>
@@ -828,10 +833,16 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                 </svg>
               </div>
               <div>
-                <h3 className="text-lg font-bold text-neutral-900">Pilih kursi untuk terbang lebih nyaman</h3>
-                <p className="mt-2 text-sm leading-6 text-neutral-600">Pilih kursi sesuai keinginan Anda sekarang juga.</p>
-                <button type="button" className="mt-4 rounded-lg border border-[#ff4b00] px-5 py-3 text-sm font-bold text-[#ff4b00]">
-                  Pilih Kursi
+                <h3 className="text-lg font-bold text-neutral-900">Seat selection setelah hold supplier</h3>
+                <p className="mt-2 text-sm leading-6 text-neutral-600">
+                  Kursi baru bisa dipilih setelah Red Feng berhasil recheck fare dan mengunci booking/PNR.
+                </p>
+                <button
+                  type="button"
+                  disabled
+                  className="mt-4 rounded-lg border border-orange-200 bg-orange-50 px-5 py-3 text-sm font-bold text-orange-400"
+                >
+                  Menunggu Hold
                 </button>
               </div>
             </div>
@@ -863,8 +874,12 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                     <p className="mt-1 text-sm text-neutral-600">Lindungi perjalanan Anda mulai dari keterlambatan hingga kehilangan bagasi.</p>
                   </div>
                 </div>
-                <button type="button" className="rounded-lg border border-[#ff4b00] px-4 py-2 text-sm font-bold text-[#ff4b00]">
-                  + Tambah
+                <button
+                  type="button"
+                  disabled
+                  className="rounded-lg border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-bold text-orange-400"
+                >
+                  Segera Hadir
                 </button>
               </div>
             </div>
@@ -948,9 +963,37 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                 </div>
               </div>
             </div>
-            <button type="button" className="mt-5 text-sm font-bold text-[#ff4b00]">
-              Lihat detail penerbangan v
+            <button
+              type="button"
+              onClick={() => setShowFlightDetails((current) => !current)}
+              className="mt-5 text-sm font-bold text-[#ff4b00]"
+              aria-expanded={showFlightDetails}
+            >
+              {showFlightDetails ? "Tutup detail penerbangan ^" : "Lihat detail penerbangan v"}
             </button>
+            {showFlightDetails ? (
+              <div className="mt-4 rounded-lg border border-orange-100 bg-orange-50 px-4 py-4 text-sm text-neutral-700">
+                <dl className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-600">Rute</dt>
+                    <dd className="mt-1 font-semibold text-neutral-900">{data.route || `${data.origin}-${data.destination}`}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-600">Transit</dt>
+                    <dd className="mt-1 font-semibold text-neutral-900">{data.transit || "-"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-600">Tanggal pulang</dt>
+                    <dd className="mt-1 font-semibold text-neutral-900">{data.returnDate ? formatReadableDate(data.returnDate) : "-"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-600">Referensi fare</dt>
+                    <dd className="mt-1 break-all font-semibold text-neutral-900">{data.fareReferenceId || data.offerId || "-"}</dd>
+                  </div>
+                </dl>
+                {data.detailSchedule ? <p className="mt-4 break-words text-xs leading-5 text-neutral-600">{data.detailSchedule}</p> : null}
+              </div>
+            ) : null}
             <div className="mt-5 space-y-3 border-t border-orange-100 pt-5 text-sm">
               <div className="flex justify-between gap-4">
                 <span className="text-neutral-600">Penumpang</span>
