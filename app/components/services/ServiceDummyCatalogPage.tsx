@@ -6,7 +6,7 @@ import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
 import FlightCatalogInteractiveClient from "@/app/components/services/FlightCatalogInteractiveClient"
-import { isFlightTripMode, normalizeFlightLocationLabel } from "@/app/components/flights/flightSearchParams"
+import { isFlightTripMode, normalizeFlightLocationLabel, type FlightTripMode } from "@/app/components/flights/flightSearchParams"
 import {
   getServiceAvailabilityLabel,
   getServiceAvailabilityTone,

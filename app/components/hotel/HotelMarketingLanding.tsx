@@ -1,4 +1,3 @@
-<<<<<<< ours
 import Image from "next/image"
 import Link from "next/link"
 import PublicHeader from "@/app/components/PublicHeader"
@@ -11,15 +10,11 @@ import PromoPlacementImpressionBeacon from "@/app/components/promo/PromoPlacemen
 import HotelHeroSearchBar from "@/app/components/hotel/HotelHeroSearchBar"
 import { getMarketingPromosResolved } from "@/lib/marketing-content"
 import { getCurrentLocale } from "@/lib/locale"
-=======
-import FlightsMarketingLanding from "@/app/components/flights/FlightsMarketingLanding"
->>>>>>> theirs
 
 type HotelMarketingLandingProps = {
   searchParams?: { newsletter_success?: string; newsletter_error?: string }
 }
 
-<<<<<<< ours
 export default async function HotelMarketingLanding({ searchParams }: HotelMarketingLandingProps) {
   const locale = await getCurrentLocale()
   const { promos, placementUsed } = await getMarketingPromosResolved(locale, {
@@ -280,8 +275,4 @@ export default async function HotelMarketingLanding({ searchParams }: HotelMarke
       <PublicMobileNav locale={locale} />
     </div>
   )
-=======
-export default function HotelMarketingLanding({ searchParams }: HotelMarketingLandingProps) {
-  return <FlightsMarketingLanding searchParams={searchParams} />
->>>>>>> theirs
 }
