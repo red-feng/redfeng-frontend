@@ -20,6 +20,11 @@ function firstQueryValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] || "" : value || ""
 }
 
+function extractCountFromLabel(value: string, keyword: string) {
+  const match = value.toLowerCase().match(new RegExp(`(\\d+)\\s*${keyword}`))
+  return match ? match[1] : ""
+}
+
 function allQueryValues(value: string | string[] | undefined) {
   if (Array.isArray(value)) return value.map((entry) => String(entry || "").trim()).filter(Boolean)
   const normalized = String(value || "").trim()
@@ -178,7 +183,7 @@ function buildHotelInteractiveItems(
         departure: "14:00",
         arrival: "12:00",
         duration: `${nights} malam`,
-        transit: "Langsung",
+        transit: "Menginap",
         price: formatIdrCompact(getHotelStartingPrice(item)),
         seatNote: item.availabilityNote,
         origin: item.location,
@@ -250,7 +255,10 @@ export default async function ServiceDummyCatalogPage({
   const service = servicePageConfigBySlug[slug]
   const catalog = getDummyServiceCatalog(slug)
 
-  const keyword = firstQueryValue(resolvedSearchParams.q)
+  const rawHotelPassengerLabel = firstQueryValue(resolvedSearchParams.passengers)
+  const rawHotelRoomLabel = firstQueryValue(resolvedSearchParams.cabin)
+  const hotelDestination = firstQueryValue(resolvedSearchParams.destination) || firstQueryValue(resolvedSearchParams.q)
+  const keyword = slug === "hotel" ? hotelDestination : firstQueryValue(resolvedSearchParams.q)
   const selectedRegion = firstQueryValue(resolvedSearchParams.region)
   const selectedGroup = firstQueryValue(resolvedSearchParams.group)
   const flightTrip = firstQueryValue(resolvedSearchParams.trip) || "one_way"
@@ -264,15 +272,34 @@ export default async function ServiceDummyCatalogPage({
   const flightPassengers = firstQueryValue(resolvedSearchParams.passengers) || "1 Dewasa"
   const flightCabin = firstQueryValue(resolvedSearchParams.cabin) || "Economy"
   const flightSort = firstQueryValue(resolvedSearchParams.sort) || "best"
-  const flightAirlines = allQueryValues(resolvedSearchParams.airline)
-  const flightDepartWindows = allQueryValues(resolvedSearchParams.depart_window)
-  const flightTransitTypes = allQueryValues(resolvedSearchParams.transit_type)
+  const flightAirlines =
+    slug === "hotel"
+      ? [...allQueryValues(resolvedSearchParams.property), ...allQueryValues(resolvedSearchParams.airline)]
+      : allQueryValues(resolvedSearchParams.airline)
+  const flightDepartWindows =
+    slug === "hotel"
+      ? [...allQueryValues(resolvedSearchParams.checkin_window), ...allQueryValues(resolvedSearchParams.depart_window)]
+      : allQueryValues(resolvedSearchParams.depart_window)
+  const flightTransitTypes =
+    slug === "hotel"
+      ? [...allQueryValues(resolvedSearchParams.access), ...allQueryValues(resolvedSearchParams.transit_type)]
+      : allQueryValues(resolvedSearchParams.transit_type)
   const flightPriceBands = allQueryValues(resolvedSearchParams.price_band)
-  const hotelCheckin = firstQueryValue(resolvedSearchParams.checkin)
-  const hotelCheckout = firstQueryValue(resolvedSearchParams.checkout)
-  const hotelAdults = firstQueryValue(resolvedSearchParams.adults)
-  const hotelChildren = firstQueryValue(resolvedSearchParams.children)
-  const hotelRooms = firstQueryValue(resolvedSearchParams.rooms)
+  const hotelCheckin = firstQueryValue(resolvedSearchParams.checkin) || firstQueryValue(resolvedSearchParams.depart)
+  const hotelCheckout = firstQueryValue(resolvedSearchParams.checkout) || firstQueryValue(resolvedSearchParams.return)
+  const hotelAdults =
+    firstQueryValue(resolvedSearchParams.adults) ||
+    extractCountFromLabel(rawHotelPassengerLabel, "dewasa") ||
+    extractCountFromLabel(rawHotelPassengerLabel, "adult")
+  const hotelChildren =
+    firstQueryValue(resolvedSearchParams.children) ||
+    extractCountFromLabel(rawHotelPassengerLabel, "anak") ||
+    extractCountFromLabel(rawHotelPassengerLabel, "child")
+  const hotelRooms =
+    firstQueryValue(resolvedSearchParams.rooms) ||
+    extractCountFromLabel(rawHotelPassengerLabel, "kamar") ||
+    extractCountFromLabel(rawHotelRoomLabel, "kamar") ||
+    extractCountFromLabel(rawHotelRoomLabel, "room")
   const baseFilteredItems = filterItems(catalog.items, keyword, selectedRegion, selectedGroup)
   const filteredItems =
     slug === "hotel"
@@ -607,6 +634,7 @@ export default async function ServiceDummyCatalogPage({
     const hotelPassengerLabel = [
       `${hotelAdultsCount} Dewasa`,
       hotelChildrenCount ? `${hotelChildrenCount} Anak` : "",
+      `${Math.max(Number(hotelRooms || "1"), 1)} Kamar`,
     ].filter(Boolean).join(", ")
 
     return (
@@ -619,6 +647,7 @@ export default async function ServiceDummyCatalogPage({
             checkout: hotelCheckoutDate,
           })}
           dataSource="fallback"
+          catalogVariant="hotel"
           emptyKeyword={catalog.emptyKeyword}
           searchPlaceholder={catalog.searchPlaceholder}
           serviceCatalogHref={service.catalogHref}
@@ -628,7 +657,7 @@ export default async function ServiceDummyCatalogPage({
           locale={locale}
           resultHrefMode="support"
           initialState={{
-            tripMode: hotelCheckout ? "round_trip" : "one_way",
+            tripMode: "round_trip",
             q: keyword,
             region: selectedRegion,
             group: selectedGroup,
@@ -636,9 +665,9 @@ export default async function ServiceDummyCatalogPage({
             via: "",
             to: "",
             depart: hotelCheckinDate,
-            returnDate: hotelCheckout ? hotelCheckoutDate : "",
+            returnDate: hotelCheckoutDate,
             passengers: hotelPassengerLabel,
-            cabin: "",
+            cabin: `${Math.max(Number(hotelRooms || "1"), 1)} Kamar`,
             sort: flightSort,
             airlines: flightAirlines,
             departWindows: flightDepartWindows,

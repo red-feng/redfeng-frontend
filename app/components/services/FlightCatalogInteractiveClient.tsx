@@ -23,6 +23,7 @@ import { formatPackageMoney, localeCurrencyMap, roundConvertedPrice } from "@/li
 
 type FilterSectionKey = "region" | "group" | "airline" | "departWindow" | "transit" | "price"
 type RecommendationPanelMode = "calendar" | "price_table"
+type CatalogVariant = "flight" | "hotel"
 
 type FlightFact = {
   label: string
@@ -313,13 +314,22 @@ function getFlightSupplierStatus(
   }
 }
 
+function getSupportCatalogStatus(copy: FlightCopy, locale: Locale): FlightSupplierStatus {
+  return {
+    availabilityStatus: "reference_available",
+    badgeLabel: locale === "id" ? "Referensi" : "Reference Only",
+    badgeClassName: "border-slate-200 bg-slate-50 text-slate-600",
+    fareLabel: copy.fareLabel,
+    hint: copy.supportHint,
+  }
+}
+
 const FLIGHT_IDR_FALLBACK_RATES: Record<string, number> = {
   IDR: 1,
   USD: 1 / 16000,
   CNY: 1 / 2200,
 }
 
-const FLIGHT_HERO_STATE_KEY = "catalog-flight"
 const FLIGHT_CABIN_OPTIONS = ["Ekonomi", "Premium Economy", "Business", "First Class"]
 const INDONESIAN_MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
 const INDONESIAN_WEEKDAYS = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"]
@@ -519,7 +529,42 @@ function toggleValue(values: string[], value: string) {
   return values.includes(value) ? values.filter((entry) => entry !== value) : [...values, value]
 }
 
-function buildQuery(state: FlightFilterState) {
+function extractHotelGuestCount(value: string, keyword: string) {
+  const match = value.toLowerCase().match(new RegExp(`(\\d+)\\s*${keyword}`))
+  return match ? match[1] : ""
+}
+
+function buildHotelCatalogQuery(state: FlightFilterState) {
+  const params = new URLSearchParams()
+  const setIfValue = (key: string, value: string) => {
+    if (value.trim()) params.set(key, value.trim())
+  }
+
+  setIfValue("destination", state.from || state.q)
+  setIfValue("checkin", state.depart)
+  setIfValue("checkout", state.returnDate)
+  setIfValue("adults", extractHotelGuestCount(state.passengers, "dewasa") || extractHotelGuestCount(state.passengers, "adult"))
+  setIfValue("children", extractHotelGuestCount(state.passengers, "anak") || extractHotelGuestCount(state.passengers, "child"))
+  setIfValue(
+    "rooms",
+    extractHotelGuestCount(state.passengers, "kamar") ||
+      extractHotelGuestCount(state.passengers, "room") ||
+      extractHotelGuestCount(state.cabin, "kamar") ||
+      extractHotelGuestCount(state.cabin, "room"),
+  )
+  setIfValue("region", state.region)
+  setIfValue("group", state.group)
+  setIfValue("sort", state.sort)
+  state.airlines.forEach((value) => params.append("property", value))
+  state.departWindows.forEach((value) => params.append("checkin_window", value))
+  state.transitTypes.forEach((value) => params.append("access", value))
+  state.priceBands.forEach((value) => params.append("price_band", value))
+  return params.toString()
+}
+
+function buildQuery(state: FlightFilterState, variant: CatalogVariant) {
+  if (variant === "hotel") return buildHotelCatalogQuery(state)
+
   const params = buildFlightCatalogQuery({
     tripMode: state.tripMode,
     from: state.from,
@@ -562,17 +607,20 @@ function getCatalogFieldSemanticKey(label: string) {
 
   if (isOriginLabel(normalized)) return "origin"
   if (isDestinationLabel(normalized)) return "destination"
+  if (normalized.includes("destinasi")) return "destinasi"
   if (normalized.includes("transit")) return "transit"
   if (normalized.includes("kabin") || normalized.includes("cabin")) return "cabin"
+  if (normalized.includes("check-in")) return "check-in"
+  if (normalized.includes("check-out")) return "check-out"
   if (normalized.includes("berangkat") || normalized.includes("pergi") || normalized.includes("keberangkatan")) return "departure"
   if (normalized.includes("pulang")) return "return"
-  if (normalized.includes("penumpang")) return "passenger"
+  if (normalized.includes("penumpang") || normalized.includes("tamu")) return "passenger"
 
   return normalized.replace(/\s+/g, "_")
 }
 
-function getCatalogHeroFieldStateKey(label: string) {
-  return `${FLIGHT_HERO_STATE_KEY}:${getCatalogFieldSemanticKey(label)}`
+function getCatalogHeroFieldStateKey(label: string, variant: CatalogVariant) {
+  return `catalog-${variant}:${getCatalogFieldSemanticKey(label)}`
 }
 
 function parseHeroDisplayDateToIso(value: string) {
@@ -616,12 +664,12 @@ function extractPassengerCountByKeyword(value: string, keyword: string) {
   return match ? Number.parseInt(match[1], 10) : 0
 }
 
-function buildFallbackPassengerState(passengers: string, cabin: string): HeroPassengerState {
+function buildFallbackPassengerState(passengers: string, cabin: string, variant: CatalogVariant): HeroPassengerState {
   return {
     adults: extractPassengerCountByKeyword(passengers, "dewasa") || 1,
     children: extractPassengerCountByKeyword(passengers, "anak"),
     infants: extractPassengerCountByKeyword(passengers, "bayi"),
-    cabin: cabin.trim() || "Ekonomi",
+    cabin: cabin.trim() || (variant === "hotel" ? "1 Kamar" : "Ekonomi"),
   }
 }
 
@@ -638,10 +686,26 @@ function normalizeLocationFromHeroField(value: string) {
   return normalizeFlightLocationLabel(value.replace(/\s+/g, " ").trim())
 }
 
-function buildCatalogHeroBaseFields(state: FlightFilterState): HeroSearchFieldData[] {
-  const passengerState = buildFallbackPassengerState(state.passengers, state.cabin)
+function buildCatalogHeroBaseFields(state: FlightFilterState, variant: CatalogVariant): HeroSearchFieldData[] {
+  const passengerState = buildFallbackPassengerState(state.passengers, state.cabin, variant)
   const passengerValue = state.passengers.trim() || `${passengerState.adults} Dewasa`
   const cabinValue = state.cabin.trim() || passengerState.cabin
+  if (variant === "hotel") {
+    return [
+      { label: "Destinasi", value: state.from || state.q, sublabel: "" },
+      { label: "Check-in", value: formatIsoToHeroDisplayDate(state.depart), sublabel: formatIsoToHeroWeekday(state.depart) },
+      { label: "Check-out", value: formatIsoToHeroDisplayDate(state.returnDate), sublabel: formatIsoToHeroWeekday(state.returnDate) },
+      {
+        label: "Tamu",
+        value: passengerValue,
+        sublabel: cabinValue,
+        withChevron: true,
+        passengerState,
+        cabinOptions: ["1 Kamar", "2 Kamar", "3 Kamar", "4 Kamar"],
+      },
+    ]
+  }
+
   const passengerField: HeroSearchFieldData = {
     label: "Penumpang",
     value: passengerValue,
@@ -683,14 +747,28 @@ function buildCatalogHeroBaseFields(state: FlightFilterState): HeroSearchFieldDa
   return baseFields
 }
 
-function resolveCatalogHeroFields(baseFields: HeroSearchFieldData[], fieldStates: Record<string, HeroSearchFieldData>) {
-  return baseFields.map((field) => fieldStates[getCatalogHeroFieldStateKey(field.label)] ?? field)
+function resolveCatalogHeroFields(baseFields: HeroSearchFieldData[], fieldStates: Record<string, HeroSearchFieldData>, variant: CatalogVariant) {
+  return baseFields.map((field) => fieldStates[getCatalogHeroFieldStateKey(field.label, variant)] ?? field)
 }
 
-function applyCatalogHeroFieldsToDraft(current: FlightFilterState, fields: HeroSearchFieldData[]) {
+function applyCatalogHeroFieldsToDraft(current: FlightFilterState, fields: HeroSearchFieldData[], variant: CatalogVariant) {
   const getFieldValue = (semanticKey: string) => fields.find((field) => getCatalogFieldSemanticKey(field.label) === semanticKey)
   const passengerField = getFieldValue("passenger")
   const cabinField = getFieldValue("cabin")
+  if (variant === "hotel") {
+    const stayGuestField = getFieldValue("passenger")
+    return {
+      ...current,
+      q: getFieldValue("destinasi")?.value || current.q,
+      from: getFieldValue("destinasi")?.value || current.from,
+      via: "",
+      to: "",
+      depart: parseHeroDisplayDateToIso(getFieldValue("check-in")?.value || ""),
+      returnDate: parseHeroDisplayDateToIso(getFieldValue("check-out")?.value || ""),
+      passengers: stayGuestField?.value || current.passengers,
+      cabin: stayGuestField?.sublabel || current.cabin,
+    }
+  }
 
   return {
     ...current,
@@ -706,12 +784,19 @@ function applyCatalogHeroFieldsToDraft(current: FlightFilterState, fields: HeroS
 
 function getCalendarReferenceValue(fields: CatalogHeroRenderedField[], field: CatalogHeroRenderedField) {
   const normalized = field.label.toLowerCase()
-  if (!normalized.includes("pulang")) return undefined
+  if (!normalized.includes("pulang") && !normalized.includes("check-out")) return undefined
 
-  return fields.find((candidate) => candidate.label.toLowerCase().includes("berangkat"))?.value
+  return fields.find((candidate) => {
+    const candidateLabel = candidate.label.toLowerCase()
+    return candidateLabel.includes("berangkat") || candidateLabel.includes("check-in")
+  })?.value
 }
 
-function getCatalogGridClass(tripMode: FlightTripMode) {
+function getCatalogGridClass(tripMode: FlightTripMode, variant: CatalogVariant) {
+  if (variant === "hotel") {
+    return "xl:grid-cols-[minmax(0,1.15fr)_0.88fr_0.88fr_0.96fr_64px]"
+  }
+
   if (tripMode === "one_way") {
     return "xl:grid-cols-[1.12fr_44px_1.12fr_0.92fr_1fr_0.92fr_64px]"
   }
@@ -849,9 +934,12 @@ function getMonthLowestPrice(cells: PriceCalendarCell[]) {
   return Math.min(...prices)
 }
 
-function buildStickyRouteSummary(state: FlightFilterState, copy: Pick<FlightCopy, "fromLabel" | "viaLabel" | "toLabel">) {
+function buildStickyRouteSummary(state: FlightFilterState, copy: Pick<FlightCopy, "fromLabel" | "viaLabel" | "toLabel">, variant: CatalogVariant) {
   const from = state.from.trim() || copy.fromLabel
   const to = state.to.trim() || copy.toLabel
+  if (variant === "hotel") {
+    return [from, state.group.trim() || to].filter(Boolean).join(" - ")
+  }
   if (state.tripMode === "multi_city" && state.via.trim()) {
     return `${from} → ${state.via.trim()} → ${to}`
   }
@@ -859,10 +947,10 @@ function buildStickyRouteSummary(state: FlightFilterState, copy: Pick<FlightCopy
   return `${from} → ${to}`
 }
 
-function buildStickyMetaSummary(state: FlightFilterState, locale: Locale, copy: Pick<FlightCopy, "passengerLabel" | "cabinLabel">) {
+function buildStickyMetaSummary(state: FlightFilterState, locale: Locale, copy: Pick<FlightCopy, "passengerLabel" | "cabinLabel">, variant: CatalogVariant) {
   const parts = [formatCompactDateLabel(state.depart, locale)]
 
-  if (state.tripMode === "round_trip" && state.returnDate.trim()) {
+  if ((variant === "hotel" || state.tripMode === "round_trip") && state.returnDate.trim()) {
     parts.push(formatCompactDateLabel(state.returnDate, locale))
   }
 
@@ -913,6 +1001,7 @@ function CatalogDesktopFieldShell({ label, children }: { label: string; children
 export default function FlightCatalogInteractiveClient({
   items,
   dataSource,
+  catalogVariant = "flight",
   emptyKeyword,
   searchPlaceholder,
   serviceCatalogHref,
@@ -925,6 +1014,7 @@ export default function FlightCatalogInteractiveClient({
 }: {
   items: FlightItem[]
   dataSource: "live" | "fallback"
+  catalogVariant?: CatalogVariant
   emptyKeyword: string
   searchPlaceholder: string
   serviceCatalogHref: string
@@ -971,12 +1061,12 @@ export default function FlightCatalogInteractiveClient({
     price: false,
   })
   useEffect(() => {
-    const query = buildQuery(state)
+    const query = buildQuery(state, catalogVariant)
     const nextUrl = query ? `${serviceCatalogHref}?${query}` : serviceCatalogHref
     const currentUrl = `${window.location.pathname}${window.location.search}`
     if (currentUrl === nextUrl) return
     router.replace(nextUrl, { scroll: false })
-  }, [router, serviceCatalogHref, state])
+  }, [router, serviceCatalogHref, state, catalogVariant])
 
   useEffect(() => {
     const nextSignature = buildFlightStateSignature(initialState)
@@ -1104,10 +1194,10 @@ export default function FlightCatalogInteractiveClient({
     { key: "one_way" as const, label: copy.oneWay },
     { key: "multi_city" as const, label: copy.multiCity },
   ]
-  const heroBaseFields = useMemo(() => buildCatalogHeroBaseFields(draft), [draft])
+  const heroBaseFields = useMemo(() => buildCatalogHeroBaseFields(draft, catalogVariant), [draft, catalogVariant])
   const heroFields = useMemo(
-    () => buildFormFields(heroBaseFields, "flight", FLIGHT_HERO_STATE_KEY, heroFieldStates, locale) as CatalogHeroRenderedField[],
-    [heroBaseFields, heroFieldStates, locale],
+    () => buildFormFields(heroBaseFields, catalogVariant, `catalog-${catalogVariant}`, heroFieldStates, locale) as CatalogHeroRenderedField[],
+    [catalogVariant, heroBaseFields, heroFieldStates, locale],
   )
 
   const sortFlightResults = (entries: FlightItem[]) =>
@@ -1236,8 +1326,8 @@ export default function FlightCatalogInteractiveClient({
 
   const shouldShowCompactStickyBar = isScrolled && !isStickySearchExpanded
   const stickyCompactCopy = getStickyCompactCopy(locale)
-  const activeRouteSummary = buildStickyRouteSummary(state, copy)
-  const activeMetaSummary = buildStickyMetaSummary(state, locale, copy)
+  const activeRouteSummary = buildStickyRouteSummary(state, copy, catalogVariant)
+  const activeMetaSummary = buildStickyMetaSummary(state, locale, copy, catalogVariant)
   const durationSortLabel = locale === "en" ? "Shortest duration" : locale === "id" ? "Durasi tersingkat" : "最短时长"
   const activeLabel = locale === "en" ? "Active" : locale === "zh" ? "已启用" : "Aktif"
   const currentSortLabel =
@@ -1255,12 +1345,24 @@ export default function FlightCatalogInteractiveClient({
               ? copy.sortArriveLate
               : copy.sortBest
 
-  const recommendedLabel = locale === "en" ? "Recommended searches" : locale === "zh" ? "推荐搜索" : "Rekomendasi pencarian"
-  const recommendationLead = locale === "en" ? "Affordable flights on your favorite routes" : locale === "zh" ? "为你喜爱的航线提供更经济的选择" : "Terbang ekonomis dengan rute favoritmu"
+  const recommendedLabel =
+    catalogVariant === "hotel"
+      ? locale === "en" ? "Recommended stays" : locale === "zh" ? "推荐住宿" : "Rekomendasi stay"
+      : locale === "en" ? "Recommended searches" : locale === "zh" ? "推荐搜索" : "Rekomendasi pencarian"
+  const recommendationLead =
+    catalogVariant === "hotel"
+      ? locale === "en" ? "Curated hotel options for your stay" : locale === "zh" ? "精选酒店住宿选项" : "Pilihan hotel curated untuk stay kamu"
+      : locale === "en" ? "Affordable flights on your favorite routes" : locale === "zh" ? "为你喜爱的航线提供更经济的选择" : "Terbang ekonomis dengan rute favoritmu"
   const shortestDurationLabel = locale === "en" ? "Shortest duration" : locale === "zh" ? "最短时长" : "Durasi tersingkat"
   const bestTimeLabel = locale === "en" ? "Best time" : locale === "zh" ? "最佳时间" : "Waktu terbaik"
   const resultsCountLabel =
-    locale === "en"
+    catalogVariant === "hotel"
+      ? locale === "en"
+        ? `Showing ${filteredItems.length} of ${items.length} hotel options`
+        : locale === "zh"
+          ? `显示 ${filteredItems.length}/${items.length} 个酒店选项`
+          : `Menampilkan ${filteredItems.length} dari ${items.length} opsi hotel`
+      : locale === "en"
       ? `Showing ${filteredItems.length} of ${items.length} flights`
       : locale === "zh"
         ? `显示 ${filteredItems.length}/${items.length} 个航班`
@@ -1269,9 +1371,14 @@ export default function FlightCatalogInteractiveClient({
   const calendarTabLabel = locale === "en" ? "Calendar" : locale === "zh" ? "日历" : "Kalender"
   const priceTableTabLabel = locale === "en" ? "Price Table" : locale === "zh" ? "价格表" : "Tabel harga"
   const resetInlineLabel = locale === "en" ? "Reset" : locale === "zh" ? "重置" : "Reset"
-  const departureAxisLabel = locale === "en" ? "Departure" : locale === "zh" ? "Departure" : "Keberangkatan"
-  const returnAxisLabel = locale === "en" ? "Return" : locale === "zh" ? "Return" : "Pulang"
-  const priceTableMetaLabel = locale === "en" ? "Showing round-trip prices" : locale === "zh" ? "Showing round-trip prices" : "Menampilkan harga pulang-pergi"
+  const departureAxisLabel =
+    catalogVariant === "hotel" ? "Check-in" : locale === "en" ? "Departure" : locale === "zh" ? "Departure" : "Keberangkatan"
+  const returnAxisLabel =
+    catalogVariant === "hotel" ? "Check-out" : locale === "en" ? "Return" : locale === "zh" ? "Return" : "Pulang"
+  const priceTableMetaLabel =
+    catalogVariant === "hotel"
+      ? locale === "en" ? "Showing stay estimates" : locale === "zh" ? "显示住宿估算" : "Menampilkan estimasi stay"
+      : locale === "en" ? "Showing round-trip prices" : locale === "zh" ? "Showing round-trip prices" : "Menampilkan harga pulang-pergi"
   const noDateSelectedLabel = locale === "en" ? "No date selected" : locale === "zh" ? "No date selected" : "Belum ada tanggal dipilih"
   const selectLabel = locale === "en" ? "Select" : locale === "zh" ? "Select" : "Pilih"
   const limitedDatesLabel =
@@ -1281,7 +1388,13 @@ export default function FlightCatalogInteractiveClient({
         ? "Only a few dates match the current filters."
         : "Hanya sedikit tanggal yang cocok dengan filter aktif."
   const benefitItems =
-    locale === "en"
+    catalogVariant === "hotel"
+      ? locale === "en"
+        ? ["Curated stays", "Manual availability check", "24/7 support"]
+        : locale === "zh"
+          ? ["精选住宿", "人工确认库存", "24/7 客服"]
+          : ["Stay curated", "Cek availability manual", "Layanan pelanggan 24/7"]
+      : locale === "en"
       ? ["Best fares", "Trusted booking", "24/7 support"]
       : locale === "zh"
         ? ["优惠价格", "安心预订", "24/7 客服"]
@@ -1380,7 +1493,11 @@ export default function FlightCatalogInteractiveClient({
   }
 
   const syncHeroFieldsToCatalogState = (nextFieldStates: Record<string, HeroSearchFieldData>, baseFields: HeroSearchFieldData[], currentDraft: FlightFilterState) => {
-    const nextDraft = applyCatalogHeroFieldsToDraft(currentDraft, resolveCatalogHeroFields(baseFields, nextFieldStates))
+    const nextDraft = applyCatalogHeroFieldsToDraft(
+      currentDraft,
+      resolveCatalogHeroFields(baseFields, nextFieldStates, catalogVariant),
+      catalogVariant,
+    )
     setDraft(nextDraft)
     setState(nextDraft)
   }
@@ -1390,7 +1507,7 @@ export default function FlightCatalogInteractiveClient({
     if (!targetField) return
 
     setHeroFieldStates((current) => {
-      const nextFieldStates = updateFieldState(current, FLIGHT_HERO_STATE_KEY, "flight", targetField, nextValue)
+      const nextFieldStates = updateFieldState(current, `catalog-${catalogVariant}`, catalogVariant, targetField, nextValue)
       syncHeroFieldsToCatalogState(nextFieldStates, heroBaseFields, draft)
       return nextFieldStates
     })
@@ -1640,10 +1757,10 @@ export default function FlightCatalogInteractiveClient({
                   className="min-w-0 text-left"
                 >
                   <p className="truncate text-[17px] font-semibold tracking-[-0.03em] text-[#ef5b2a]">
-                    {buildStickyRouteSummary(state, copy)}
+                    {buildStickyRouteSummary(state, copy, catalogVariant)}
                   </p>
                   <p className="mt-1 truncate text-[13px] text-slate-500">
-                    {buildStickyMetaSummary(state, locale, copy)}
+                    {buildStickyMetaSummary(state, locale, copy, catalogVariant)}
                   </p>
                 </button>
                 <button
@@ -1745,6 +1862,7 @@ export default function FlightCatalogInteractiveClient({
               isScrolled ? "p-3 shadow-[0_24px_56px_-28px_rgba(15,23,42,0.22)]" : "p-4"
             }`}
           >
+            {catalogVariant === "flight" ? (
             <div className="mb-4 flex gap-6 overflow-x-auto border-b border-[#f5ede7] px-2 pb-3 text-[15px] font-semibold text-[#17324d] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {tripTabs.map((tab) => {
                 const active = draft.tripMode === tab.key
@@ -1770,9 +1888,10 @@ export default function FlightCatalogInteractiveClient({
                 )
               })}
             </div>
+            ) : null}
             <div className={`rounded-[24px] border border-[#f1ebe5] bg-[#fffdfa] p-2.5 transition-all duration-200 ${isScrolled ? "p-2" : "p-3"}`}>
               <div
-                className={`grid gap-3 transition-all duration-200 ${getCatalogGridClass(draft.tripMode)} ${isScrolled ? "xl:gap-2" : ""}`}
+                className={`grid gap-3 transition-all duration-200 ${getCatalogGridClass(draft.tripMode, catalogVariant)} ${isScrolled ? "xl:gap-2" : ""}`}
               >
                 {heroFields.map((field, index) => (
                   <Fragment key={field.label}>
@@ -1799,7 +1918,7 @@ export default function FlightCatalogInteractiveClient({
                         className="rounded-[16px] border-[#eceff4] px-4 py-3"
                       />
                     </CatalogDesktopFieldShell>
-                    {draft.tripMode !== "multi_city" && index === 0 ? (
+                    {catalogVariant === "flight" && draft.tripMode !== "multi_city" && index === 0 ? (
                       <button
                         key="catalog-swap-route"
                         type="button"
@@ -2008,7 +2127,7 @@ export default function FlightCatalogInteractiveClient({
                           <div className="-mx-[18px] border-b border-[#edf2f7] bg-white px-[18px] pb-3">
                             <div className="grid gap-3 md:grid-cols-[minmax(0,372px)_minmax(220px,280px)] md:items-start md:justify-between">
                             <div>
-                              <p className="text-[13px] font-medium text-[#6b7c93]">Departure date</p>
+                              <p className="text-[13px] font-medium text-[#6b7c93]">{catalogVariant === "hotel" ? "Check-in date" : "Departure date"}</p>
                               <button
                                 type="button"
                                 onClick={() => setRecommendationCalendarTarget("depart")}
@@ -2029,20 +2148,20 @@ export default function FlightCatalogInteractiveClient({
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
-                                  onClick={toggleRecommendationReturnDate}
+                                  onClick={catalogVariant === "hotel" ? () => setRecommendationCalendarTarget("return") : toggleRecommendationReturnDate}
                                   className={`inline-flex h-6 w-6 items-center justify-center rounded-[7px] border transition ${
                                     state.tripMode === "round_trip"
                                       ? "border-[#1a73e8] bg-[#1a73e8] text-white"
                                       : "border-[#c9d4e5] bg-white text-transparent hover:border-sky-200"
                                   }`}
                                   aria-pressed={state.tripMode === "round_trip"}
-                                  aria-label="Toggle return date"
+                                  aria-label={catalogVariant === "hotel" ? "Select check-out date" : "Toggle return date"}
                                 >
                                   <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2.2]">
                                     <path d="m3.5 8 2.5 2.5L12.5 4.5" />
                                   </svg>
                                 </button>
-                                <p className="text-[13px] font-semibold text-[#1f2d3d]">Return Date</p>
+                                <p className="text-[13px] font-semibold text-[#1f2d3d]">{catalogVariant === "hotel" ? "Check-out Date" : "Return Date"}</p>
                               </div>
                               <button
                                 type="button"
@@ -2066,7 +2185,7 @@ export default function FlightCatalogInteractiveClient({
                                   </svg>
                                 </span>
                                 <span className={`text-[15px] font-semibold ${state.tripMode === "round_trip" ? "text-[#1f2d3d]" : "text-[#8ea0b6]"}`}>
-                                  {state.tripMode === "round_trip" ? formatCalendarInputValue(state.returnDate, locale) : "Select return date"}
+                                  {state.tripMode === "round_trip" ? formatCalendarInputValue(state.returnDate, locale) : catalogVariant === "hotel" ? "Select check-out date" : "Select return date"}
                                 </span>
                               </button>
                             </div>
@@ -2570,7 +2689,10 @@ export default function FlightCatalogInteractiveClient({
           ) : (
             filteredItems.map((item) => {
               const { meta } = item
-              const supplierStatus = getFlightSupplierStatus(item, dataSource, state.depart, locale)
+              const supplierStatus =
+                resultHrefMode === "support"
+                  ? getSupportCatalogStatus(copy, locale)
+                  : getFlightSupplierStatus(item, dataSource, state.depart, locale)
               const resultHref =
                 resultHrefMode === "support" ? supportHref : buildFlightCheckoutHref(item, state, dataSource)
               return (
@@ -2626,7 +2748,7 @@ export default function FlightCatalogInteractiveClient({
                   </div>
 
                   <div className="relative flex flex-col justify-center border-t border-[#eef1f6] bg-white p-5 xl:border-l xl:border-t-0">
-                    <button type="button" aria-label="Save fare" className="absolute right-4 top-4 text-slate-300 transition hover:text-slate-500">
+                    <button type="button" aria-label={catalogVariant === "hotel" ? "Save hotel" : "Save fare"} className="absolute right-4 top-4 text-slate-300 transition hover:text-slate-500">
                       <svg viewBox="0 0 16 16" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
                         <path d="M8 13.2 3.3 8.6A2.9 2.9 0 0 1 7.4 4.5L8 5l.6-.5a2.9 2.9 0 0 1 4.1 4.1Z" />
                       </svg>
