@@ -562,6 +562,11 @@ function buildHotelCatalogQuery(state: FlightFilterState) {
   return params.toString()
 }
 
+function buildHotelDetailHref(item: FlightItem, state: FlightFilterState) {
+  const query = buildHotelCatalogQuery(state)
+  return query ? `/hotel/catalog/${item.id}?${query}` : `/hotel/catalog/${item.id}`
+}
+
 function buildQuery(state: FlightFilterState, variant: CatalogVariant) {
   if (variant === "hotel") return buildHotelCatalogQuery(state)
 
@@ -2694,7 +2699,11 @@ export default function FlightCatalogInteractiveClient({
                   ? getSupportCatalogStatus(copy, locale)
                   : getFlightSupplierStatus(item, dataSource, state.depart, locale)
               const resultHref =
-                resultHrefMode === "support" ? supportHref : buildFlightCheckoutHref(item, state, dataSource)
+                resultHrefMode === "support"
+                  ? catalogVariant === "hotel"
+                    ? buildHotelDetailHref(item, state)
+                    : supportHref
+                  : buildFlightCheckoutHref(item, state, dataSource)
               return (
               <article key={item.id} className="overflow-hidden rounded-[22px] border border-[#eef1f6] bg-white shadow-[0_20px_44px_-36px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-34px_rgba(15,23,42,0.22)]">
                 <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_250px]">
