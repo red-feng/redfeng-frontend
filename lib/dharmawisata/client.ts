@@ -62,7 +62,7 @@ function getDharmawisataMtlsOptions() {
   const rejectUnauthorized =
     getOptionalEnv("DHARMAWISATA_H2H_TLS_REJECT_UNAUTHORIZED", "true").toLowerCase() !== "false"
 
-  if (!pfxPath && !(certPath && keyPath) && !caPath) return null
+  if (!pfxPath && !(certPath && keyPath) && !caPath && rejectUnauthorized) return null
 
   return {
     cert: certPath ? readFileSync(certPath) : undefined,
