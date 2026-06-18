@@ -3,6 +3,7 @@ import type { FlightTripMode } from "@/app/components/flights/flightSearchParams
 
 export type FlightCatalogCardMeta = {
   airline: string
+  flightNumber?: string
   departure: string
   arrival: string
   duration: string

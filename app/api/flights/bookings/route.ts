@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server"
 import { calculateBookingAmounts, getFinanceSettings } from "@/lib/finance/settings"
+import { createDharmawisataFlightBooking, type DharmawisataPassenger } from "@/lib/flights/dharmawisataFlightBooking"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient as createServerClient } from "@/lib/supabase/server"
+
+const AIRLINE_NAME_CODES: Record<string, string> = {
+  citilink: "QG",
+  "lion air": "JT",
+  "batik air": "ID",
+  airasia: "QZ",
+  "air asia": "QZ",
+  "garuda indonesia": "GA",
+}
 
 function generateBookingCode() {
   const random = Math.floor(1000 + Math.random() * 9000)
@@ -18,6 +28,52 @@ function asString(value: unknown) {
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null
+}
+
+function splitPersonName(value: string) {
+  const parts = value.trim().split(/\s+/).filter(Boolean)
+  if (parts.length <= 1) {
+    return {
+      firstName: parts[0] || "Passenger",
+      lastName: parts[0] || "Passenger",
+    }
+  }
+
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(" "),
+  }
+}
+
+function splitIndonesianPhone(value: string) {
+  const digits = value.replace(/\D/g, "")
+  const local = digits.startsWith("62") ? digits.slice(2) : digits.startsWith("0") ? digits.slice(1) : digits
+  const areaLength = local.length >= 10 ? 3 : 2
+
+  return {
+    countryCode: "62",
+    areaCode: local.slice(0, areaLength),
+    remainingPhoneNo: local.slice(areaLength),
+  }
+}
+
+function normalizeAirlineCode(value: unknown, fallbackAirlineName: unknown) {
+  const direct = asString(value).toUpperCase()
+  const directMatch = direct.match(/\b[A-Z0-9]{2,3}\b/)
+  if (directMatch) return directMatch[0] || ""
+
+  const normalizedAirline = asString(fallbackAirlineName).toLowerCase()
+  return AIRLINE_NAME_CODES[normalizedAirline] || ""
+}
+
+function normalizeFlightNumber(value: unknown) {
+  const normalized = asString(value).toUpperCase().replace(/\s+/g, "")
+  return /^[A-Z0-9]{2,3}-?\d{1,4}[A-Z]?$/.test(normalized) ? normalized : ""
+}
+
+function normalizePassengerTitle(value: unknown) {
+  const normalized = asString(value).toUpperCase()
+  return ["MR", "MRS", "MS", "MSTR", "MISS"].includes(normalized) ? normalized : "MR"
 }
 
 function asPositiveInteger(value: unknown, fallback = 1) {
@@ -92,6 +148,13 @@ function maybeArrivalDateTime(dateValue: unknown, departureTime: unknown, arriva
   return arrivalDate.toISOString()
 }
 
+function normalizeDateTimeForDb(value: string | null | undefined) {
+  if (!value) return null
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return null
+  return parsed.toISOString()
+}
+
 function calculateAgeFromBirthDate(value: unknown) {
   const birthDate = asString(value)
   if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return null
@@ -114,22 +177,61 @@ function parsePassengerDetails(value: unknown, expectedAdults: number) {
 
   return value.slice(0, expectedAdults).map((item, index) => {
     const passenger = asRecord(item) || {}
+    const title = normalizePassengerTitle(passenger.title)
     const firstName = asString(passenger.first_name ?? passenger.firstName)
     const lastName = asString(passenger.last_name ?? passenger.lastName)
     const fullName = [firstName, lastName].filter(Boolean).join(" ").trim()
     const identityNumber = asString(passenger.identity_number ?? passenger.identityNumber)
+    const identityType = asString(passenger.identity_type ?? passenger.identityType)
     const nationality = asString(passenger.nationality) || "Indonesia"
-    const age = calculateAgeFromBirthDate(passenger.birth_date ?? passenger.birthDate)
+    const birthDate = asString(passenger.birth_date ?? passenger.birthDate)
+    const age = calculateAgeFromBirthDate(birthDate)
 
     return {
       participant_type: "adult" as const,
       sequence_no: index + 1,
+      title,
+      first_name: firstName,
+      last_name: lastName,
       full_name: fullName,
+      birth_date: birthDate,
+      identity_type: identityType,
       identity_number: identityNumber,
       nationality,
       age,
     }
   })
+}
+
+function buildDharmawisataPassengers(
+  passengerDetails: ReturnType<typeof parsePassengerDetails>,
+  fallbackName: string,
+  fallbackEmail: string,
+): DharmawisataPassenger[] {
+  const fallbackNameParts = splitPersonName(fallbackName)
+  const source: Array<{
+    title: string
+    first_name: string
+    last_name: string
+    full_name?: string
+  }> = passengerDetails.length > 0
+    ? passengerDetails
+    : [
+        {
+          title: "MR",
+          first_name: fallbackNameParts.firstName,
+          last_name: fallbackNameParts.lastName,
+          full_name: fallbackName,
+        },
+      ]
+
+  return source.map((passenger) => ({
+    title: normalizePassengerTitle(passenger.title),
+    firstName: passenger.first_name || splitPersonName(passenger.full_name || fallbackName).firstName,
+    lastName: passenger.last_name || splitPersonName(passenger.full_name || fallbackName).lastName,
+    email: fallbackEmail,
+    type: "Adult",
+  }))
 }
 
 export async function POST(req: Request) {
@@ -147,6 +249,7 @@ export async function POST(req: Request) {
     const customerName = asString(body.customer_name)
     const customerEmail = asString(body.customer_email) || user.email || ""
     const customerPhone = asString(body.customer_phone)
+    const contactTitle = normalizePassengerTitle(body.contact_title)
     const passengerManifest = asString(body.passenger_manifest)
     const originAirportCode = extractAirportCode(body.origin || body.route)
     const destinationAirportCode = extractAirportCode(body.destination || String(body.route || "").split("-")[1])
@@ -157,6 +260,11 @@ export async function POST(req: Request) {
     const passengerCount = passengerMix.adults + passengerMix.children
     const fareAmount = asMoney(body.price)
     const passengerDetails = parsePassengerDetails(body.passenger_details, passengerMix.adults)
+    const airlineCode = normalizeAirlineCode(body.airline_code || body.flight_number, body.airline)
+    const flightNumber = normalizeFlightNumber(body.flight_number)
+    const airlineAccessCode = asString(body.airline_access_code || body.fare_reference_id || body.offer_id)
+    const searchKey = asString(body.search_key)
+    const detailSchedule = asString(body.detail_schedule)
 
     if (!customerName || !customerEmail || !customerPhone) {
       return NextResponse.json({ error: "Nama, email, dan nomor telepon wajib diisi." }, { status: 400 })
@@ -263,6 +371,11 @@ export async function POST(req: Request) {
       arrivalTime: asString(body.arrival_time),
       duration: asString(body.duration),
       transit: asString(body.transit),
+      airlineCode: airlineCode || null,
+      flightNumber: flightNumber || asString(body.flight_number) || null,
+      airlineAccessCode: airlineAccessCode || null,
+      searchKey: searchKey || null,
+      detailSchedule: detailSchedule || null,
       passengerManifest: passengerManifest || null,
       passengerDetails: passengerDetails.map((passenger) => ({
         sequenceNo: passenger.sequence_no,
@@ -303,8 +416,9 @@ export async function POST(req: Request) {
     const { error: detailError } = await supabase.from("flight_booking_details").insert({
       booking_id: booking.id,
       supplier_order_id: supplierOrder.id,
+      airline_code: airlineCode || null,
       airline_name: asString(body.airline) || supplier.supplier_name,
-      flight_number: asString(body.flight_number) || asString(body.offer_id) || "RECHECK",
+      flight_number: flightNumber || asString(body.flight_number) || asString(body.offer_id) || "RECHECK",
       origin_airport_code: originAirportCode,
       destination_airport_code: destinationAirportCode,
       departure_at: departureAt,
@@ -320,6 +434,8 @@ export async function POST(req: Request) {
         flow: "customer_catalog_checkout",
         source: asString(body.source),
         offerId: asString(body.offer_id),
+        airlineCode: airlineCode || null,
+        airlineAccessCode: airlineAccessCode || null,
         requiresFareRecheck: true,
       },
       notes: "Customer booking request dari katalog pesawat. Recheck fare dan hold supplier sebelum payment dibuka.",
@@ -352,6 +468,157 @@ export async function POST(req: Request) {
           { status: 500 },
         )
       }
+    }
+
+    const contactNameParts = splitPersonName(customerName)
+    const contactPhone = splitIndonesianPhone(customerPhone)
+    const dharmawisataPassengers = buildDharmawisataPassengers(passengerDetails, customerName, customerEmail)
+    const shouldAutoBookDharmawisata = supplier.supplier_code === "DHARMAWISATA_H2H" && supplier.integration_mode === "api"
+
+    const bookingApiResult = shouldAutoBookDharmawisata
+      ? await createDharmawisataFlightBooking({
+          bookingId: booking.id,
+          airlineId: airlineCode,
+          airlineCode,
+          flightNumber,
+          originAirportCode,
+          destinationAirportCode,
+          tripType: normalizeTripType(body.trip_type),
+          departureAt,
+          arrivalAt,
+          returnAt,
+          flightClass: normalizeCabinClass(body.cabin),
+          detailSchedule,
+          searchKey,
+          airlineAccessCode,
+          contactTitle,
+          contactFirstName: contactNameParts.firstName,
+          contactLastName: contactNameParts.lastName,
+          contactCountryCodePhone: contactPhone.countryCode,
+          contactAreaCodePhone: contactPhone.areaCode,
+          contactRemainingPhoneNo: contactPhone.remainingPhoneNo,
+          contactEmail: customerEmail,
+          paxAdult: passengerMix.adults,
+          paxChild: passengerMix.children,
+          paxInfant: 0,
+          passengers: dharmawisataPassengers,
+        })
+      : {
+          ok: false,
+          skipped: true,
+          mode: "manual_unconfigured" as const,
+          message: "Supplier Dharmawisata belum memakai mode API, jadi hold dilakukan manual.",
+          bookingCode: null,
+          bookingDate: null,
+          timeLimit: null,
+          referenceNo: null,
+          bookingCodeAirline: null,
+          airlineAccessCode: null,
+          raw: {
+            bookingMode: "manual_non_api_supplier",
+            supplierCode: supplier.supplier_code,
+            integrationMode: supplier.integration_mode,
+          },
+        }
+
+    if (bookingApiResult.ok) {
+      const now = new Date().toISOString()
+      const holdExpiresAt = normalizeDateTimeForDb(bookingApiResult.timeLimit)
+      const apiSupplierReference = bookingApiResult.referenceNo || bookingApiResult.bookingCodeAirline || null
+      const apiBookingCode = bookingApiResult.bookingCode || null
+
+      await supabase
+        .from("supplier_orders")
+        .update({
+          supplier_order_id: apiBookingCode,
+          supplier_reference: apiSupplierReference,
+          supplier_status: "confirmed",
+          response_payload: bookingApiResult.raw,
+          last_error: null,
+          submitted_at: now,
+          confirmed_at: now,
+          synced_at: now,
+          updated_by: user.id,
+        })
+        .eq("id", supplierOrder.id)
+
+      await supabase
+        .from("bookings")
+        .update({
+          supplier_booking_reference: apiSupplierReference,
+          supplier_order_status: "confirmed",
+        })
+        .eq("id", booking.id)
+
+      await supabase
+        .from("flight_booking_details")
+        .update({
+          lifecycle_status: "booking_hold_created",
+          pnr_code: bookingApiResult.bookingCodeAirline || null,
+          supplier_confirmation_code: bookingApiResult.referenceNo || bookingApiResult.bookingCode || null,
+          fare_reference_id: bookingApiResult.airlineAccessCode || airlineAccessCode || asString(body.fare_reference_id) || null,
+          fare_rechecked_at: now,
+          booking_hold_expires_at: holdExpiresAt,
+          supplier_raw_reference: bookingApiResult.raw,
+          updated_at: now,
+        })
+        .eq("booking_id", booking.id)
+
+      await supabase.from("supplier_order_events").insert({
+        supplier_order_id: supplierOrder.id,
+        actor_id: user.id,
+        actor_role: "customer",
+        event_type: "flight_booking_hold_created_via_dharmawisata",
+        summary: "Booking/hold Pesawat berhasil dibuat lewat API Dharmawisata dari checkout customer.",
+        metadata: {
+          productType: "flight",
+          lifecycleStatus: "booking_hold_created",
+          bookingCode: bookingApiResult.bookingCode,
+          bookingDate: bookingApiResult.bookingDate,
+          referenceNo: bookingApiResult.referenceNo,
+          bookingCodeAirline: bookingApiResult.bookingCodeAirline,
+          timeLimit: bookingApiResult.timeLimit,
+        },
+      })
+    } else if (!bookingApiResult.skipped) {
+      await supabase
+        .from("supplier_orders")
+        .update({
+          supplier_status: "failed",
+          response_payload: bookingApiResult.raw,
+          last_error: bookingApiResult.message,
+          synced_at: new Date().toISOString(),
+          updated_by: user.id,
+        })
+        .eq("id", supplierOrder.id)
+
+      await supabase.from("supplier_order_events").insert({
+        supplier_order_id: supplierOrder.id,
+        actor_id: user.id,
+        actor_role: "customer",
+        event_type: "flight_booking_hold_failed",
+        summary: "Booking/hold Pesawat lewat API Dharmawisata gagal dari checkout customer.",
+        metadata: {
+          productType: "flight",
+          lifecycleStatus: "fare_recheck_required",
+          message: bookingApiResult.message,
+        },
+      })
+    } else {
+      await supabase.from("supplier_order_events").insert({
+        supplier_order_id: supplierOrder.id,
+        actor_id: user.id,
+        actor_role: "customer",
+        event_type: "flight_booking_hold_manual_required",
+        summary: "Checkout customer tersimpan dan membutuhkan hold manual/admin.",
+        metadata: {
+          productType: "flight",
+          lifecycleStatus: "fare_recheck_required",
+          mode: bookingApiResult.mode,
+          message: bookingApiResult.message,
+          raw: bookingApiResult.raw,
+        },
+      })
     }
 
     return NextResponse.json({ booking_id: booking.id, booking_code: booking.booking_code })

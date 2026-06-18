@@ -9,6 +9,7 @@ export type FlightCheckoutData = {
   offerId: string
   title: string
   airline: string
+  airlineCode: string
   flightNumber: string
   origin: string
   destination: string
@@ -24,6 +25,9 @@ export type FlightCheckoutData = {
   passengers: string
   price: number
   fareReferenceId: string
+  airlineAccessCode: string
+  searchKey: string
+  detailSchedule: string
   source: string
 }
 
@@ -449,6 +453,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
           offer_id: data.offerId,
           title: data.title,
           airline: data.airline,
+          airline_code: data.airlineCode,
           flight_number: data.flightNumber,
           origin: data.origin,
           destination: data.destination,
@@ -464,6 +469,9 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
           passengers: passengerSummary,
           price: data.price,
           fare_reference_id: data.fareReferenceId,
+          airline_access_code: data.airlineAccessCode,
+          search_key: data.searchKey,
+          detail_schedule: data.detailSchedule,
           source: data.source,
           customer_name: contactName,
           customer_email: email,

@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto"
+import { readFileSync } from "node:fs"
+import https from "node:https"
 
 import { getOptionalEnv, getRequiredEnv } from "@/lib/env"
 
@@ -40,6 +42,94 @@ function normalizeBaseUrl(value: string) {
 function joinPath(baseUrl: string, path = "") {
   const normalizedPath = path.replace(/^\/+/, "")
   return normalizedPath ? `${baseUrl}/${normalizedPath}` : baseUrl
+}
+
+function normalizeHeaders(headers?: HeadersInit) {
+  const normalized = new Headers(headers)
+  const result: Record<string, string> = {}
+  normalized.forEach((value, key) => {
+    result[key] = value
+  })
+  return result
+}
+
+function getDharmawisataMtlsOptions() {
+  const certPath = getOptionalEnv("DHARMAWISATA_H2H_CLIENT_CERT_PATH").trim()
+  const keyPath = getOptionalEnv("DHARMAWISATA_H2H_CLIENT_KEY_PATH").trim()
+  const pfxPath = getOptionalEnv("DHARMAWISATA_H2H_CLIENT_PFX_PATH").trim()
+  const caPath = getOptionalEnv("DHARMAWISATA_H2H_CA_CERT_PATH").trim()
+  const passphrase = getOptionalEnv("DHARMAWISATA_H2H_CLIENT_CERT_PASSPHRASE").trim()
+  const rejectUnauthorized =
+    getOptionalEnv("DHARMAWISATA_H2H_TLS_REJECT_UNAUTHORIZED", "true").toLowerCase() !== "false"
+
+  if (!pfxPath && !(certPath && keyPath) && !caPath) return null
+
+  return {
+    cert: certPath ? readFileSync(certPath) : undefined,
+    key: keyPath ? readFileSync(keyPath) : undefined,
+    pfx: pfxPath ? readFileSync(pfxPath) : undefined,
+    ca: caPath ? readFileSync(caPath) : undefined,
+    passphrase: passphrase || undefined,
+    rejectUnauthorized,
+  }
+}
+
+function normalizeRequestBody(body: BodyInit | null | undefined) {
+  if (!body) return undefined
+  if (typeof body === "string") return body
+  if (body instanceof URLSearchParams) return body.toString()
+  throw new Error("Dharmawisata request body type is not supported by mTLS transport.")
+}
+
+async function dharmawisataNodeHttpsFetch(input: {
+  url: string
+  method: string
+  headers?: HeadersInit
+  body?: BodyInit | null
+  timeoutMs: number
+}) {
+  const mtlsOptions = getDharmawisataMtlsOptions()
+  if (!mtlsOptions) return null
+
+  const requestBody = normalizeRequestBody(input.body)
+  const headers = normalizeHeaders(input.headers)
+  if (requestBody !== undefined && !headers["content-length"]) {
+    headers["content-length"] = Buffer.byteLength(requestBody).toString()
+  }
+
+  return new Promise<Response>((resolve, reject) => {
+    const request = https.request(
+      input.url,
+      {
+        method: input.method,
+        headers,
+        timeout: input.timeoutMs,
+        ...mtlsOptions,
+      },
+      (response) => {
+        const chunks: Buffer[] = []
+        response.on("data", (chunk) => {
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+        })
+        response.on("end", () => {
+          resolve(
+            new Response(Buffer.concat(chunks), {
+              status: response.statusCode || 0,
+              statusText: response.statusMessage,
+              headers: response.headers as HeadersInit,
+            }),
+          )
+        })
+      },
+    )
+
+    request.on("timeout", () => {
+      request.destroy(new Error(`Dharmawisata request timed out after ${input.timeoutMs}ms`))
+    })
+    request.on("error", reject)
+    if (requestBody !== undefined) request.write(requestBody)
+    request.end()
+  })
 }
 
 export function getDharmawisataClientConfig(): DharmawisataClientConfig {
@@ -92,6 +182,17 @@ export async function dharmawisataFetch({
   const config = getDharmawisataClientConfig()
   const url = joinPath(config.baseUrl, path)
   const requestTimeoutMs = timeoutMs ?? getDharmawisataTimeoutMs()
+  const mtlsResponse = url.startsWith("https://")
+    ? await dharmawisataNodeHttpsFetch({
+        url,
+        method,
+        headers,
+        body,
+        timeoutMs: requestTimeoutMs,
+      })
+    : null
+
+  if (mtlsResponse) return mtlsResponse
 
   return fetch(url, {
     method,

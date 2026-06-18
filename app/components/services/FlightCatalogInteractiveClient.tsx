@@ -31,6 +31,7 @@ type FlightFact = {
 
 type FlightMeta = {
   airline: string
+  flightNumber?: string
   departure: string
   arrival: string
   duration: string
@@ -81,16 +82,42 @@ type FlightFilterState = {
   priceBands: string[]
 }
 
+const AIRLINE_NAME_CODES: Record<string, string> = {
+  citilink: "QG",
+  "lion air": "JT",
+  "batik air": "ID",
+  airasia: "QZ",
+  "air asia": "QZ",
+  "garuda indonesia": "GA",
+}
+
+function resolveAirlineCode(airlineName: string, flightNumber?: string) {
+  const fromFlightNumber = String(flightNumber || "").trim().toUpperCase().match(/^([A-Z0-9]{2,3})\s*-?\s*\d/)
+  if (fromFlightNumber) return fromFlightNumber[1] || ""
+
+  const normalizedAirline = airlineName.trim().toLowerCase()
+  return AIRLINE_NAME_CODES[normalizedAirline] || ""
+}
+
+function normalizeFlightNumberForCheckout(item: FlightItem) {
+  const fromMeta = String(item.meta.flightNumber || "").trim().toUpperCase()
+  if (/^[A-Z0-9]{2,3}\s*-?\s*\d{1,4}[A-Z]?$/.test(fromMeta)) return fromMeta.replace(/\s+/g, "")
+  return ""
+}
+
 function buildFlightCheckoutHref(item: FlightItem, state: FlightFilterState, dataSource: string) {
   const params = new URLSearchParams()
   const meta = item.meta
   const departDate = state.depart || meta.availableDates[0] || ""
   const returnDate = state.tripMode === "round_trip" ? state.returnDate : ""
+  const flightNumber = normalizeFlightNumberForCheckout(item)
+  const airlineCode = resolveAirlineCode(meta.airline, flightNumber)
 
   params.set("offer_id", item.id)
   params.set("title", item.title)
   params.set("airline", meta.airline)
-  params.set("flight_number", item.id.replace(/^live-/, "").toUpperCase())
+  params.set("flight_number", flightNumber)
+  params.set("airline_code", airlineCode)
   params.set("origin", meta.origin)
   params.set("destination", meta.destination)
   params.set("route", meta.routeCode)
@@ -104,7 +131,8 @@ function buildFlightCheckoutHref(item: FlightItem, state: FlightFilterState, dat
   params.set("trip_type", state.tripMode)
   params.set("passengers", state.passengers || "1")
   params.set("price", String(parseFlightPrice(meta.price)))
-  params.set("fare_reference_id", item.id)
+  params.set("fare_reference_id", item.id.replace(/^live-/, ""))
+  params.set("airline_access_code", item.id.replace(/^live-/, ""))
   params.set("source", dataSource || "catalog")
 
   return `/pesawat/checkout?${params.toString()}`

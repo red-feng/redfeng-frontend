@@ -70,9 +70,30 @@ Status `issued` tidak boleh dipilih saat create booking. Issue tetap dilakukan s
 Isi env berikut saat endpoint resmi dari Dharmawisata sudah dikonfirmasi:
 
 ```env
+DHARMAWISATA_H2H_BASE_URL=https://uat-backup.darmawisataindonesiah2h.co.id:7080/h2h
 DHARMAWISATA_H2H_BOOKING_PATH=/Airline/Booking
 DHARMAWISATA_H2H_BOOKING_DETAIL_PATH=/Airline/BookingDetail
 DHARMAWISATA_H2H_ISSUE_PATH=/Airline/Issued
 ```
 
 Path di atas berasal dari Help Page UAT Dharmawisata. Setelah env ini terpasang, create booking bisa mencoba auto-hold ke `Airline/Booking`, lalu gate `Request Ticket Issue` akan auto-issue via `Airline/Issued`. `Mark Issued` dan `Mark Issue Failed` tetap tersedia sebagai override/follow up manual.
+
+## Catatan TLS UAT
+
+Pengecekan ke `https://uat-backup.darmawisataindonesiah2h.co.id:7080/h2h/` menunjukkan server meminta credential/certificate saat TLS handshake. Jika Dharmawisata memberikan client certificate, isi salah satu konfigurasi berikut:
+
+```env
+# Opsi PFX/P12
+DHARMAWISATA_H2H_CLIENT_PFX_PATH=/secure/dharmawisata/client.p12
+DHARMAWISATA_H2H_CLIENT_CERT_PASSPHRASE=...
+
+# Atau opsi cert + key PEM
+DHARMAWISATA_H2H_CLIENT_CERT_PATH=/secure/dharmawisata/client.crt
+DHARMAWISATA_H2H_CLIENT_KEY_PATH=/secure/dharmawisata/client.key
+DHARMAWISATA_H2H_CLIENT_CERT_PASSPHRASE=...
+
+# Opsional jika Dharmawisata memberi CA chain khusus
+DHARMAWISATA_H2H_CA_CERT_PATH=/secure/dharmawisata/ca.crt
+```
+
+Tanpa certificate tersebut, auto-search/auto-booking bisa gagal di level koneksi. Red Feng tetap menyimpan booking internal dan menahan payment sampai admin berhasil recheck fare serta mencatat hold/PNR.

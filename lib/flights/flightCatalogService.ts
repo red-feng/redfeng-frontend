@@ -176,8 +176,11 @@ function buildItemFromAffiliateOffer(
 }
 
 function mapAffiliateOfferToFlightCardMeta(offer: AffiliateFlightOffer, item: DummyCatalogItem): FlightCatalogCardMeta {
+  const flightNumber = offer.segments.map((segment) => segment.flightNumber).filter(Boolean)[0] || ""
+
   return {
     airline: offer.airlineName,
+    flightNumber,
     departure: offer.departureTime,
     arrival: offer.arrivalTime,
     duration: offer.durationLabel,

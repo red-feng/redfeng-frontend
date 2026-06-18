@@ -24,6 +24,7 @@ export default async function FlightCheckoutPage({
     offerId: firstParam(params, "offer_id"),
     title: firstParam(params, "title"),
     airline: firstParam(params, "airline"),
+    airlineCode: firstParam(params, "airline_code"),
     flightNumber: firstParam(params, "flight_number"),
     origin: firstParam(params, "origin"),
     destination: firstParam(params, "destination"),
@@ -39,6 +40,9 @@ export default async function FlightCheckoutPage({
     passengers: firstParam(params, "passengers") || "1",
     price: numberParam(params, "price"),
     fareReferenceId: firstParam(params, "fare_reference_id"),
+    airlineAccessCode: firstParam(params, "airline_access_code"),
+    searchKey: firstParam(params, "search_key"),
+    detailSchedule: firstParam(params, "detail_schedule"),
     source: firstParam(params, "source") || "catalog",
   }
 
