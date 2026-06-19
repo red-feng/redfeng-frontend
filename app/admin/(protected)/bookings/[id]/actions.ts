@@ -8,6 +8,7 @@ import { createAdminAuditLog } from "@/lib/admin-audit"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { formatBookingCode } from "@/lib/merchant-code"
 import { issueDharmawisataFlightTicket } from "@/lib/flights/dharmawisataTicketIssue"
+import { createDharmawisataFlightBooking, type DharmawisataPassenger } from "@/lib/flights/dharmawisataFlightBooking"
 
 type BookingPortal = "admin" | "superadmin"
 
@@ -100,6 +101,59 @@ function readNestedString(value: unknown, keys: string[]) {
 
 function asJsonRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
+}
+
+function splitPersonName(value: string) {
+  const parts = value.trim().split(/\s+/).filter(Boolean)
+  if (parts.length <= 1) {
+    return {
+      firstName: parts[0] || "Passenger",
+      lastName: parts[0] || "Passenger",
+    }
+  }
+
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(" "),
+  }
+}
+
+function splitIndonesianPhone(value: string) {
+  const digits = value.replace(/\D/g, "")
+  const local = digits.startsWith("62") ? digits.slice(2) : digits.startsWith("0") ? digits.slice(1) : digits
+  const areaLength = local.length >= 10 ? 3 : 2
+
+  return {
+    countryCode: "62",
+    areaCode: local.slice(0, areaLength),
+    remainingPhoneNo: local.slice(areaLength),
+  }
+}
+
+function normalizePassengerTitle(value: unknown) {
+  const normalized = String(value || "").trim().toUpperCase()
+  return ["MR", "MRS", "MS", "MSTR", "MISS"].includes(normalized) ? normalized : "MR"
+}
+
+function buildDharmawisataPassengersFromParticipants(
+  participants: Array<{ full_name: string | null; participant_type: string | null }>,
+  fallbackName: string,
+  fallbackEmail: string,
+) {
+  const source = participants.length > 0 ? participants : [{ full_name: fallbackName, participant_type: "adult" }]
+
+  return source.map((participant): DharmawisataPassenger => {
+    const name = splitPersonName(participant.full_name || fallbackName)
+    const type = String(participant.participant_type || "").toLowerCase()
+
+    return {
+      title: normalizePassengerTitle(type === "child" ? "MSTR" : "MR"),
+      firstName: name.firstName,
+      lastName: name.lastName,
+      email: fallbackEmail,
+      type: type === "child" ? "Child" : type === "infant" ? "Infant" : "Adult",
+    }
+  })
 }
 
 function backToBookingDetailWithState(bookingId: string, type: "success" | "error", message: string, formData: FormData): never {
@@ -279,7 +333,7 @@ async function getFlightBookingForAction(bookingId: string, formData: FormData) 
   const adminSupabase = createAdminClient()
   const { data: booking, error: bookingError } = await adminSupabase
     .from("bookings")
-    .select("id, booking_code, booking_product_type, payment_status, booking_status, supplier_order_status, supplier_booking_reference, created_at")
+    .select("id, booking_code, booking_product_type, payment_status, booking_status, supplier_order_status, supplier_booking_reference, customer_name, customer_email, customer_phone, adult_count, child_count, created_at")
     .eq("id", bookingId)
     .maybeSingle<{
       id: string
@@ -289,6 +343,11 @@ async function getFlightBookingForAction(bookingId: string, formData: FormData) 
       booking_status: string | null
       supplier_order_status: string | null
       supplier_booking_reference: string | null
+      customer_name: string | null
+      customer_email: string | null
+      customer_phone: string | null
+      adult_count: number | null
+      child_count: number | null
       created_at: string | null
     }>()
 
@@ -303,7 +362,7 @@ async function getFlightBookingForAction(bookingId: string, formData: FormData) 
   const { data: flightDetail, error: flightDetailError } = await adminSupabase
     .from("flight_booking_details")
     .select(
-      "booking_id, lifecycle_status, issue_status, pnr_code, ticket_number, supplier_confirmation_code, fare_reference_id, airline_code, origin_airport_code, destination_airport_code, trip_type, departure_at, return_at, passenger_count",
+      "booking_id, lifecycle_status, issue_status, pnr_code, ticket_number, supplier_confirmation_code, fare_reference_id, airline_code, flight_number, origin_airport_code, destination_airport_code, trip_type, departure_at, arrival_at, return_at, cabin_class, passenger_count",
     )
     .eq("booking_id", bookingId)
     .maybeSingle<{
@@ -315,11 +374,14 @@ async function getFlightBookingForAction(bookingId: string, formData: FormData) 
       supplier_confirmation_code: string | null
       fare_reference_id: string | null
       airline_code: string | null
+      flight_number: string | null
       origin_airport_code: string | null
       destination_airport_code: string | null
       trip_type: string | null
       departure_at: string | null
+      arrival_at: string | null
       return_at: string | null
+      cabin_class: string | null
       passenger_count: number | null
     }>()
 
@@ -329,7 +391,7 @@ async function getFlightBookingForAction(bookingId: string, formData: FormData) 
 
   const { data: supplierOrder } = await adminSupabase
     .from("supplier_orders")
-    .select("id, supplier_order_id, supplier_reference, supplier_status, response_payload")
+    .select("id, supplier_order_id, supplier_reference, supplier_status, request_payload, response_payload")
     .eq("booking_id", bookingId)
     .eq("product_type", "flight")
     .order("created_at", { ascending: false })
@@ -339,6 +401,7 @@ async function getFlightBookingForAction(bookingId: string, formData: FormData) 
       supplier_order_id: string | null
       supplier_reference: string | null
       supplier_status: string | null
+      request_payload: Record<string, unknown> | null
       response_payload: Record<string, unknown> | null
     }>()
 
@@ -518,6 +581,240 @@ export async function markFlightFareRechecked(formData: FormData) {
       : "Fare recheck tercatat. Payment dapat dibuka ke customer.",
     formData,
   )
+}
+
+export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
+  const portal = resolvePortal(formData)
+  const adminActor = await ensureAdmin(portal)
+  const bookingId = String(formData.get("booking_id") || "").trim()
+
+  if (!bookingId) {
+    redirect(resolvePortalPaths(portal).bookingsPath)
+  }
+
+  const { adminSupabase, booking, flightDetail, supplierOrder } = await getFlightBookingForAction(bookingId, formData)
+  const lifecycleStatus = String(flightDetail.lifecycle_status || "").toLowerCase()
+
+  if (String(booking.payment_status || "").toLowerCase() === "paid") {
+    backToBookingDetailWithState(bookingId, "error", "Hold Dharmawisata tidak dijalankan karena payment sudah verified.", formData)
+  }
+
+  if (["booking_hold_created", "pending_payment", "payment_uploaded", "payment_verified", "ticketing", "issued"].includes(lifecycleStatus)) {
+    backToBookingDetailWithState(bookingId, "error", "Booking ini sudah melewati gate hold/recheck.", formData)
+  }
+
+  if (!supplierOrder?.id) {
+    backToBookingDetailWithState(bookingId, "error", "Supplier order Pesawat tidak ditemukan.", formData)
+  }
+
+  const customerName = String(booking.customer_name || "").trim()
+  const customerEmail = String(booking.customer_email || "").trim()
+  const customerPhone = String(booking.customer_phone || "").trim()
+
+  if (!customerName || !customerEmail || !customerPhone) {
+    backToBookingDetailWithState(bookingId, "error", "Data kontak customer belum lengkap untuk hold Dharmawisata.", formData)
+  }
+
+  const { data: participants } = await adminSupabase
+    .from("booking_participants")
+    .select("full_name, participant_type")
+    .eq("booking_id", bookingId)
+    .order("sequence_no", { ascending: true })
+    .returns<Array<{ full_name: string | null; participant_type: string | null }>>()
+
+  const previousSupplierResponsePayload = asJsonRecord(supplierOrder.response_payload)
+  const requestPayload = asJsonRecord(supplierOrder.request_payload)
+  const contactName = splitPersonName(customerName)
+  const contactPhone = splitIndonesianPhone(customerPhone)
+  const dharmawisataPassengers = buildDharmawisataPassengersFromParticipants(participants || [], customerName, customerEmail)
+  const paxAdult = Math.max(Number(booking.adult_count || flightDetail.passenger_count || dharmawisataPassengers.length || 1), 1)
+  const paxChild = Math.max(Number(booking.child_count || 0), 0)
+  const airlineAccessCode =
+    readNestedString(requestPayload, ["airlineAccessCode", "fareReferenceId"]) ||
+    readNestedString(previousSupplierResponsePayload, ["airlineAccessCode"]) ||
+    flightDetail.fare_reference_id ||
+    null
+  const searchKey = readNestedString(requestPayload, ["searchKey"]) || readNestedString(previousSupplierResponsePayload, ["searchKey"])
+  const detailSchedule =
+    readNestedString(requestPayload, ["detailSchedule", "journeyReference"]) ||
+    readNestedString(previousSupplierResponsePayload, ["detailSchedule", "journeyReference"]) ||
+    flightDetail.flight_number
+
+  const holdResult = await createDharmawisataFlightBooking({
+    bookingId,
+    airlineId: flightDetail.airline_code,
+    airlineCode: flightDetail.airline_code,
+    flightNumber: flightDetail.flight_number,
+    originAirportCode: flightDetail.origin_airport_code,
+    destinationAirportCode: flightDetail.destination_airport_code,
+    tripType: flightDetail.trip_type,
+    departureAt: flightDetail.departure_at,
+    arrivalAt: flightDetail.arrival_at,
+    returnAt: flightDetail.return_at,
+    flightClass: flightDetail.cabin_class || "Economy",
+    detailSchedule,
+    searchKey,
+    airlineAccessCode,
+    contactTitle: "MR",
+    contactFirstName: contactName.firstName,
+    contactLastName: contactName.lastName,
+    contactCountryCodePhone: contactPhone.countryCode,
+    contactAreaCodePhone: contactPhone.areaCode,
+    contactRemainingPhoneNo: contactPhone.remainingPhoneNo,
+    contactEmail: customerEmail,
+    paxAdult,
+    paxChild,
+    paxInfant: 0,
+    passengers: dharmawisataPassengers,
+  })
+
+  if (!holdResult.ok) {
+    const now = new Date().toISOString()
+
+    await adminSupabase
+      .from("supplier_orders")
+      .update({
+        supplier_status: holdResult.skipped ? supplierOrder.supplier_status || "pending_submission" : "failed",
+        response_payload: {
+          ...previousSupplierResponsePayload,
+          dharmawisataHoldAttempt: holdResult.raw,
+        },
+        last_error: holdResult.message,
+        synced_at: now,
+        updated_by: adminActor.user.id,
+      })
+      .eq("id", supplierOrder.id)
+
+    await insertSupplierOrderEvent({
+      supplierOrderId: supplierOrder.id,
+      actorId: adminActor.user.id,
+      actorRole: adminActor.role,
+      eventType: holdResult.skipped ? "flight_booking_hold_skipped" : "flight_booking_hold_failed",
+      summary: `Hold Dharmawisata gagal: ${holdResult.message}`,
+      metadata: {
+        bookingId,
+        mode: holdResult.mode,
+        skipped: holdResult.skipped,
+        message: holdResult.message,
+        raw: holdResult.raw,
+      },
+    })
+
+    await createAdminAuditLog({
+      actorId: adminActor.user.id,
+      actorRole: adminActor.role,
+      targetType: "booking",
+      targetId: bookingId,
+      action: "flight_dharmawisata_hold_failed",
+      summary: `Hold Dharmawisata ${formatBookingCode(booking.booking_code, booking.id)} gagal`,
+      metadata: {
+        productType: "flight",
+        mode: holdResult.mode,
+        skipped: holdResult.skipped,
+        message: holdResult.message,
+      },
+    })
+
+    revalidateBookingDetailPaths(bookingId, portal)
+    backToBookingDetailWithState(bookingId, "error", `Hold Dharmawisata gagal: ${holdResult.message}`, formData)
+  }
+
+  const now = new Date().toISOString()
+  const holdExpiresAt = normalizeDateTimeForDb(holdResult.timeLimit)
+  const apiSupplierReference = holdResult.referenceNo || holdResult.bookingCodeAirline || null
+  const apiBookingCode = holdResult.bookingCode || null
+
+  const { error: supplierError } = await adminSupabase
+    .from("supplier_orders")
+    .update({
+      supplier_order_id: apiBookingCode,
+      supplier_reference: apiSupplierReference,
+      supplier_status: "confirmed",
+      response_payload: {
+        ...previousSupplierResponsePayload,
+        dharmawisataHold: holdResult.raw,
+      },
+      last_error: null,
+      submitted_at: now,
+      confirmed_at: now,
+      synced_at: now,
+      updated_by: adminActor.user.id,
+    })
+    .eq("id", supplierOrder.id)
+
+  if (supplierError) {
+    backToBookingDetailWithState(bookingId, "error", supplierError.message, formData)
+  }
+
+  const { error: bookingError } = await adminSupabase
+    .from("bookings")
+    .update({
+      booking_status: "pending_payment",
+      supplier_booking_reference: apiSupplierReference,
+      supplier_order_status: "confirmed",
+    })
+    .eq("id", bookingId)
+
+  if (bookingError) {
+    backToBookingDetailWithState(bookingId, "error", bookingError.message, formData)
+  }
+
+  const { error: detailError } = await adminSupabase
+    .from("flight_booking_details")
+    .update({
+      lifecycle_status: "booking_hold_created",
+      pnr_code: holdResult.bookingCodeAirline || flightDetail.pnr_code || null,
+      supplier_confirmation_code: holdResult.referenceNo || holdResult.bookingCode || null,
+      fare_reference_id: holdResult.airlineAccessCode || airlineAccessCode || flightDetail.fare_reference_id || null,
+      fare_rechecked_at: now,
+      booking_hold_expires_at: holdExpiresAt,
+      supplier_raw_reference: holdResult.raw,
+      notes: "Hold Dharmawisata berhasil dibuat via admin recheck. Payment gate dapat dibuka.",
+      updated_at: now,
+    })
+    .eq("booking_id", bookingId)
+
+  if (detailError) {
+    backToBookingDetailWithState(bookingId, "error", detailError.message, formData)
+  }
+
+  await insertSupplierOrderEvent({
+    supplierOrderId: supplierOrder.id,
+    actorId: adminActor.user.id,
+    actorRole: adminActor.role,
+    eventType: "flight_booking_hold_created_via_dharmawisata",
+    summary: "Admin berhasil membuat booking/hold Pesawat lewat API Dharmawisata.",
+    metadata: {
+      bookingId,
+      lifecycleStatus: "booking_hold_created",
+      bookingCode: holdResult.bookingCode,
+      bookingDate: holdResult.bookingDate,
+      referenceNo: holdResult.referenceNo,
+      bookingCodeAirline: holdResult.bookingCodeAirline,
+      timeLimit: holdResult.timeLimit,
+    },
+  })
+
+  await createAdminAuditLog({
+    actorId: adminActor.user.id,
+    actorRole: adminActor.role,
+    targetType: "booking",
+    targetId: bookingId,
+    action: "flight_dharmawisata_hold_created",
+    summary: `Hold Dharmawisata ${formatBookingCode(booking.booking_code, booking.id)} berhasil`,
+    metadata: {
+      productType: "flight",
+      lifecycleStatus: "booking_hold_created",
+      supplierStatus: "confirmed",
+      bookingCode: holdResult.bookingCode,
+      referenceNo: holdResult.referenceNo,
+      bookingCodeAirline: holdResult.bookingCodeAirline,
+      timeLimit: holdResult.timeLimit,
+    },
+  })
+
+  revalidateBookingDetailPaths(bookingId, portal)
+  backToBookingDetailWithState(bookingId, "success", "Hold Dharmawisata berhasil dibuat. Payment gate sudah siap untuk customer.", formData)
 }
 
 export async function verifyFlightPayment(formData: FormData) {

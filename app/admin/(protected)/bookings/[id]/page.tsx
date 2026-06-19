@@ -25,6 +25,7 @@ import {
   markFlightFareRechecked,
   markFlightIssueFailed,
   markFlightTicketIssued,
+  recheckAndHoldDharmawisataFlight,
   reopenBookingAdminNote,
   requestFlightTicketIssue,
   resolveBookingAdminNote,
@@ -690,6 +691,10 @@ export default async function AdminBookingDetailPage({
     flightLifecycleStatus !== "payment_verified" &&
     flightLifecycleStatus !== "ticketing" &&
     flightLifecycleStatus !== "issued"
+  const canRecheckAndHoldDharmawisata =
+    canMarkFlightFareRechecked &&
+    booking.fulfillment_mode === "affiliate_api" &&
+    Boolean(supplierOrder?.id)
   const canVerifyFlightPayment =
     canExecuteAdminOps &&
     isFlightBooking &&
@@ -1083,6 +1088,16 @@ export default async function AdminBookingDetailPage({
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  {canRecheckAndHoldDharmawisata ? (
+                    <form action={recheckAndHoldDharmawisataFlight}>
+                      <input type="hidden" name="portal" value={portal} />
+                      <input type="hidden" name="booking_id" value={booking.id} />
+                      <button className="rounded-[14px] bg-orange-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-orange-700">
+                        Recheck & Hold Dharmawisata
+                      </button>
+                    </form>
+                  ) : null}
+
                   {canVerifyFlightPayment ? (
                     <form action={verifyFlightPayment}>
                       <input type="hidden" name="portal" value={portal} />
