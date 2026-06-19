@@ -9,6 +9,7 @@ import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { formatBookingCode } from "@/lib/merchant-code"
 import { issueDharmawisataFlightTicket } from "@/lib/flights/dharmawisataTicketIssue"
 import { createDharmawisataFlightBooking, type DharmawisataPassenger } from "@/lib/flights/dharmawisataFlightBooking"
+import { sendFlightTicketIssuedEmail } from "@/lib/flights/flightTicketEmail"
 
 type BookingPortal = "admin" | "superadmin"
 
@@ -333,7 +334,7 @@ async function getFlightBookingForAction(bookingId: string, formData: FormData) 
   const adminSupabase = createAdminClient()
   const { data: booking, error: bookingError } = await adminSupabase
     .from("bookings")
-    .select("id, booking_code, booking_product_type, payment_status, booking_status, supplier_order_status, supplier_booking_reference, customer_name, customer_email, customer_phone, adult_count, child_count, created_at")
+    .select("id, booking_code, booking_product_type, payment_status, booking_status, supplier_order_status, supplier_booking_reference, customer_name, customer_email, customer_phone, customer_locale, adult_count, child_count, created_at")
     .eq("id", bookingId)
     .maybeSingle<{
       id: string
@@ -346,6 +347,7 @@ async function getFlightBookingForAction(bookingId: string, formData: FormData) 
       customer_name: string | null
       customer_email: string | null
       customer_phone: string | null
+      customer_locale: string | null
       adult_count: number | null
       child_count: number | null
       created_at: string | null
@@ -362,7 +364,7 @@ async function getFlightBookingForAction(bookingId: string, formData: FormData) 
   const { data: flightDetail, error: flightDetailError } = await adminSupabase
     .from("flight_booking_details")
     .select(
-      "booking_id, lifecycle_status, issue_status, pnr_code, ticket_number, supplier_confirmation_code, fare_reference_id, airline_code, flight_number, origin_airport_code, destination_airport_code, trip_type, departure_at, arrival_at, return_at, cabin_class, passenger_count",
+      "booking_id, lifecycle_status, issue_status, pnr_code, ticket_number, supplier_confirmation_code, fare_reference_id, airline_code, airline_name, flight_number, origin_airport_code, destination_airport_code, trip_type, departure_at, arrival_at, return_at, cabin_class, passenger_count",
     )
     .eq("booking_id", bookingId)
     .maybeSingle<{
@@ -374,6 +376,7 @@ async function getFlightBookingForAction(bookingId: string, formData: FormData) 
       supplier_confirmation_code: string | null
       fare_reference_id: string | null
       airline_code: string | null
+      airline_name: string | null
       flight_number: string | null
       origin_airport_code: string | null
       destination_airport_code: string | null
@@ -432,6 +435,96 @@ async function insertSupplierOrderEvent(input: {
     summary: input.summary,
     metadata: input.metadata || {},
   })
+}
+
+async function notifyCustomerFlightTicketIssued(input: {
+  adminSupabase: ReturnType<typeof createAdminClient>
+  supplierOrderId?: string | null
+  actorId: string
+  actorRole: string
+  bookingId: string
+  bookingCode: string
+  customerName?: string | null
+  customerEmail?: string | null
+  customerLocale?: string | null
+  airlineName?: string | null
+  airlineCode?: string | null
+  flightNumber?: string | null
+  originAirportCode?: string | null
+  destinationAirportCode?: string | null
+  departureAt?: string | null
+  arrivalAt?: string | null
+  ticketNumber?: string | null
+  pnrCode?: string | null
+}) {
+  try {
+    const emailResult = await sendFlightTicketIssuedEmail({
+      bookingCode: input.bookingCode,
+      customerName: input.customerName || null,
+      customerEmail: input.customerEmail || null,
+      locale: input.customerLocale || null,
+      airlineName: input.airlineName || null,
+      airlineCode: input.airlineCode || null,
+      flightNumber: input.flightNumber || null,
+      originAirportCode: input.originAirportCode || null,
+      destinationAirportCode: input.destinationAirportCode || null,
+      departureAt: input.departureAt || null,
+      arrivalAt: input.arrivalAt || null,
+      ticketNumber: input.ticketNumber || null,
+      pnrCode: input.pnrCode || null,
+    })
+
+    if (emailResult.skipped) {
+      await insertSupplierOrderEvent({
+        supplierOrderId: input.supplierOrderId,
+        actorId: input.actorId,
+        actorRole: input.actorRole,
+        eventType: "flight_ticket_email_skipped",
+        summary: "Email e-ticket Pesawat dilewati karena konfigurasi email atau email customer belum tersedia.",
+        metadata: {
+          bookingId: input.bookingId,
+          customerEmailPresent: Boolean(input.customerEmail),
+        },
+      })
+      return
+    }
+
+    const notifiedAt = new Date().toISOString()
+    await input.adminSupabase
+      .from("flight_booking_details")
+      .update({
+        customer_notified_at: notifiedAt,
+        updated_at: notifiedAt,
+      })
+      .eq("booking_id", input.bookingId)
+
+    await insertSupplierOrderEvent({
+      supplierOrderId: input.supplierOrderId,
+      actorId: input.actorId,
+      actorRole: input.actorRole,
+      eventType: "flight_ticket_email_sent",
+      summary: "Email e-ticket Pesawat berhasil dikirim ke customer.",
+      metadata: {
+        bookingId: input.bookingId,
+        customerEmail: input.customerEmail || null,
+        ticketNumber: input.ticketNumber || null,
+        pnrCode: input.pnrCode || null,
+      },
+    })
+  } catch (error) {
+    await insertSupplierOrderEvent({
+      supplierOrderId: input.supplierOrderId,
+      actorId: input.actorId,
+      actorRole: input.actorRole,
+      eventType: "flight_ticket_email_failed",
+      summary: "Email e-ticket Pesawat gagal dikirim ke customer.",
+      metadata: {
+        bookingId: input.bookingId,
+        customerEmail: input.customerEmail || null,
+        error: error instanceof Error ? error.message : "Unknown email error",
+      },
+    })
+  }
 }
 
 function revalidateBookingDetailPaths(bookingId: string, portal: BookingPortal) {
@@ -1093,8 +1186,29 @@ export async function requestFlightTicketIssue(formData: FormData) {
       },
     })
 
+    await notifyCustomerFlightTicketIssued({
+      adminSupabase,
+      supplierOrderId: supplierOrder?.id,
+      actorId: adminActor.user.id,
+      actorRole: adminActor.role,
+      bookingId,
+      bookingCode: formatBookingCode(booking.booking_code, booking.id),
+      customerName: booking.customer_name,
+      customerEmail: booking.customer_email,
+      customerLocale: booking.customer_locale,
+      airlineName: flightDetail.airline_name,
+      airlineCode: flightDetail.airline_code,
+      flightNumber: flightDetail.flight_number,
+      originAirportCode: flightDetail.origin_airport_code,
+      destinationAirportCode: flightDetail.destination_airport_code,
+      departureAt: flightDetail.departure_at,
+      arrivalAt: flightDetail.arrival_at,
+      ticketNumber,
+      pnrCode,
+    })
+
     revalidateBookingDetailPaths(bookingId, portal)
-    backToBookingDetailWithState(bookingId, "success", "Issue tiket Dharmawisata berhasil. Booking sudah ditandai issued.", formData)
+    backToBookingDetailWithState(bookingId, "success", "Issue tiket Dharmawisata berhasil. Booking sudah ditandai issued dan e-ticket dikirim bila email tersedia.", formData)
   }
 
   const failedAt = new Date().toISOString()
@@ -1191,7 +1305,7 @@ export async function markFlightTicketIssued(formData: FormData) {
     redirect(resolvePortalPaths(portal).bookingsPath)
   }
 
-  const { adminSupabase, booking, supplierOrder } = await getFlightBookingForAction(bookingId, formData)
+  const { adminSupabase, booking, flightDetail, supplierOrder } = await getFlightBookingForAction(bookingId, formData)
   const now = new Date().toISOString()
 
   if (!ticketNumber && !pnrCode) {
@@ -1275,8 +1389,29 @@ export async function markFlightTicketIssued(formData: FormData) {
     },
   })
 
+  await notifyCustomerFlightTicketIssued({
+    adminSupabase,
+    supplierOrderId: supplierOrder?.id,
+    actorId: adminActor.user.id,
+    actorRole: adminActor.role,
+    bookingId,
+    bookingCode: formatBookingCode(booking.booking_code, booking.id),
+    customerName: booking.customer_name,
+    customerEmail: booking.customer_email,
+    customerLocale: booking.customer_locale,
+    airlineName: flightDetail.airline_name,
+    airlineCode: flightDetail.airline_code,
+    flightNumber: flightDetail.flight_number,
+    originAirportCode: flightDetail.origin_airport_code,
+    destinationAirportCode: flightDetail.destination_airport_code,
+    departureAt: flightDetail.departure_at,
+    arrivalAt: flightDetail.arrival_at,
+    ticketNumber: ticketNumber || null,
+    pnrCode: pnrCode || null,
+  })
+
   revalidateBookingDetailPaths(bookingId, portal)
-  backToBookingDetailWithState(bookingId, "success", "Tiket Pesawat berhasil ditandai issued.", formData)
+  backToBookingDetailWithState(bookingId, "success", "Tiket Pesawat berhasil ditandai issued dan e-ticket dikirim bila email tersedia.", formData)
 }
 
 export async function markFlightIssueFailed(formData: FormData) {

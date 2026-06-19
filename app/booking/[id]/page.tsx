@@ -1008,7 +1008,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                 locale={locale}
                 label={normalizedPaymentType === "dp" ? t.payDpNow : t.payFullNow}
                 className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                cleanupOnAbandon
+                cleanupOnAbandon={!isFlightBooking}
                 redirectOnCleanup={t.draftCancelledRedirect}
               />
             ) : null}

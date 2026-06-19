@@ -19,6 +19,7 @@ type BookingRow = {
   id: string
   package_id: string | null
   booking_code: string | null
+  booking_product_type?: string | null
   customer_email?: string | null
   created_at?: string | null
   pickup_date: string | null
@@ -33,6 +34,8 @@ type BookingRow = {
   merchant_arrived_at: string | null
   merchant_picked_up_at: string | null
   customer_picked_up_at: string | null
+  flight_lifecycle_status?: string | null
+  flight_booking_hold_expires_at?: string | null
 }
 
 type PackageRow = {
@@ -113,6 +116,18 @@ function getCustomerActionHint(
   }
 
   if (paymentStatus === "pending" || paymentStatus === "unpaid") {
+    if (isFlightBooking(booking) && !canOpenFlightPayment(booking)) {
+      return {
+        tone: "border-sky-200 bg-sky-50 text-sky-800",
+        text:
+          locale === "en"
+            ? "Red Feng is rechecking the fare and securing the airline hold. Payment will open after the hold is confirmed."
+            : locale === "zh"
+              ? "Red Feng 正在复查票价并锁定航空公司预订。确认 hold 后将开放付款。"
+              : "Red Feng sedang recheck fare dan mengunci hold maskapai. Pembayaran akan terbuka setelah hold terkonfirmasi.",
+      }
+    }
+
     return {
       tone: "border-slate-200 bg-slate-50 text-slate-700",
       text: t.paymentPendingNote,
@@ -176,6 +191,24 @@ function getCustomerActionHint(
   }
 
   return null
+}
+
+function isFlightBooking(booking: BookingRow) {
+  return normalizeStatus(booking.booking_product_type || null) === "flight"
+}
+
+function isExpiredDateTime(value: string | null | undefined) {
+  if (!value) return false
+  const parsed = new Date(value)
+  return !Number.isNaN(parsed.getTime()) && parsed.getTime() <= Date.now()
+}
+
+function canOpenFlightPayment(booking: BookingRow) {
+  if (!isFlightBooking(booking)) return false
+  return (
+    normalizeStatus(booking.flight_lifecycle_status) === "booking_hold_created" &&
+    !isExpiredDateTime(booking.flight_booking_hold_expires_at)
+  )
 }
 
 function formatMoney(value: number) {
@@ -573,7 +606,7 @@ export default async function CustomerDashboardPage() {
     const adminBookingsResult = await adminSupabase
       .from("bookings")
       .select(
-        "id, package_id, booking_code, customer_email, created_at, pickup_date, payment_type, final_payment_amount, total_amount, display_currency, display_subtotal_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
+        "id, package_id, booking_product_type, booking_code, customer_email, created_at, pickup_date, payment_type, final_payment_amount, total_amount, display_currency, display_subtotal_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
       )
       .eq("customer_email", user.email)
 
@@ -586,7 +619,7 @@ export default async function CustomerDashboardPage() {
     const fallbackBookingsResult = await adminSupabase
       .from("bookings")
       .select(
-        "id, package_id, booking_code, customer_email, created_at, payment_type, final_payment_amount, total_amount, display_currency, display_subtotal_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
+        "id, package_id, booking_product_type, booking_code, customer_email, created_at, payment_type, final_payment_amount, total_amount, display_currency, display_subtotal_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
       )
       .eq("customer_email", user.email)
 
@@ -612,6 +645,30 @@ export default async function CustomerDashboardPage() {
     const timeB = b.pickup_date ? new Date(b.pickup_date).getTime() : 0
       return timeB - timeA
     })
+
+  const flightBookingIds = customerBookings.filter(isFlightBooking).map((booking) => booking.id)
+  if (flightBookingIds.length > 0) {
+    const { data: flightRows } = await adminSupabase
+      .from("flight_booking_details")
+      .select("booking_id, lifecycle_status, booking_hold_expires_at")
+      .in("booking_id", flightBookingIds)
+
+    const flightMap = new Map(
+      ((flightRows as Array<{
+        booking_id: string
+        lifecycle_status: string | null
+        booking_hold_expires_at: string | null
+      }> | null) || []).map((row) => [row.booking_id, row]),
+    )
+
+    for (const booking of customerBookings) {
+      const flight = flightMap.get(booking.id)
+      if (!flight) continue
+      booking.flight_lifecycle_status = flight.lifecycle_status
+      booking.flight_booking_hold_expires_at = flight.booking_hold_expires_at
+    }
+  }
+
   const packageIds = [...new Set(customerBookings.map((booking) => booking.package_id).filter(Boolean))]
 
   let packageRows: PackageRow[] | null = []
@@ -830,6 +887,9 @@ export default async function CustomerDashboardPage() {
                   const canConfirmPickup = Boolean(booking.merchant_arrived_at) && !booking.customer_picked_up_at
                   const isDpPaid = normalizeStatus(booking.payment_status) === "dp_paid"
                   const canPayRemaining = isDpPaid && !isFinalPaymentOverdue(booking.pickup_date)
+                  const canPayFlightInitial =
+                    ["pending", "unpaid", ""].includes(normalizeStatus(booking.payment_status)) &&
+                    canOpenFlightPayment(booking)
                   const finalPaymentDueDate = formatFinalPaymentDueLabel(booking.pickup_date)
                   const isSettlementOverdue = isDpPaid && isFinalPaymentOverdue(booking.pickup_date)
                   const dpAmountPaid = Math.max(Number(booking.total_amount || 0) - Number(booking.final_payment_amount || 0), 0)
@@ -943,6 +1003,14 @@ export default async function CustomerDashboardPage() {
                           </form>
                         )}
                         {canPayRemaining && (
+                          <BookingPaymentButton
+                            bookingId={booking.id}
+                            locale={locale}
+                            label={t.payNow}
+                            className="rounded-2xl border border-orange-300 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
+                          />
+                        )}
+                        {canPayFlightInitial && (
                           <BookingPaymentButton
                             bookingId={booking.id}
                             locale={locale}

@@ -1084,7 +1084,7 @@ export default async function AdminBookingDetailPage({
                 <div>
                   <p className="text-sm font-semibold text-slate-900">Admin flight gates</p>
                   <p className="mt-1 text-xs leading-5 text-slate-500">
-                    Jalankan berurutan: recheck fare/open payment, verify payment, request ticket issue, lalu tandai issued atau issue failed berdasarkan hasil supplier.
+                    Jalankan berurutan: recheck fare/open payment, verify payment, issue ticket Dharmawisata, lalu follow up manual bila supplier gagal.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -1113,7 +1113,7 @@ export default async function AdminBookingDetailPage({
                       <input type="hidden" name="portal" value={portal} />
                       <input type="hidden" name="booking_id" value={booking.id} />
                       <button className="rounded-[14px] bg-sky-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-sky-700">
-                        Request Ticket Issue
+                        Issue Ticket Dharmawisata
                       </button>
                     </form>
                   ) : null}
