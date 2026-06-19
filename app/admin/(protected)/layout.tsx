@@ -52,7 +52,15 @@ export default async function AdminProtectedLayout({
   const accessibleProducts = await getAccessibleInternalProducts(adminSupabase, user.id, profile.role)
   const visibleProductTypes = accessibleProducts.map((entry) => entry.productType)
 
-  const [merchantResult, packageResult, bookingResult, merchantDeletionRequestResult, internalChatUnreadBadgeCount, merchantSupportRooms] = await Promise.all([
+  const [
+    merchantResult,
+    packageResult,
+    bookingResult,
+    flightRecheckResult,
+    merchantDeletionRequestResult,
+    internalChatUnreadBadgeCount,
+    merchantSupportRooms,
+  ] = await Promise.all([
     adminSupabase
       .from("merchants")
       .select("id", { count: "exact", head: true })
@@ -65,6 +73,10 @@ export default async function AdminProtectedLayout({
       .from("bookings")
       .select("id", { count: "exact", head: true })
       .in("booking_status", [...ADMIN_ACTIVE_BOOKING_BADGE_STATUSES]),
+    adminSupabase
+      .from("flight_booking_details")
+      .select("booking_id", { count: "exact", head: true })
+      .in("lifecycle_status", ["fare_recheck_required", "fare_rechecked"]),
     adminSupabase
       .from("merchant_deletion_requests")
       .select("id", { count: "exact", head: true })
@@ -80,6 +92,7 @@ export default async function AdminProtectedLayout({
   // Package and booking badges should also stay visible while items remain in their active queue.
   const pendingPackagesBadgeCount = packageResult.count || 0
   const financeReadyBadgeCount = bookingResult.count || 0
+  const flightRecheckBadgeCount = visibleProductTypes.includes("flight") ? flightRecheckResult.count || 0 : 0
   const merchantSupportBadgeCount = getMerchantSupportUnreadCountForAdmin(merchantSupportRooms)
   const canAccessPackageTour = visibleProductTypes.includes("package_tour")
 
@@ -99,9 +112,14 @@ export default async function AdminProtectedLayout({
     { href: "/admin/merchants/anomalies", label: "Anomali", badgeCount: 0 },
   ]
   const productNavChildren = visibleProductTypes.map((productType) => ({
-    href: toAdminProductNavHref(productType),
+    href: productType === "flight" ? "/admin/pesawat/ops" : toAdminProductNavHref(productType),
     label: getBookingProductLabel(productType),
-    badgeCount: productType === "package_tour" ? pendingPackagesBadgeCount : 0,
+    badgeCount:
+      productType === "package_tour"
+        ? pendingPackagesBadgeCount
+        : productType === "flight"
+          ? flightRecheckBadgeCount
+          : 0,
   }))
   const adminNav = isOperationsManager
     ? [

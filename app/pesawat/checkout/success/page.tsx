@@ -1,10 +1,7 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import SimplePublicLogoHeader from "@/app/components/SimplePublicLogoHeader"
-import {
-  getFlightLifecycleStatusLabel,
-  normalizeFlightLifecycleStatus,
-} from "@/lib/affiliate-suppliers"
+import { getCustomerFlightStatus } from "@/lib/flights/customerFlightStatus"
 import { formatBookingCode } from "@/lib/merchant-code"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
@@ -23,6 +20,7 @@ type BookingRow = {
 
 type FlightDetailRow = {
   lifecycle_status: string | null
+  issue_status: string | null
   airline_name: string | null
   flight_number: string | null
   origin_airport_code: string | null
@@ -30,6 +28,7 @@ type FlightDetailRow = {
   departure_at: string | null
   arrival_at: string | null
   pnr_code: string | null
+  ticket_number: string | null
   booking_hold_expires_at: string | null
 }
 
@@ -56,31 +55,18 @@ function formatDateTime(value: string | null) {
 }
 
 function getSuccessCopy(detail: FlightDetailRow | null) {
-  const lifecycle = normalizeFlightLifecycleStatus(detail?.lifecycle_status)
-
-  if (lifecycle === "booking_hold_created" || lifecycle === "pending_payment") {
-    return {
-      eyebrow: "Hold supplier berhasil",
-      title: "Booking request diterima. Hold/PNR sudah dibuat.",
-      body: "Tim Red Feng akan memastikan detail hold tetap valid. Setelah itu, payment Midtrans dapat dibuka dari halaman detail booking Anda.",
-      statusLabel: lifecycle ? getFlightLifecycleStatusLabel(lifecycle) : "Booking/hold dibuat",
-    }
-  }
-
-  if (lifecycle === "fare_recheck_required" || lifecycle === "fare_rechecked") {
-    return {
-      eyebrow: "Menunggu recheck fare",
-      title: "Booking request diterima. Admin akan recheck fare lebih dulu.",
-      body: "Payment belum dibuka karena Red Feng perlu validasi fare dan membuat hold/PNR ke supplier. Setelah hold valid, link payment Midtrans akan tersedia.",
-      statusLabel: lifecycle ? getFlightLifecycleStatusLabel(lifecycle) : "Perlu recheck fare",
-    }
-  }
-
+  const customerStatus = getCustomerFlightStatus({
+    lifecycleStatus: detail?.lifecycle_status,
+    issueStatus: detail?.issue_status,
+    paymentStatus: "pending",
+    ticketNumber: detail?.ticket_number,
+    pnrCode: detail?.pnr_code,
+  })
   return {
-    eyebrow: "Booking pesawat diterima",
-    title: "Booking request Anda sudah masuk ke antrean Red Feng.",
-    body: "Tim Red Feng akan memproses fare, hold supplier, dan membuka payment setelah data supplier valid.",
-    statusLabel: lifecycle ? getFlightLifecycleStatusLabel(lifecycle) : "Diproses",
+    eyebrow: customerStatus.label,
+    title: customerStatus.headline,
+    body: customerStatus.body,
+    statusLabel: customerStatus.label,
   }
 }
 
@@ -122,7 +108,7 @@ export default async function FlightCheckoutSuccessPage({
 
   const { data: flightDetail } = await adminSupabase
     .from("flight_booking_details")
-    .select("lifecycle_status, airline_name, flight_number, origin_airport_code, destination_airport_code, departure_at, arrival_at, pnr_code, booking_hold_expires_at")
+    .select("lifecycle_status, issue_status, airline_name, flight_number, origin_airport_code, destination_airport_code, departure_at, arrival_at, pnr_code, ticket_number, booking_hold_expires_at")
     .eq("booking_id", booking.id)
     .maybeSingle<FlightDetailRow>()
 

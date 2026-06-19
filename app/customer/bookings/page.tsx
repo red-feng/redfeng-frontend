@@ -9,6 +9,7 @@ import {
 import { isBookingExpiredForNonPayment } from "@/lib/bookings/draft-cleanup"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
+import { getCustomerFlightStatus } from "@/lib/flights/customerFlightStatus"
 import { formatBookingCode } from "@/lib/merchant-code"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import {
@@ -40,7 +41,10 @@ type BookingRow = {
   merchant_picked_up_at: string | null
   customer_picked_up_at: string | null
   flight_lifecycle_status?: string | null
+  flight_issue_status?: string | null
   flight_booking_hold_expires_at?: string | null
+  flight_ticket_number?: string | null
+  flight_pnr_code?: string | null
 }
 
 type PackageRow = {
@@ -146,6 +150,10 @@ function badgeClass(value: string | null, type: "payment" | "trip" | "escrow") {
 }
 
 function getTimelineStatus(booking: BookingRow, locale: Locale) {
+  if (isFlightBooking(booking)) {
+    return getFlightStatusForBooking(booking, locale).timelineLabel
+  }
+
   const t = {
     merchantGo: locale === "en" ? "Merchant clicked Go" : locale === "zh" ? "商家已点击 Go" : "Merchant sudah klik Go",
     customerPickedUp:
@@ -200,6 +208,20 @@ function canOpenFlightPayment(booking: BookingRow) {
   )
 }
 
+function getFlightStatusForBooking(booking: BookingRow, locale: Locale) {
+  return getCustomerFlightStatus(
+    {
+      lifecycleStatus: booking.flight_lifecycle_status,
+      issueStatus: booking.flight_issue_status,
+      paymentStatus: booking.payment_status,
+      holdExpired: isExpiredDateTime(booking.flight_booking_hold_expires_at),
+      ticketNumber: booking.flight_ticket_number,
+      pnrCode: booking.flight_pnr_code,
+    },
+    locale,
+  )
+}
+
 function getCustomerActionHint(
   booking: BookingRow,
   locale: Locale,
@@ -207,6 +229,14 @@ function getCustomerActionHint(
   const paymentStatus = normalizeStatus(booking.payment_status)
   const bookingStatus = normalizeStatus(booking.booking_status)
   const escrowStatus = normalizeStatus(booking.escrow_status)
+
+  if (isFlightBooking(booking)) {
+    const flightStatus = getFlightStatusForBooking(booking, locale)
+    return {
+      tone: flightStatus.tone,
+      text: flightStatus.body,
+    }
+  }
 
   if (paymentStatus === "pending" || paymentStatus === "unpaid") {
     if (isFlightBooking(booking) && !canOpenFlightPayment(booking)) {
@@ -481,14 +511,17 @@ export default async function CustomerBookingsPage() {
   if (flightBookingIds.length > 0) {
     const { data: flightRows } = await adminSupabase
       .from("flight_booking_details")
-      .select("booking_id, lifecycle_status, booking_hold_expires_at")
+      .select("booking_id, lifecycle_status, issue_status, booking_hold_expires_at, ticket_number, pnr_code")
       .in("booking_id", flightBookingIds)
 
     const flightMap = new Map(
       ((flightRows as Array<{
         booking_id: string
         lifecycle_status: string | null
+        issue_status: string | null
         booking_hold_expires_at: string | null
+        ticket_number: string | null
+        pnr_code: string | null
       }> | null) || []).map((row) => [row.booking_id, row]),
     )
 
@@ -496,7 +529,10 @@ export default async function CustomerBookingsPage() {
       const flight = flightMap.get(booking.id)
       if (!flight) continue
       booking.flight_lifecycle_status = flight.lifecycle_status
+      booking.flight_issue_status = flight.issue_status
       booking.flight_booking_hold_expires_at = flight.booking_hold_expires_at
+      booking.flight_ticket_number = flight.ticket_number
+      booking.flight_pnr_code = flight.pnr_code
     }
   }
 
@@ -624,6 +660,7 @@ export default async function CustomerBookingsPage() {
                 const isSettlementOverdue = isDpPaid && isFinalPaymentOverdue(booking.pickup_date)
                 const dpAmountPaid = Math.max(Number(booking.total_amount || 0) - Number(booking.final_payment_amount || 0), 0)
                 const actionHint = getCustomerActionHint(booking, locale)
+                const flightStatus = isFlightBooking(booking) ? getFlightStatusForBooking(booking, locale) : null
 
                 return (
                   <article
@@ -644,8 +681,8 @@ export default async function CustomerBookingsPage() {
                         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.payment_status, "payment")}`}>
                           {t.pay}: {resolvePaymentHeadline(booking.payment_status, locale)}
                         </span>
-                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.booking_status, "trip")}`}>
-                          {t.trip}: {resolveTripStatusLabel(booking.booking_status, locale)}
+                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${flightStatus ? flightStatus.tone : badgeClass(booking.booking_status, "trip")}`}>
+                          {t.trip}: {flightStatus ? flightStatus.label : resolveTripStatusLabel(booking.booking_status, locale)}
                         </span>
                         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.escrow_status, "escrow")}`}>
                           {t.escrow}: {resolveEscrowStatusLabel(booking.escrow_status, locale)}

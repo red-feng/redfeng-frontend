@@ -4,6 +4,7 @@ import BookingPaymentButton from "@/app/components/BookingPaymentButton"
 import { cancelDraftBooking, confirmCustomerPickedUp } from "./actions"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatPackageMoney } from "@/lib/package-pricing"
+import { getCustomerFlightStatus } from "@/lib/flights/customerFlightStatus"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 import {
   formatFinalPaymentDueLabel,
@@ -57,7 +58,10 @@ type BookingDetailRow = {
 
 type FlightPaymentGateRow = {
   lifecycle_status: string | null
+  issue_status: string | null
   booking_hold_expires_at: string | null
+  ticket_number: string | null
+  pnr_code: string | null
 }
 
 type BookingPromoSnapshot = {
@@ -151,6 +155,24 @@ function isExpiredDateTime(value: string | null | undefined) {
   if (!value) return false
   const parsed = new Date(value)
   return !Number.isNaN(parsed.getTime()) && parsed.getTime() <= Date.now()
+}
+
+function getFlightStatusForBooking(
+  booking: BookingDetailRow,
+  flightPaymentGate: FlightPaymentGateRow | null,
+  locale: Locale,
+) {
+  return getCustomerFlightStatus(
+    {
+      lifecycleStatus: flightPaymentGate?.lifecycle_status,
+      issueStatus: flightPaymentGate?.issue_status,
+      paymentStatus: booking.payment_status,
+      holdExpired: isExpiredDateTime(flightPaymentGate?.booking_hold_expires_at),
+      ticketNumber: flightPaymentGate?.ticket_number,
+      pnrCode: flightPaymentGate?.pnr_code,
+    },
+    locale,
+  )
 }
 
 function parsePromoSnapshot(value: unknown): BookingPromoSnapshot | null {
@@ -612,7 +634,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const { data: flightPaymentGate } = isFlightBooking
     ? await adminSupabase
         .from("flight_booking_details")
-        .select("lifecycle_status, booking_hold_expires_at")
+        .select("lifecycle_status, issue_status, booking_hold_expires_at, ticket_number, pnr_code")
         .eq("booking_id", booking.id)
         .maybeSingle<FlightPaymentGateRow>()
     : { data: null }
@@ -644,6 +666,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const canStartInitialPayment =
     ["pending", "unpaid", ""].includes(normalizeStatus(booking.payment_status)) && canOpenFlightPayment
   const phase = resolveJourneyPhase(booking, locale)
+  const flightStatus = isFlightBooking ? getFlightStatusForBooking(booking, flightPaymentGate || null, locale) : null
   const openedFromCheckout = resolvedSearchParams.from_checkout === "1"
   const normalizedPaymentType = normalizeStatus(booking.payment_type) === "dp" ? "dp" : "full"
   const amountDueNow = normalizedPaymentType === "dp" ? Number(booking.dp_amount || 0) : Number(booking.total_amount || 0)
@@ -701,6 +724,30 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
             </div>
           </div>
         </section>
+
+        {flightStatus ? (
+          <section className={`mt-6 rounded-[28px] border p-6 shadow-sm ${flightStatus.tone}`}>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em]">{flightStatus.label}</p>
+            <h2 className="mt-3 text-xl font-semibold">{flightStatus.headline}</h2>
+            <p className="mt-2 text-sm leading-7">{flightStatus.body}</p>
+            {(flightPaymentGate?.pnr_code || flightPaymentGate?.ticket_number) ? (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {flightPaymentGate?.pnr_code ? (
+                  <div className="rounded-[18px] border border-white/60 bg-white/70 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] opacity-70">PNR</p>
+                    <p className="mt-2 text-base font-semibold">{flightPaymentGate.pnr_code}</p>
+                  </div>
+                ) : null}
+                {flightPaymentGate?.ticket_number ? (
+                  <div className="rounded-[18px] border border-white/60 bg-white/70 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] opacity-70">Ticket</p>
+                    <p className="mt-2 text-base font-semibold">{flightPaymentGate.ticket_number}</p>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </section>
+        ) : null}
 
         {openedFromCheckout ? (
           <div className="mt-6 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-700">
