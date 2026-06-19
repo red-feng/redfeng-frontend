@@ -137,6 +137,13 @@ function isNewRecheckRequest(card: FlightOpsCard) {
   return getOpsColumnKey(card) === "recheck" && hoursSince(card.booking.created_at) <= 24
 }
 
+function isIssueFailedAlert(card: FlightOpsCard) {
+  return (
+    normalizeFlightLifecycleStatus(card.detail.lifecycle_status) === "issue_failed" ||
+    normalizeFlightIssueStatus(card.detail.issue_status) === "issue_failed"
+  )
+}
+
 function formatCabin(value: string | null) {
   const normalized = String(value || "").replace(/_/g, " ").trim()
   if (!normalized) return "-"
@@ -311,6 +318,8 @@ export default async function AdminFlightOpsBoardPage() {
   const actionReadyCount = cards.filter((card) => canQuickRecheckAndHold(card) || canQuickIssue(card) || canQuickResend(card)).length
   const newRecheckRequests = cards.filter(isNewRecheckRequest)
   const latestNewRecheckRequests = newRecheckRequests.slice(0, 3)
+  const issueFailedAlerts = cards.filter(isIssueFailedAlert)
+  const latestIssueFailedAlerts = issueFailedAlerts.slice(0, 3)
 
   return (
     <AdminProductWorkspace
@@ -325,6 +334,53 @@ export default async function AdminFlightOpsBoardPage() {
       secondaryActionLabel="Diagnostics Dharmawisata"
       preparedModules={["Recheck fare", "Hold/PNR", "Midtrans payment", "Ticket issue", "E-ticket resend", "Follow up"]}
     >
+      {issueFailedAlerts.length > 0 ? (
+        <section className="rounded-[22px] border border-rose-200 bg-rose-50 p-5 shadow-[0_18px_44px_rgba(225,29,72,0.08)]">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-rose-600">Ticket issue alert</p>
+              <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950">
+                {issueFailedAlerts.length} booking pesawat butuh follow up issue ticket.
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-rose-800">
+                Customer melihat status aman sementara tim Red Feng perlu cek Dharmawisata, retry issue, atau menghubungi customer bila ada perubahan fare/seat.
+              </p>
+            </div>
+            <Link
+              href="/admin/bookings?product=pesawat&flight=issue-failed"
+              className="inline-flex rounded-[14px] bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700"
+            >
+              Buka issue failed
+            </Link>
+          </div>
+
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            {latestIssueFailedAlerts.map((card) => {
+              const route = `${card.detail.origin_airport_code || "-"} -> ${card.detail.destination_airport_code || "-"}`
+
+              return (
+                <Link
+                  key={card.booking.id}
+                  href={`/admin/bookings/${card.booking.id}`}
+                  className="rounded-[18px] border border-rose-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-rose-300 hover:shadow-[0_14px_34px_rgba(225,29,72,0.12)]"
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-rose-600">
+                    Issue failed
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-950">
+                    {formatBookingCode(card.booking.booking_code, card.booking.id)}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">{route}</p>
+                  <p className="mt-3 line-clamp-2 text-xs leading-5 text-rose-700">
+                    {card.detail.notes || "Cek response supplier dan tentukan retry/refund/follow up customer."}
+                  </p>
+                </Link>
+              )
+            })}
+          </div>
+        </section>
+      ) : null}
+
       {newRecheckRequests.length > 0 ? (
         <section className="rounded-[22px] border border-orange-200 bg-orange-50 p-5 shadow-[0_18px_44px_rgba(249,115,22,0.08)]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">

@@ -12,6 +12,7 @@ import { createDharmawisataFlightBooking, type DharmawisataPassenger } from "@/l
 import { sendFlightTicketIssuedEmail } from "@/lib/flights/flightTicketEmail"
 
 type BookingPortal = "admin" | "superadmin"
+const FLIGHT_TICKET_ISSUE_LOCK_TTL_MS = 10 * 60 * 1000
 
 function resolvePortal(formData: FormData): BookingPortal {
   return String(formData.get("portal") || "").trim() === "superadmin" ? "superadmin" : "admin"
@@ -104,6 +105,12 @@ function asJsonRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
 }
 
+function isRecentTimestamp(value: string | null | undefined, ttlMs: number) {
+  if (!value) return false
+  const parsed = new Date(value)
+  return !Number.isNaN(parsed.getTime()) && Date.now() - parsed.getTime() < ttlMs
+}
+
 function splitPersonName(value: string) {
   const parts = value.trim().split(/\s+/).filter(Boolean)
   if (parts.length <= 1) {
@@ -163,6 +170,59 @@ function backToBookingDetailWithState(bookingId: string, type: "success" | "erro
   const params = readBookingDetailFilters(formData)
   params.set(type, message)
   redirect(`${bookingDetailPath(bookingId)}?${params.toString()}`)
+}
+
+async function createFlightIssueFailedAdminAlert(input: {
+  adminSupabase: ReturnType<typeof createAdminClient>
+  booking: {
+    id: string
+    booking_code: string | null
+    customer_name?: string | null
+    customer_email?: string | null
+  }
+  actorId: string
+  failureMessage: string
+  source: "dharmawisata_issue" | "manual_mark_failed"
+}) {
+  const bookingCode = formatBookingCode(input.booking.booking_code, input.booking.id)
+  const customerLabel = [input.booking.customer_name, input.booking.customer_email].filter(Boolean).join(" / ") || "-"
+  const note = [
+    `ALERT PESAWAT - Issue ticket gagal untuk ${bookingCode}.`,
+    `Customer melihat status aman: "Pembayaran berhasil. Tiket sedang dikonfirmasi tim Red Feng."`,
+    `Follow up: cek response Dharmawisata/PNR, retry issue bila aman, atau hubungi customer jika ada perubahan fare/seat.`,
+    `Customer: ${customerLabel}.`,
+    `Sumber: ${input.source}.`,
+    `Detail: ${input.failureMessage || "-"}`,
+  ].join("\n")
+
+  const { data: existingAlert } = await input.adminSupabase
+    .from("booking_admin_notes")
+    .select("id")
+    .eq("booking_id", input.booking.id)
+    .eq("note_type", "urgent")
+    .eq("is_resolved", false)
+    .ilike("note", "%ALERT PESAWAT - Issue ticket gagal%")
+    .limit(1)
+    .maybeSingle<{ id: string }>()
+
+  if (existingAlert?.id) {
+    await input.adminSupabase
+      .from("booking_admin_notes")
+      .update({
+        note,
+        is_pinned: true,
+      })
+      .eq("id", existingAlert.id)
+    return
+  }
+
+  await input.adminSupabase.from("booking_admin_notes").insert({
+    booking_id: input.booking.id,
+    actor_id: input.actorId,
+    note,
+    note_type: "urgent",
+    is_pinned: true,
+  })
 }
 
 export async function addBookingAdminNote(formData: FormData) {
@@ -364,7 +424,7 @@ async function getFlightBookingForAction(bookingId: string, formData: FormData) 
   const { data: flightDetail, error: flightDetailError } = await adminSupabase
     .from("flight_booking_details")
     .select(
-      "booking_id, lifecycle_status, issue_status, pnr_code, ticket_number, supplier_confirmation_code, fare_reference_id, airline_code, airline_name, flight_number, origin_airport_code, destination_airport_code, trip_type, departure_at, arrival_at, return_at, cabin_class, passenger_count",
+      "booking_id, lifecycle_status, issue_status, pnr_code, ticket_number, supplier_confirmation_code, fare_reference_id, airline_code, airline_name, flight_number, origin_airport_code, destination_airport_code, trip_type, departure_at, arrival_at, return_at, cabin_class, passenger_count, issue_requested_at",
     )
     .eq("booking_id", bookingId)
     .maybeSingle<{
@@ -386,6 +446,7 @@ async function getFlightBookingForAction(bookingId: string, formData: FormData) 
       return_at: string | null
       cabin_class: string | null
       passenger_count: number | null
+      issue_requested_at: string | null
     }>()
 
   if (flightDetailError || !flightDetail) {
@@ -998,7 +1059,27 @@ export async function requestFlightTicketIssue(formData: FormData) {
     backToBookingDetailWithState(bookingId, "error", "Payment harus verified sebelum request ticket issue.", formData)
   }
 
-  const { error: detailError } = await adminSupabase
+  const lifecycleStatus = String(flightDetail.lifecycle_status || "").trim().toLowerCase()
+  const issueStatus = String(flightDetail.issue_status || "").trim().toLowerCase()
+  const ticketingLockIsRecent =
+    (lifecycleStatus === "ticketing" || issueStatus === "ticketing") &&
+    isRecentTimestamp(flightDetail.issue_requested_at, FLIGHT_TICKET_ISSUE_LOCK_TTL_MS)
+
+  if (lifecycleStatus === "issued" || issueStatus === "issued" || flightDetail.ticket_number) {
+    backToBookingDetailWithState(bookingId, "error", "Tiket sudah issued. Issue ulang diblokir untuk mencegah duplicate issue.", formData)
+  }
+
+  if (ticketingLockIsRecent) {
+    backToBookingDetailWithState(
+      bookingId,
+      "error",
+      "Issue ticket sedang diproses. Tunggu beberapa menit sebelum retry agar tidak terjadi duplicate issue.",
+      formData,
+    )
+  }
+
+  const lockableStatuses = ["payment_verified", "issue_failed"]
+  const lockQuery = adminSupabase
     .from("flight_booking_details")
     .update({
       lifecycle_status: "ticketing",
@@ -1007,9 +1088,25 @@ export async function requestFlightTicketIssue(formData: FormData) {
       updated_at: now,
     })
     .eq("booking_id", bookingId)
+    .select("booking_id")
 
-  if (detailError) {
-    backToBookingDetailWithState(bookingId, "error", detailError.message, formData)
+  const staleTicketingCutoff = new Date(Date.now() - FLIGHT_TICKET_ISSUE_LOCK_TTL_MS).toISOString()
+  const lockResult =
+    lifecycleStatus === "ticketing" || issueStatus === "ticketing"
+      ? await lockQuery.lte("issue_requested_at", staleTicketingCutoff).maybeSingle<{ booking_id: string }>()
+      : await lockQuery.in("lifecycle_status", lockableStatuses).maybeSingle<{ booking_id: string }>()
+
+  if (lockResult.error) {
+    backToBookingDetailWithState(bookingId, "error", lockResult.error.message, formData)
+  }
+
+  if (!lockResult.data) {
+    backToBookingDetailWithState(
+      bookingId,
+      "error",
+      "Issue ticket tidak dijalankan karena status booking sudah berubah. Refresh halaman lalu cek status terbaru.",
+      formData,
+    )
   }
 
   if (supplierOrder?.id) {
@@ -1273,6 +1370,14 @@ export async function requestFlightTicketIssue(formData: FormData) {
       issueStatus: "issue_failed",
       message: failureMessage,
     },
+  })
+
+  await createFlightIssueFailedAdminAlert({
+    adminSupabase,
+    booking,
+    actorId: adminActor.user.id,
+    failureMessage,
+    source: "dharmawisata_issue",
   })
 
   await createAdminAuditLog({
@@ -1552,6 +1657,14 @@ export async function markFlightIssueFailed(formData: FormData) {
       issueStatus: "issue_failed",
       reason,
     },
+  })
+
+  await createFlightIssueFailedAdminAlert({
+    adminSupabase,
+    booking,
+    actorId: adminActor.user.id,
+    failureMessage: reason,
+    source: "manual_mark_failed",
   })
 
   await createAdminAuditLog({
