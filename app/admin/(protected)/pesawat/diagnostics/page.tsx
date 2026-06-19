@@ -1,6 +1,6 @@
 import Link from "next/link"
 import AdminProductWorkspace from "@/app/components/AdminProductWorkspace"
-import { previewDharmawisataHoldPayload, testDharmawisataLogin, testDharmawisataSearch } from "./actions"
+import { checkFlightSchemaReadiness, previewDharmawisataHoldPayload, testDharmawisataLogin, testDharmawisataSearch } from "./actions"
 
 type SearchParams = Promise<{
   panel?: string
@@ -52,6 +52,7 @@ function summarizeResult(result: ResultRecord | null) {
     ["Message", asText(result.respMessage) || asText(result.authMessage) || asText(result.error) || "-"],
     ["Elapsed", result.elapsedMs ? `${result.elapsedMs} ms` : "-"],
     ["Journeys", result.journeyDepartCount ? `${result.journeyDepartCount}` : "-"],
+    ["Missing columns", typeof result.missingColumnCount === "number" ? `${result.missingColumnCount}` : "-"],
   ]
 }
 
@@ -67,17 +68,41 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
     <AdminProductWorkspace
       productType="flight"
       productLabel="Pesawat Diagnostics"
-      description="Panel ini dipakai untuk menguji koneksi Dharmawisata secara aman: login token, low fare search, dan kesiapan payload sebelum masuk ke hold booking."
-      statusLabel="Supplier test console"
-      statusNote="Gunakan panel ini setelah update environment variable Vercel atau saat mengecek apakah UAT/production Dharmawisata sedang sehat."
+      description="Panel ini dipakai untuk menguji kesiapan pesawat: schema database, login token, low fare search, dan payload sebelum hold booking."
+      statusLabel="Flight test console"
+      statusNote="Gunakan panel ini setelah update environment variable Vercel, migration Supabase, atau saat mengecek apakah UAT/production Dharmawisata sedang sehat."
       primaryActionHref="/admin/pesawat"
       primaryActionLabel="Kembali ke dashboard Pesawat"
       secondaryActionHref="/admin/pesawat/coverage"
       secondaryActionLabel="Lihat coverage supplier"
-      preparedModules={["Login token", "Low fare search", "TLS visibility", "Redacted response", "Hold readiness"]}
+      preparedModules={["Schema readiness", "Login token", "Low fare search", "TLS visibility", "Redacted response", "Hold readiness"]}
     >
       <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-5">
+          <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Schema</p>
+                <h2 className="mt-2 text-base font-semibold text-slate-950">Audit Schema Pesawat</h2>
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+                  Memastikan kolom checkout, supplier order, lifecycle, dan ticketing sudah tersedia di database aktif.
+                </p>
+              </div>
+              <span className="rounded-[12px] border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
+                Read only
+              </span>
+            </div>
+
+            <form action={checkFlightSchemaReadiness} className="mt-5">
+              <button
+                type="submit"
+                className="inline-flex w-full items-center justify-center rounded-[14px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto"
+              >
+                Cek schema pesawat
+              </button>
+            </form>
+          </div>
+
           <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>

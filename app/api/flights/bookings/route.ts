@@ -4,6 +4,8 @@ import { createDharmawisataFlightBooking, type DharmawisataPassenger } from "@/l
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 
+type AdminSupabaseClient = ReturnType<typeof createAdminClient>
+
 const AIRLINE_NAME_CODES: Record<string, string> = {
   citilink: "QG",
   "lion air": "JT",
@@ -116,6 +118,24 @@ function normalizeTripType(value: unknown) {
   const normalized = asString(value).toLowerCase()
   if (normalized === "round_trip" || normalized === "multi_city") return normalized
   return "one_way"
+}
+
+function isMissingSchemaColumnError(error: { message?: string | null } | null | undefined) {
+  const message = String(error?.message || "").toLowerCase()
+  return message.includes("schema cache") && message.includes("column")
+}
+
+async function insertFlightBookingDetail(
+  supabase: AdminSupabaseClient,
+  fullPayload: Record<string, unknown>,
+  fallbackPayload: Record<string, unknown>,
+) {
+  const result = await supabase.from("flight_booking_details").insert(fullPayload)
+  if (!result.error || !isMissingSchemaColumnError(result.error)) {
+    return result
+  }
+
+  return supabase.from("flight_booking_details").insert(fallbackPayload)
 }
 
 function extractAirportCode(value: unknown) {
@@ -411,7 +431,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const { error: detailError } = await supabase.from("flight_booking_details").insert({
+    const detailPayload = {
       booking_id: booking.id,
       supplier_order_id: supplierOrder.id,
       airline_code: airlineCode || null,
@@ -437,7 +457,27 @@ export async function POST(req: Request) {
         requiresFareRecheck: true,
       },
       notes: "Customer booking request dari katalog pesawat. Recheck fare dan hold supplier sebelum payment dibuka.",
-    })
+    }
+    const detailFallbackPayload = {
+      booking_id: booking.id,
+      airline_name: detailPayload.airline_name,
+      flight_number: detailPayload.flight_number,
+      origin_airport_code: originAirportCode,
+      destination_airport_code: destinationAirportCode,
+      departure_at: departureAt,
+      cabin_class: detailPayload.cabin_class,
+      passenger_count: passengerCount,
+      notes: [
+        "Customer booking request dari katalog pesawat. Recheck fare dan hold supplier sebelum payment dibuka.",
+        arrivalAt ? `Arrival: ${arrivalAt}.` : "",
+        returnAt ? `Return: ${returnAt}.` : "",
+        `Lifecycle: ${detailPayload.lifecycle_status}.`,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    }
+
+    const { error: detailError } = await insertFlightBookingDetail(supabase, detailPayload, detailFallbackPayload)
 
     if (detailError) {
       await supabase.from("supplier_orders").delete().eq("id", supplierOrder.id)

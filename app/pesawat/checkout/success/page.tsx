@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/server"
 
 export const dynamic = "force-dynamic"
 
+type AdminSupabaseClient = ReturnType<typeof createAdminClient>
+
 type BookingRow = {
   id: string
   booking_code: string | null
@@ -70,6 +72,45 @@ function getSuccessCopy(detail: FlightDetailRow | null) {
   }
 }
 
+function isMissingSchemaColumnError(error: { message?: string | null } | null | undefined) {
+  const message = String(error?.message || "").toLowerCase()
+  return message.includes("schema cache") && message.includes("column")
+}
+
+async function getFlightDetailForSuccess(adminSupabase: AdminSupabaseClient, bookingId: string) {
+  const fullResult = await adminSupabase
+    .from("flight_booking_details")
+    .select("lifecycle_status, issue_status, airline_name, flight_number, origin_airport_code, destination_airport_code, departure_at, arrival_at, pnr_code, ticket_number, booking_hold_expires_at")
+    .eq("booking_id", bookingId)
+    .maybeSingle<FlightDetailRow>()
+
+  if (!fullResult.error || !isMissingSchemaColumnError(fullResult.error)) {
+    return fullResult.data || null
+  }
+
+  const fallbackResult = await adminSupabase
+    .from("flight_booking_details")
+    .select("airline_name, flight_number, origin_airport_code, destination_airport_code, departure_at")
+    .eq("booking_id", bookingId)
+    .maybeSingle<Pick<FlightDetailRow, "airline_name" | "flight_number" | "origin_airport_code" | "destination_airport_code" | "departure_at">>()
+
+  if (fallbackResult.error || !fallbackResult.data) return null
+
+  return {
+    lifecycle_status: "fare_recheck_required",
+    issue_status: "pending_confirmation",
+    airline_name: fallbackResult.data.airline_name,
+    flight_number: fallbackResult.data.flight_number,
+    origin_airport_code: fallbackResult.data.origin_airport_code,
+    destination_airport_code: fallbackResult.data.destination_airport_code,
+    departure_at: fallbackResult.data.departure_at,
+    arrival_at: null,
+    pnr_code: null,
+    ticket_number: null,
+    booking_hold_expires_at: null,
+  } satisfies FlightDetailRow
+}
+
 export default async function FlightCheckoutSuccessPage({
   searchParams,
 }: {
@@ -106,11 +147,7 @@ export default async function FlightCheckoutSuccessPage({
     redirect("/customer/bookings?error=Booking%20pesawat%20tidak%20ditemukan")
   }
 
-  const { data: flightDetail } = await adminSupabase
-    .from("flight_booking_details")
-    .select("lifecycle_status, issue_status, airline_name, flight_number, origin_airport_code, destination_airport_code, departure_at, arrival_at, pnr_code, ticket_number, booking_hold_expires_at")
-    .eq("booking_id", booking.id)
-    .maybeSingle<FlightDetailRow>()
+  const flightDetail = await getFlightDetailForSuccess(adminSupabase, booking.id)
 
   const copy = getSuccessCopy(flightDetail || null)
   const route = `${flightDetail?.origin_airport_code || "-"} -> ${flightDetail?.destination_airport_code || "-"}`

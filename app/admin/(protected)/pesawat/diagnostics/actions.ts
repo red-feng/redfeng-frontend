@@ -19,6 +19,56 @@ import {
 
 type JsonRecord = Record<string, unknown>
 
+const FLIGHT_SCHEMA_REQUIRED_COLUMNS = [
+  ["bookings", "fulfillment_mode"],
+  ["bookings", "supplier_id"],
+  ["bookings", "supplier_booking_reference"],
+  ["bookings", "supplier_order_status"],
+  ["bookings", "redfeng_profit_source"],
+  ["bookings", "supplier_net_cost_amount"],
+  ["bookings", "redfeng_spread_amount"],
+  ["bookings", "redfeng_recorded_profit_amount"],
+  ["supplier_orders", "booking_id"],
+  ["supplier_orders", "supplier_id"],
+  ["supplier_orders", "product_type"],
+  ["supplier_orders", "supplier_order_id"],
+  ["supplier_orders", "supplier_reference"],
+  ["supplier_orders", "supplier_status"],
+  ["supplier_orders", "submission_mode"],
+  ["supplier_orders", "request_payload"],
+  ["supplier_orders", "response_payload"],
+  ["supplier_orders", "supplier_cost_amount"],
+  ["supplier_orders", "supplier_cost_currency"],
+  ["supplier_orders", "supplier_cost_recorded_at"],
+  ["flight_booking_details", "booking_id"],
+  ["flight_booking_details", "supplier_order_id"],
+  ["flight_booking_details", "airline_code"],
+  ["flight_booking_details", "airline_name"],
+  ["flight_booking_details", "flight_number"],
+  ["flight_booking_details", "origin_airport_code"],
+  ["flight_booking_details", "origin_airport_name"],
+  ["flight_booking_details", "destination_airport_code"],
+  ["flight_booking_details", "destination_airport_name"],
+  ["flight_booking_details", "departure_at"],
+  ["flight_booking_details", "arrival_at"],
+  ["flight_booking_details", "return_at"],
+  ["flight_booking_details", "cabin_class"],
+  ["flight_booking_details", "trip_type"],
+  ["flight_booking_details", "passenger_count"],
+  ["flight_booking_details", "pnr_code"],
+  ["flight_booking_details", "ticket_number"],
+  ["flight_booking_details", "issue_status"],
+  ["flight_booking_details", "lifecycle_status"],
+  ["flight_booking_details", "fare_reference_id"],
+  ["flight_booking_details", "fare_rechecked_at"],
+  ["flight_booking_details", "booking_hold_expires_at"],
+  ["flight_booking_details", "issue_requested_at"],
+  ["flight_booking_details", "issued_at"],
+  ["flight_booking_details", "issue_failed_at"],
+  ["flight_booking_details", "customer_notified_at"],
+  ["flight_booking_details", "supplier_raw_reference"],
+] as const
+
 function asString(value: unknown) {
   return typeof value === "string" ? value.trim() : typeof value === "number" ? String(value) : ""
 }
@@ -67,6 +117,57 @@ async function ensureFlightAdmin() {
 
 function buildResultPayload(value: unknown) {
   return JSON.stringify(value)
+}
+
+export async function checkFlightSchemaReadiness() {
+  await ensureFlightAdmin()
+  const adminSupabase = createAdminClient()
+  const startedAt = Date.now()
+  const tableNames = Array.from(new Set(FLIGHT_SCHEMA_REQUIRED_COLUMNS.map(([tableName]) => tableName)))
+
+  const { data, error } = await adminSupabase
+    .schema("information_schema")
+    .from("columns")
+    .select("table_name, column_name")
+    .eq("table_schema", "public")
+    .in("table_name", tableNames)
+
+  if (error) {
+    diagnosticsRedirect({
+      panel: "schema",
+      status: "error",
+      result: buildResultPayload({
+        title: "Schema readiness gagal dibaca",
+        elapsedMs: Date.now() - startedAt,
+        error: error.message,
+      }),
+    })
+  }
+
+  const available = new Set(
+    ((data as Array<{ table_name?: string | null; column_name?: string | null }> | null) || [])
+      .map((column) => `${column.table_name || ""}.${column.column_name || ""}`),
+  )
+  const missingColumns = FLIGHT_SCHEMA_REQUIRED_COLUMNS
+    .filter(([tableName, columnName]) => !available.has(`${tableName}.${columnName}`))
+    .map(([tableName, columnName]) => ({ tableName, columnName }))
+
+  diagnosticsRedirect({
+    panel: "schema",
+    status: missingColumns.length > 0 ? "warning" : "success",
+    result: buildResultPayload({
+      title: missingColumns.length > 0 ? "Schema pesawat belum lengkap" : "Schema pesawat sudah lengkap",
+      status: missingColumns.length > 0 ? "MISSING_COLUMNS" : "READY",
+      respMessage:
+        missingColumns.length > 0
+          ? "Jalankan migration 2026062001_ensure_flight_schema_alignment.sql di Supabase production."
+          : "Kolom wajib alur checkout pesawat sudah tersedia.",
+      elapsedMs: Date.now() - startedAt,
+      requiredColumnCount: FLIGHT_SCHEMA_REQUIRED_COLUMNS.length,
+      missingColumnCount: missingColumns.length,
+      missingColumns,
+    }),
+  })
 }
 
 function summarizeEnv() {

@@ -11,6 +11,26 @@ import { getAccessibleInternalProducts, hasInternalProductAccess } from "@/lib/i
 import { getFlightLifecycleStatusLabel, getVisibleSupplierLabel, normalizeFlightIssueStatus, normalizeFlightLifecycleStatus, normalizeSupplierOrderStatus } from "@/lib/affiliate-suppliers"
 import { createDharmawisataFlightBooking, type DharmawisataPassenger } from "@/lib/flights/dharmawisataFlightBooking"
 
+type AdminSupabaseClient = ReturnType<typeof createAdminClient>
+
+function isMissingSchemaColumnError(error: { message?: string | null } | null | undefined) {
+  const message = String(error?.message || "").toLowerCase()
+  return message.includes("schema cache") && message.includes("column")
+}
+
+async function insertFlightBookingDetail(
+  supabase: AdminSupabaseClient,
+  fullPayload: Record<string, unknown>,
+  fallbackPayload: Record<string, unknown>,
+) {
+  const result = await supabase.from("flight_booking_details").insert(fullPayload)
+  if (!result.error || !isMissingSchemaColumnError(result.error)) {
+    return result
+  }
+
+  return supabase.from("flight_booking_details").insert(fallbackPayload)
+}
+
 function generateBookingCode() {
   const random = Math.floor(1000 + Math.random() * 9000)
   const date = new Date()
@@ -319,7 +339,7 @@ export async function createFlightBooking(formData: FormData) {
     backToFlightCreate(supplierOrderError?.message || "Gagal menyimpan order supplier Pesawat.", "error")
   }
 
-  const { error: detailError } = await actor.adminSupabase.from("flight_booking_details").insert({
+  const detailPayload = {
     booking_id: booking.id,
     supplier_order_id: supplierOrder.id,
     airline_code: airlineCode || null,
@@ -348,7 +368,30 @@ export async function createFlightBooking(formData: FormData) {
       flow: "search_recheck_hold_payment_issue",
     },
     notes: notes || null,
-  })
+  }
+  const detailFallbackPayload = {
+    booking_id: booking.id,
+    airline_name: airlineName,
+    flight_number: flightNumber,
+    origin_airport_code: originAirportCode,
+    destination_airport_code: destinationAirportCode,
+    departure_at: departureAt,
+    cabin_class: cabinClass,
+    passenger_count: passengerCount,
+    notes:
+      notes ||
+      [
+        "Booking pesawat dibuat admin.",
+        arrivalAt ? `Arrival: ${arrivalAt}.` : "",
+        returnAt ? `Return: ${returnAt}.` : "",
+        pnrCode ? `PNR: ${pnrCode}.` : "",
+        `Lifecycle: ${lifecycleStatus}.`,
+      ]
+        .filter(Boolean)
+        .join(" "),
+  }
+
+  const { error: detailError } = await insertFlightBookingDetail(actor.adminSupabase, detailPayload, detailFallbackPayload)
 
   if (detailError) {
     await actor.adminSupabase.from("supplier_orders").delete().eq("id", supplierOrder.id)
