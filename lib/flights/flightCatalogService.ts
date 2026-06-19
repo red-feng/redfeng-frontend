@@ -201,6 +201,7 @@ function mapAffiliateOfferToFlightCardMeta(offer: AffiliateFlightOffer, item: Du
           ? ["one_way", "multi_city"]
           : ["one_way"],
     availableDates: offer.availableDates,
+    supplierMeta: offer.supplierMeta,
   }
 }
 

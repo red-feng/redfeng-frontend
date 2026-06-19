@@ -1,5 +1,6 @@
 import type { DummyCatalogItem } from "@/lib/service-dummy-catalog"
 import type { FlightTripMode } from "@/app/components/flights/flightSearchParams"
+import type { AffiliateFlightSupplierMeta } from "@/lib/flights/affiliateTypes"
 
 export type FlightCatalogCardMeta = {
   airline: string
@@ -19,6 +20,7 @@ export type FlightCatalogCardMeta = {
   maxPassengers: number
   tripSupport: FlightTripMode[]
   availableDates: string[]
+  supplierMeta?: AffiliateFlightSupplierMeta
 }
 
 type FlightCatalogPresetMeta = Omit<FlightCatalogCardMeta, "origin" | "destination" | "routeCode" | "cabin" | "tripLabel" | "highlightBadges">

@@ -162,13 +162,20 @@ function mapJourneyToOffer(
   const availableDetail = Array.isArray(primarySegment.availableDetail) && primarySegment.availableDetail.length > 0 && isRecord(primarySegment.availableDetail[0])
     ? primarySegment.availableDetail[0]
     : {}
+  const flightDetail = Array.isArray(primarySegment.flightDetail) && primarySegment.flightDetail.length > 0 && isRecord(primarySegment.flightDetail[0])
+    ? primarySegment.flightDetail[0]
+    : {}
   const totalPrice = asNumber(journey.sumPrice ?? availableDetail.price)
+  const airlineId = asString(journey.airlineID)
+  const airlineCode = asString(flightDetail.airlineCode, airlineId)
+  const flightNumber = asString(flightDetail.flightNumber)
+  const journeyReference = asString(journey.journeyReference, `dharmawisata-journey-${index + 1}`)
   const airlineName = getAirlineDisplayName(
-    asString(journey.airlineID || segments[0]?.marketingAirline),
+    asString(airlineId || segments[0]?.marketingAirline),
   )
 
   return {
-    offerId: asString(journey.journeyReference, `dharmawisata-journey-${index + 1}`),
+    offerId: journeyReference,
     providerKey: "dharmawisata-h2h",
     salesModel: "affiliate",
     tripType: params.tripType,
@@ -200,6 +207,17 @@ function mapJourneyToOffer(
     },
     highlights: buildHighlights(primarySegment),
     sourceItemId: `${originCode}-${destinationCode}-${index + 1}`.toLowerCase(),
+    supplierMeta: {
+      supplierKey: "dharmawisata-h2h",
+      airlineId,
+      airlineCode,
+      flightNumber,
+      journeyReference,
+      fareReferenceId: journeyReference,
+      airlineAccessCode: asString(journey.airlineAccessCode),
+      searchKey: journeyReference,
+      detailSchedule: flightNumber,
+    },
   }
 }
 
@@ -267,6 +285,17 @@ function mapOffer(offer: unknown, index: number, params: AffiliateFlightSearchPa
     },
     highlights: asStringArray(offer.highlights),
     sourceItemId: asString(offer.sourceItemId, `${originCode}-${destinationCode}-${index + 1}`.toLowerCase()),
+    supplierMeta: {
+      supplierKey: "dharmawisata-h2h",
+      airlineId: asString(offer.airlineID ?? offer.airlineId),
+      airlineCode: asString(offer.airlineCode),
+      flightNumber: asString(offer.flightNumber ?? segments[0]?.flightNumber),
+      journeyReference: asString(offer.journeyReference ?? offer.offerId ?? offer.id),
+      fareReferenceId: asString(offer.fareReferenceId ?? offer.journeyReference ?? offer.offerId ?? offer.id),
+      airlineAccessCode: asString(offer.airlineAccessCode),
+      searchKey: asString(offer.searchKey ?? offer.journeyReference),
+      detailSchedule: asString(offer.detailSchedule ?? offer.flightNumber ?? segments[0]?.flightNumber),
+    },
   }
 }
 

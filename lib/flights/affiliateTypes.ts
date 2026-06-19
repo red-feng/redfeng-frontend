@@ -36,6 +36,18 @@ export type AffiliateFlightFarePolicy = {
   baggageSummary: string
 }
 
+export type AffiliateFlightSupplierMeta = {
+  supplierKey?: string
+  airlineId?: string
+  airlineCode?: string
+  flightNumber?: string
+  journeyReference?: string
+  fareReferenceId?: string
+  airlineAccessCode?: string
+  searchKey?: string
+  detailSchedule?: string
+}
+
 export type AffiliateFlightPrice = {
   currency: string
   total: number
@@ -63,6 +75,7 @@ export type AffiliateFlightOffer = {
   policy: AffiliateFlightFarePolicy
   highlights: string[]
   sourceItemId: string
+  supplierMeta?: AffiliateFlightSupplierMeta
 }
 
 export type AffiliateFlightSearchResult = {

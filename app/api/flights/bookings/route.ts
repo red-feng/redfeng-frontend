@@ -68,7 +68,7 @@ function normalizeAirlineCode(value: unknown, fallbackAirlineName: unknown) {
 
 function normalizeFlightNumber(value: unknown) {
   const normalized = asString(value).toUpperCase().replace(/\s+/g, "")
-  return /^[A-Z0-9]{2,3}-?\d{1,4}[A-Z]?$/.test(normalized) ? normalized : ""
+  return /^(?:[A-Z0-9]{2,3}-?)?\d{1,4}[A-Z]?$/.test(normalized) ? normalized : ""
 }
 
 function normalizePassengerTitle(value: unknown) {

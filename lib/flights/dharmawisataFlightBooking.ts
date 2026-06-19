@@ -59,6 +59,16 @@ export type DharmawisataFlightBookingResult = {
   raw: JsonRecord
 }
 
+export type DharmawisataFlightBookingPayloadPreview = {
+  configured: boolean
+  bookingPathConfigured: boolean
+  missingFields: string[]
+  readyToSubmit: boolean
+  message: string
+  payload: ReturnType<typeof buildBookingPayload> | null
+  summary: ReturnType<typeof summarizeBookingRequest> | null
+}
+
 function asRecord(value: unknown): JsonRecord | null {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : null
 }
@@ -209,6 +219,41 @@ function summarizeBookingRequest(
     passengerCount,
     hasSearchKey: Boolean(payload.searchKey),
     hasAirlineAccessCode: Boolean(payload.airlineAccessCode),
+  }
+}
+
+export function buildDharmawisataFlightBookingPayloadPreview(
+  input: DharmawisataFlightBookingInput,
+): DharmawisataFlightBookingPayloadPreview {
+  const bookingPath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_BOOKING_PATH")
+  const configured = isDharmawisataConfigured()
+  const missingFields = getMissingRequiredFields(input)
+  const readyToSubmit = configured && Boolean(bookingPath) && missingFields.length === 0
+
+  if (!configured || !bookingPath) {
+    return {
+      configured,
+      bookingPathConfigured: Boolean(bookingPath),
+      missingFields,
+      readyToSubmit: false,
+      message: "Konfigurasi booking Dharmawisata belum lengkap untuk membuat preview payload penuh.",
+      payload: null,
+      summary: null,
+    }
+  }
+
+  const payload = buildBookingPayload(input, "present-redacted")
+
+  return {
+    configured,
+    bookingPathConfigured: true,
+    missingFields,
+    readyToSubmit,
+    message: readyToSubmit
+      ? "Payload hold siap secara struktur. Submit tetap harus dikonfirmasi terpisah karena dapat membuat booking supplier."
+      : `Payload hold belum siap. Field kurang: ${missingFields.join(", ")}.`,
+    payload,
+    summary: summarizeBookingRequest(payload, input.passengers.length),
   }
 }
 

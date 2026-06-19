@@ -18,6 +18,7 @@ import {
   findDharmawisataVerifiedLiveRoute,
   type SupplierAvailabilityStatus,
 } from "@/lib/flights/dharmawisataSupplierCatalog"
+import type { AffiliateFlightSupplierMeta } from "@/lib/flights/affiliateTypes"
 import type { Locale } from "@/lib/i18n"
 import { formatPackageMoney, localeCurrencyMap, roundConvertedPrice } from "@/lib/package-pricing"
 
@@ -48,6 +49,7 @@ type FlightMeta = {
   maxPassengers: number
   tripSupport: FlightTripMode[]
   availableDates: string[]
+  supplierMeta?: AffiliateFlightSupplierMeta
 }
 
 type FlightItem = {
@@ -101,18 +103,23 @@ function resolveAirlineCode(airlineName: string, flightNumber?: string) {
 }
 
 function normalizeFlightNumberForCheckout(item: FlightItem) {
-  const fromMeta = String(item.meta.flightNumber || "").trim().toUpperCase()
-  if (/^[A-Z0-9]{2,3}\s*-?\s*\d{1,4}[A-Z]?$/.test(fromMeta)) return fromMeta.replace(/\s+/g, "")
+  const fromMeta = String(item.meta.supplierMeta?.flightNumber || item.meta.flightNumber || "").trim().toUpperCase()
+  if (/^(?:[A-Z0-9]{2,3}\s*-?\s*)?\d{1,4}[A-Z]?$/.test(fromMeta)) return fromMeta.replace(/\s+/g, "")
   return ""
 }
 
 function buildFlightCheckoutHref(item: FlightItem, state: FlightFilterState, dataSource: string) {
   const params = new URLSearchParams()
   const meta = item.meta
+  const supplierMeta = meta.supplierMeta
   const departDate = state.depart || meta.availableDates[0] || ""
   const returnDate = state.tripMode === "round_trip" ? state.returnDate : ""
   const flightNumber = normalizeFlightNumberForCheckout(item)
-  const airlineCode = resolveAirlineCode(meta.airline, flightNumber)
+  const airlineCode = supplierMeta?.airlineCode || supplierMeta?.airlineId || resolveAirlineCode(meta.airline, flightNumber)
+  const fareReferenceId = supplierMeta?.fareReferenceId || supplierMeta?.journeyReference || item.id.replace(/^live-/, "")
+  const airlineAccessCode = supplierMeta?.airlineAccessCode || fareReferenceId
+  const searchKey = supplierMeta?.searchKey || supplierMeta?.journeyReference || ""
+  const detailSchedule = supplierMeta?.detailSchedule || flightNumber
 
   params.set("offer_id", item.id)
   params.set("title", item.title)
@@ -132,8 +139,10 @@ function buildFlightCheckoutHref(item: FlightItem, state: FlightFilterState, dat
   params.set("trip_type", state.tripMode)
   params.set("passengers", state.passengers || "1")
   params.set("price", String(parseFlightPrice(meta.price)))
-  params.set("fare_reference_id", item.id.replace(/^live-/, ""))
-  params.set("airline_access_code", item.id.replace(/^live-/, ""))
+  params.set("fare_reference_id", fareReferenceId)
+  params.set("airline_access_code", airlineAccessCode)
+  params.set("search_key", searchKey)
+  params.set("detail_schedule", detailSchedule)
   params.set("source", dataSource || "catalog")
 
   return `/pesawat/checkout?${params.toString()}`
