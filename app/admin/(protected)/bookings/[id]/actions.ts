@@ -653,7 +653,6 @@ export async function markFlightFareRechecked(formData: FormData) {
   const { error: bookingError } = await adminSupabase
     .from("bookings")
     .update({
-      booking_status: "pending",
       supplier_booking_reference: supplierReference || booking.supplier_booking_reference || null,
       supplier_order_status: nextSupplierStatus,
     })
@@ -903,7 +902,6 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
   const { error: bookingError } = await adminSupabase
     .from("bookings")
     .update({
-      booking_status: "pending",
       supplier_booking_reference: apiSupplierReference,
       supplier_order_status: "confirmed",
     })

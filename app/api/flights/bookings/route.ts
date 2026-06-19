@@ -335,7 +335,6 @@ export async function POST(req: Request) {
         expiry_time: expiry.toISOString(),
         payment_type: "full",
         payment_status: "pending",
-        booking_status: "pending",
         escrow_status: "pending_payment",
         display_currency: "IDR",
         display_subtotal_amount: priceBreakdown.subtotalAmount,
