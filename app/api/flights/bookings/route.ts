@@ -375,6 +375,8 @@ export async function POST(req: Request) {
       airlineAccessCode: airlineAccessCode || null,
       searchKey: searchKey || null,
       detailSchedule: detailSchedule || null,
+      supplierCostAmount: subtotalAmount,
+      supplierCostCurrency: "IDR",
       passengerManifest: passengerManifest || null,
       passengerDetails: passengerDetails.map((passenger) => ({
         sequenceNo: passenger.sequence_no,
@@ -394,9 +396,6 @@ export async function POST(req: Request) {
         product_type: "flight",
         supplier_status: "pending_submission",
         submission_mode: supplier.integration_mode,
-        supplier_cost_amount: subtotalAmount,
-        supplier_cost_currency: "IDR",
-        supplier_cost_recorded_at: new Date().toISOString(),
         request_payload: requestPayload,
         created_by: user.id,
         updated_by: user.id,
