@@ -1,0 +1,236 @@
+import Link from "next/link"
+import { redirect } from "next/navigation"
+import SimplePublicLogoHeader from "@/app/components/SimplePublicLogoHeader"
+import {
+  getFlightLifecycleStatusLabel,
+  normalizeFlightLifecycleStatus,
+} from "@/lib/affiliate-suppliers"
+import { formatBookingCode } from "@/lib/merchant-code"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
+
+export const dynamic = "force-dynamic"
+
+type BookingRow = {
+  id: string
+  booking_code: string | null
+  customer_name: string | null
+  customer_email: string | null
+  user_id: string | null
+  total_amount: number | null
+  created_at: string | null
+}
+
+type FlightDetailRow = {
+  lifecycle_status: string | null
+  airline_name: string | null
+  flight_number: string | null
+  origin_airport_code: string | null
+  destination_airport_code: string | null
+  departure_at: string | null
+  arrival_at: string | null
+  pnr_code: string | null
+  booking_hold_expires_at: string | null
+}
+
+function firstParam(params: Record<string, string | string[] | undefined>, key: string) {
+  const value = params[key]
+  return Array.isArray(value) ? value[0] || "" : value || ""
+}
+
+function formatMoney(value: number | null) {
+  return `IDR ${Number(value || 0).toLocaleString("id-ID")}`
+}
+
+function formatDateTime(value: string | null) {
+  if (!value) return "-"
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return "-"
+  return parsed.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
+function getSuccessCopy(detail: FlightDetailRow | null) {
+  const lifecycle = normalizeFlightLifecycleStatus(detail?.lifecycle_status)
+
+  if (lifecycle === "booking_hold_created" || lifecycle === "pending_payment") {
+    return {
+      eyebrow: "Hold supplier berhasil",
+      title: "Booking request diterima. Hold/PNR sudah dibuat.",
+      body: "Tim Red Feng akan memastikan detail hold tetap valid. Setelah itu, payment Midtrans dapat dibuka dari halaman detail booking Anda.",
+      statusLabel: lifecycle ? getFlightLifecycleStatusLabel(lifecycle) : "Booking/hold dibuat",
+    }
+  }
+
+  if (lifecycle === "fare_recheck_required" || lifecycle === "fare_rechecked") {
+    return {
+      eyebrow: "Menunggu recheck fare",
+      title: "Booking request diterima. Admin akan recheck fare lebih dulu.",
+      body: "Payment belum dibuka karena Red Feng perlu validasi fare dan membuat hold/PNR ke supplier. Setelah hold valid, link payment Midtrans akan tersedia.",
+      statusLabel: lifecycle ? getFlightLifecycleStatusLabel(lifecycle) : "Perlu recheck fare",
+    }
+  }
+
+  return {
+    eyebrow: "Booking pesawat diterima",
+    title: "Booking request Anda sudah masuk ke antrean Red Feng.",
+    body: "Tim Red Feng akan memproses fare, hold supplier, dan membuka payment setelah data supplier valid.",
+    statusLabel: lifecycle ? getFlightLifecycleStatusLabel(lifecycle) : "Diproses",
+  }
+}
+
+export default async function FlightCheckoutSuccessPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const params = await searchParams
+  const bookingId = firstParam(params, "booking_id")
+
+  if (!bookingId) {
+    redirect("/pesawat/catalog")
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect(`/login?next=${encodeURIComponent(`/pesawat/checkout/success?booking_id=${bookingId}`)}`)
+  }
+
+  const adminSupabase = createAdminClient()
+  const { data: booking } = await adminSupabase
+    .from("bookings")
+    .select("id, booking_code, customer_name, customer_email, user_id, total_amount, created_at")
+    .eq("id", bookingId)
+    .maybeSingle<BookingRow>()
+
+  const userEmail = String(user.email || "").trim().toLowerCase()
+  const bookingEmail = String(booking?.customer_email || "").trim().toLowerCase()
+  const isOwner = booking && (booking.user_id === user.id || (bookingEmail && userEmail && bookingEmail === userEmail))
+
+  if (!booking || !isOwner) {
+    redirect("/customer/bookings?error=Booking%20pesawat%20tidak%20ditemukan")
+  }
+
+  const { data: flightDetail } = await adminSupabase
+    .from("flight_booking_details")
+    .select("lifecycle_status, airline_name, flight_number, origin_airport_code, destination_airport_code, departure_at, arrival_at, pnr_code, booking_hold_expires_at")
+    .eq("booking_id", booking.id)
+    .maybeSingle<FlightDetailRow>()
+
+  const copy = getSuccessCopy(flightDetail || null)
+  const route = `${flightDetail?.origin_airport_code || "-"} -> ${flightDetail?.destination_airport_code || "-"}`
+
+  return (
+    <main className="min-h-screen bg-[#fffaf6] text-slate-950">
+      <SimplePublicLogoHeader />
+
+      <section className="mx-auto grid max-w-6xl gap-5 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-8">
+        <div className="rounded-[24px] border border-orange-100 bg-white p-6 shadow-[0_18px_48px_rgba(255,75,0,0.08)] sm:p-8">
+          <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
+            {copy.eyebrow}
+          </span>
+          <h1 className="mt-5 max-w-2xl text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+            {copy.title}
+          </h1>
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
+            {copy.body}
+          </p>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-[18px] border border-orange-100 bg-orange-50 p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-600">Kode booking</p>
+              <p className="mt-2 text-lg font-bold text-slate-950">{formatBookingCode(booking.booking_code, booking.id)}</p>
+            </div>
+            <div className="rounded-[18px] border border-sky-100 bg-sky-50 p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-sky-600">Status</p>
+              <p className="mt-2 text-sm font-bold text-slate-950">{copy.statusLabel}</p>
+            </div>
+            <div className="rounded-[18px] border border-emerald-100 bg-emerald-50 p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-600">Estimasi total</p>
+              <p className="mt-2 text-lg font-bold text-slate-950">{formatMoney(booking.total_amount)}</p>
+            </div>
+          </div>
+
+          <div className="mt-7 rounded-[20px] border border-orange-100 bg-[#fffaf3] p-5">
+            <h2 className="text-base font-bold text-slate-950">Langkah berikutnya</h2>
+            <div className="mt-4 grid gap-3">
+              {[
+                "Red Feng recheck fare dan ketersediaan seat ke supplier.",
+                "Jika fare valid, admin/sistem membuat hold/PNR.",
+                "Payment Midtrans dibuka setelah hold supplier valid.",
+                "Setelah payment sukses, Red Feng request issue tiket dan mengirim e-ticket.",
+              ].map((item, index) => (
+                <div key={item} className="flex gap-3 rounded-[16px] border border-white bg-white p-4">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#ff4b00] text-xs font-bold text-white">
+                    {index + 1}
+                  </span>
+                  <p className="text-sm leading-6 text-slate-700">{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-7 flex flex-wrap gap-3">
+            <Link
+              href={`/booking/${booking.id}`}
+              className="inline-flex items-center justify-center rounded-[16px] bg-[#ff4b00] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(255,75,0,0.2)] transition hover:bg-[#e64400]"
+            >
+              Lihat detail booking
+            </Link>
+            <Link
+              href="/customer/bookings"
+              className="inline-flex items-center justify-center rounded-[16px] border border-orange-200 bg-white px-5 py-3 text-sm font-bold text-[#ff4b00] transition hover:bg-orange-50"
+            >
+              Pesanan saya
+            </Link>
+          </div>
+        </div>
+
+        <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+          <div className="rounded-[22px] border border-orange-100 bg-white p-5 shadow-[0_18px_48px_rgba(255,75,0,0.08)]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Ringkasan flight</p>
+            <h2 className="mt-3 text-xl font-bold text-slate-950">{route}</h2>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
+              <p>
+                <span className="font-semibold text-slate-900">Airline:</span>{" "}
+                {flightDetail?.airline_name || "-"} {flightDetail?.flight_number || ""}
+              </p>
+              <p>
+                <span className="font-semibold text-slate-900">Berangkat:</span>{" "}
+                {formatDateTime(flightDetail?.departure_at || null)}
+              </p>
+              <p>
+                <span className="font-semibold text-slate-900">Tiba:</span>{" "}
+                {formatDateTime(flightDetail?.arrival_at || null)}
+              </p>
+              {flightDetail?.pnr_code ? (
+                <p>
+                  <span className="font-semibold text-slate-900">PNR:</span> {flightDetail.pnr_code}
+                </p>
+              ) : null}
+              {flightDetail?.booking_hold_expires_at ? (
+                <p>
+                  <span className="font-semibold text-slate-900">Hold sampai:</span>{" "}
+                  {formatDateTime(flightDetail.booking_hold_expires_at)}
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="rounded-[22px] border border-emerald-100 bg-emerald-50 p-5 text-sm leading-6 text-emerald-800">
+            Payment tetap memakai Midtrans, tetapi hanya dibuka setelah hold supplier valid supaya harga dan seat tidak berubah saat customer membayar.
+          </div>
+        </aside>
+      </section>
+    </main>
+  )
+}

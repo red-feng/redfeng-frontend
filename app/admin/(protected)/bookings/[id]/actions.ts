@@ -592,7 +592,7 @@ export async function markFlightFareRechecked(formData: FormData) {
   const { error: bookingError } = await adminSupabase
     .from("bookings")
     .update({
-      booking_status: "pending_payment",
+      booking_status: "pending",
       supplier_booking_reference: supplierReference || booking.supplier_booking_reference || null,
       supplier_order_status: nextSupplierStatus,
     })
@@ -842,7 +842,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
   const { error: bookingError } = await adminSupabase
     .from("bookings")
     .update({
-      booking_status: "pending_payment",
+      booking_status: "pending",
       supplier_booking_reference: apiSupplierReference,
       supplier_order_status: "confirmed",
     })
@@ -930,7 +930,7 @@ export async function verifyFlightPayment(formData: FormData) {
     .from("bookings")
     .update({
       payment_status: "paid",
-      booking_status: "payment_verified",
+      booking_status: "confirmed",
       escrow_status: "payment_verified",
     })
     .eq("id", bookingId)
@@ -1124,7 +1124,7 @@ export async function requestFlightTicketIssue(formData: FormData) {
     const { error: issuedBookingError } = await adminSupabase
       .from("bookings")
       .update({
-        booking_status: "issued",
+        booking_status: "confirmed",
         supplier_order_status: "issued",
       })
       .eq("id", bookingId)
@@ -1232,7 +1232,7 @@ export async function requestFlightTicketIssue(formData: FormData) {
   const { error: failedBookingError } = await adminSupabase
     .from("bookings")
     .update({
-      booking_status: "issue_failed",
+      booking_status: "confirmed",
       supplier_order_status: "failed",
     })
     .eq("id", bookingId)
@@ -1331,7 +1331,7 @@ export async function markFlightTicketIssued(formData: FormData) {
   const { error: bookingError } = await adminSupabase
     .from("bookings")
     .update({
-      booking_status: "issued",
+      booking_status: "confirmed",
       supplier_order_status: "issued",
     })
     .eq("id", bookingId)
@@ -1514,7 +1514,7 @@ export async function markFlightIssueFailed(formData: FormData) {
   const { error: bookingError } = await adminSupabase
     .from("bookings")
     .update({
-      booking_status: "issue_failed",
+      booking_status: "confirmed",
       supplier_order_status: "failed",
     })
     .eq("id", bookingId)

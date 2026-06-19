@@ -446,7 +446,7 @@ export default async function AdminCreateFlightBookingPage({
               <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950">Yang akan tercatat</h2>
               <div className="mt-5 space-y-3">
                 {[
-                  "Tabel bookings untuk master transaksi Red Feng dengan status pending_payment.",
+                  "Tabel bookings untuk master transaksi Red Feng dengan status pending umum; status payment flight disimpan di lifecycle detail.",
                   "Tabel supplier_orders untuk referensi order/hold ke partner reservasi dan biaya supplier.",
                   "Tabel flight_booking_details untuk rute, cabin, fare reference, hold expiry, lifecycle, dan status issue tiket.",
                 ].map((item) => (

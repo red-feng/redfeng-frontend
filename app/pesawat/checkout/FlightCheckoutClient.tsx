@@ -499,7 +499,11 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
       }
 
       window.localStorage.removeItem(draftStorageKey)
-      router.push(`/booking/${payload.booking_id}`)
+      const query = new URLSearchParams({
+        booking_id: String(payload.booking_id),
+      })
+      if (payload.booking_code) query.set("booking_code", String(payload.booking_code))
+      router.push(`/pesawat/checkout/success?${query.toString()}`)
     } catch {
       setError("Server belum bisa membuat booking pesawat.")
       setSubmitting(false)

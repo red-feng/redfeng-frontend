@@ -177,7 +177,7 @@ export async function POST(req: Request) {
               if (isFlightBooking(booking)) {
                 return {
                   payment_status: "paid",
-                  booking_status: "payment_verified",
+                  booking_status: "confirmed",
                   escrow_status: "payment_verified",
                 }
               }
