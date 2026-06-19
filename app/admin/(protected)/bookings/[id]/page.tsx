@@ -28,6 +28,7 @@ import {
   recheckAndHoldDharmawisataFlight,
   reopenBookingAdminNote,
   requestFlightTicketIssue,
+  resendFlightTicketEmail,
   resolveBookingAdminNote,
   verifyFlightPayment,
 } from "./actions"
@@ -164,6 +165,15 @@ type SupplierOrderRow = {
   last_error: string | null
 }
 
+type SupplierOrderEventRow = {
+  id: string
+  event_type: string | null
+  summary: string | null
+  actor_role: string | null
+  metadata: Record<string, unknown> | null
+  created_at: string | null
+}
+
 type PayoutRow = {
   id: string
   status: string | null
@@ -241,6 +251,60 @@ function formatDate(value: string | null) {
 
 function formatMoney(value: number | null | undefined) {
   return `Rp ${Number(value || 0).toLocaleString("id-ID")}`
+}
+
+function formatSupplierEventType(value: string | null) {
+  const normalized = normalizeStatus(value)
+  if (!normalized) return "Event"
+  if (normalized === "flight_booking_hold_created_via_dharmawisata") return "Hold Created"
+  if (normalized === "flight_booking_hold_failed") return "Hold Failed"
+  if (normalized === "flight_booking_hold_skipped") return "Hold Skipped"
+  if (normalized === "flight_fare_rechecked") return "Fare Rechecked"
+  if (normalized === "flight_payment_verified") return "Payment Verified"
+  if (normalized === "flight_ticket_issue_requested") return "Issue Requested"
+  if (normalized === "flight_ticket_issued_via_dharmawisata") return "Issued via Dharmawisata"
+  if (normalized === "flight_ticket_issued") return "Marked Issued"
+  if (normalized === "flight_ticket_issue_failed") return "Issue Failed"
+  if (normalized === "flight_ticket_email_sent") return "E-ticket Sent"
+  if (normalized === "flight_ticket_email_skipped") return "E-ticket Skipped"
+  if (normalized === "flight_ticket_email_failed") return "E-ticket Failed"
+  return titleCaseStatus(value)
+}
+
+function supplierEventTone(value: string | null) {
+  const normalized = normalizeStatus(value)
+  if (normalized.includes("failed")) return "border-rose-200 bg-rose-50 text-rose-700"
+  if (normalized.includes("skipped")) return "border-amber-200 bg-amber-50 text-amber-700"
+  if (normalized.includes("issued") || normalized.includes("sent") || normalized.includes("verified") || normalized.includes("created")) {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  }
+  if (normalized.includes("requested") || normalized.includes("rechecked")) return "border-sky-200 bg-sky-50 text-sky-700"
+  return "border-slate-200 bg-slate-50 text-slate-600"
+}
+
+function metadataHighlights(metadata: Record<string, unknown> | null) {
+  if (!metadata) return []
+  const keys = [
+    "lifecycleStatus",
+    "issueStatus",
+    "supplierStatus",
+    "bookingCode",
+    "bookingCodeAirline",
+    "referenceNo",
+    "ticketNumber",
+    "pnrCode",
+    "timeLimit",
+    "customerEmail",
+    "message",
+    "error",
+  ]
+
+  return keys.flatMap((key) => {
+    const value = metadata[key]
+    if (value === undefined || value === null || value === "") return []
+    if (typeof value === "object") return []
+    return [{ key, value: String(value) }]
+  })
 }
 
 function parsePromoSnapshot(value: unknown): BookingPromoSnapshot | null {
@@ -628,6 +692,16 @@ export default async function AdminBookingDetailPage({
           .maybeSingle<SupplierOrderRow>()
       : { data: null as SupplierOrderRow | null }
 
+  const { data: supplierOrderEventsData } = supplierOrder?.id
+    ? await adminSupabase
+        .from("supplier_order_events")
+        .select("id, event_type, summary, actor_role, metadata, created_at")
+        .eq("supplier_order_id", supplierOrder.id)
+        .order("created_at", { ascending: false })
+        .limit(20)
+    : { data: [] as SupplierOrderEventRow[] }
+  const supplierOrderEvents = (supplierOrderEventsData as SupplierOrderEventRow[] | null) || []
+
   const { data: payout } = await adminSupabase
     .from("payout_requests")
     .select("id, status, amount, gross_booking_amount, created_at, note")
@@ -723,6 +797,11 @@ export default async function AdminBookingDetailPage({
     (flightLifecycleStatus === "ticketing" || flightIssueStatus === "ticketing") &&
     flightLifecycleStatus !== "issued" &&
     flightIssueStatus !== "issued"
+  const canResendFlightTicketEmail =
+    canExecuteAdminOps &&
+    isFlightBooking &&
+    (flightLifecycleStatus === "issued" || flightIssueStatus === "issued") &&
+    Boolean(flightDetail?.ticket_number || flightDetail?.pnr_code || supplierOrder?.supplier_reference)
   const promoSnapshot = parsePromoSnapshot(booking.promo_snapshot)
   const displayDiscountAmount = Math.max(
     Number(promoSnapshot?.display_discount_amount ?? booking.promo_discount_amount ?? 0),
@@ -1117,6 +1196,16 @@ export default async function AdminBookingDetailPage({
                       </button>
                     </form>
                   ) : null}
+
+                  {canResendFlightTicketEmail ? (
+                    <form action={resendFlightTicketEmail}>
+                      <input type="hidden" name="portal" value={portal} />
+                      <input type="hidden" name="booking_id" value={booking.id} />
+                      <button className="rounded-[14px] bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-emerald-700">
+                        Resend E-ticket
+                      </button>
+                    </form>
+                  ) : null}
                 </div>
               </div>
 
@@ -1261,6 +1350,62 @@ export default async function AdminBookingDetailPage({
                 {supplierOrder?.last_error || flightDetail.notes}
               </div>
             ) : null}
+
+            <div className="mt-6 rounded-[22px] border border-slate-200 bg-white p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Flight event history</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Kronologi supplier untuk hold, payment, issue, dan email e-ticket.
+                  </p>
+                </div>
+                <span className="rounded-[12px] border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                  {supplierOrderEvents.length} event
+                </span>
+              </div>
+
+              {supplierOrderEvents.length ? (
+                <div className="mt-4 space-y-3">
+                  {supplierOrderEvents.map((event) => {
+                    const highlights = metadataHighlights(event.metadata)
+
+                    return (
+                      <div key={event.id} className="rounded-[18px] border border-slate-100 bg-slate-50/70 p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <span className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold ${supplierEventTone(event.event_type)}`}>
+                              {formatSupplierEventType(event.event_type)}
+                            </span>
+                            <p className="mt-3 text-sm font-semibold text-slate-900">{event.summary || "-"}</p>
+                            <p className="mt-1 text-xs leading-5 text-slate-500">
+                              {formatDateTime(event.created_at)} oleh {event.actor_role || "-"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {highlights.length ? (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {highlights.map((item) => (
+                              <span
+                                key={`${event.id}-${item.key}`}
+                                className="inline-flex max-w-full rounded-[12px] border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-slate-600"
+                              >
+                                <span className="mr-1 font-semibold text-slate-800">{titleCaseStatus(item.key)}:</span>
+                                <span className="break-all">{item.value}</span>
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="mt-4 rounded-[18px] border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                  Belum ada event supplier untuk booking pesawat ini.
+                </div>
+              )}
+            </div>
           </section>
         ) : null}
 

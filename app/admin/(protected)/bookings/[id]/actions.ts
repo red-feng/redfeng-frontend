@@ -1414,6 +1414,71 @@ export async function markFlightTicketIssued(formData: FormData) {
   backToBookingDetailWithState(bookingId, "success", "Tiket Pesawat berhasil ditandai issued dan e-ticket dikirim bila email tersedia.", formData)
 }
 
+export async function resendFlightTicketEmail(formData: FormData) {
+  const portal = resolvePortal(formData)
+  const adminActor = await ensureAdmin(portal)
+  const bookingId = String(formData.get("booking_id") || "").trim()
+
+  if (!bookingId) {
+    redirect(resolvePortalPaths(portal).bookingsPath)
+  }
+
+  const { adminSupabase, booking, flightDetail, supplierOrder } = await getFlightBookingForAction(bookingId, formData)
+  const lifecycleStatus = String(flightDetail.lifecycle_status || "").toLowerCase()
+  const issueStatus = String(flightDetail.issue_status || "").toLowerCase()
+  const ticketNumber = flightDetail.ticket_number || null
+  const pnrCode = flightDetail.pnr_code || supplierOrder?.supplier_reference || null
+
+  if (lifecycleStatus !== "issued" && issueStatus !== "issued") {
+    backToBookingDetailWithState(bookingId, "error", "E-ticket hanya bisa dikirim ulang setelah tiket berstatus issued.", formData)
+  }
+
+  if (!ticketNumber && !pnrCode) {
+    backToBookingDetailWithState(bookingId, "error", "Ticket number atau PNR belum tersedia untuk dikirim ulang.", formData)
+  }
+
+  await notifyCustomerFlightTicketIssued({
+    adminSupabase,
+    supplierOrderId: supplierOrder?.id,
+    actorId: adminActor.user.id,
+    actorRole: adminActor.role,
+    bookingId,
+    bookingCode: formatBookingCode(booking.booking_code, booking.id),
+    customerName: booking.customer_name,
+    customerEmail: booking.customer_email,
+    customerLocale: booking.customer_locale,
+    airlineName: flightDetail.airline_name,
+    airlineCode: flightDetail.airline_code,
+    flightNumber: flightDetail.flight_number,
+    originAirportCode: flightDetail.origin_airport_code,
+    destinationAirportCode: flightDetail.destination_airport_code,
+    departureAt: flightDetail.departure_at,
+    arrivalAt: flightDetail.arrival_at,
+    ticketNumber,
+    pnrCode,
+  })
+
+  await createAdminAuditLog({
+    actorId: adminActor.user.id,
+    actorRole: adminActor.role,
+    targetType: "booking",
+    targetId: bookingId,
+    action: "flight_ticket_email_resent",
+    summary: `E-ticket Pesawat ${formatBookingCode(booking.booking_code, booking.id)} dikirim ulang`,
+    metadata: {
+      productType: "flight",
+      lifecycleStatus,
+      issueStatus,
+      ticketNumber,
+      pnrCode,
+      customerEmail: booking.customer_email || null,
+    },
+  })
+
+  revalidateBookingDetailPaths(bookingId, portal)
+  backToBookingDetailWithState(bookingId, "success", "Permintaan resend e-ticket diproses. Cek event supplier untuk status email terkirim/skipped/gagal.", formData)
+}
+
 export async function markFlightIssueFailed(formData: FormData) {
   const portal = resolvePortal(formData)
   const adminActor = await ensureAdmin(portal)

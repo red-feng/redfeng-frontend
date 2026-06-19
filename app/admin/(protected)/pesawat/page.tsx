@@ -37,8 +37,8 @@ export default async function AdminFlightsWorkspacePage() {
       statusNote="Booking affiliate Pesawat sudah menyimpan route, cabin, trip type, dan jadwal pulang. Fare live yang sudah terbukti saat ini masih berasal dari environment UAT Dharmawisata, jadi belum boleh dianggap production live."
       primaryActionHref="/admin/pesawat/bookings/new"
       primaryActionLabel="Buat booking Pesawat"
-      secondaryActionHref="/admin/bookings?product=pesawat"
-      secondaryActionLabel="Lihat booking Pesawat"
+      secondaryActionHref="/admin/pesawat/ops"
+      secondaryActionLabel="Buka Flight Ops Board"
       preparedModules={["Create booking", "Supplier affiliate", "Flight details", "Trip contract", "Issue status", "Promo-ready context"]}
     >
       <div className="grid gap-4 xl:grid-cols-4">
@@ -176,6 +176,32 @@ export default async function AdminFlightsWorkspacePage() {
               <li>Availability live bersifat sensitif terhadap kombinasi rute, tanggal, dan airline. Route reference yang banyak tidak berarti semua tanggal punya fare live.</li>
               <li>Jika token production sudah diberikan, panel ini bisa dinaikkan dari UAT menjadi production verification tanpa mengubah struktur dashboard.</li>
             </ul>
+          </div>
+
+          <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+            <h2 className="text-base font-semibold text-slate-950">Flight Ops Board</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Pantau alur pesawat dari recheck fare, hold/PNR, payment Midtrans, ticketing, issued, sampai follow up dari satu layar kerja.
+            </p>
+            <Link
+              href="/admin/pesawat/ops"
+              className="mt-4 inline-flex items-center justify-center rounded-[14px] bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              Buka ops board
+            </Link>
+          </div>
+
+          <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+            <h2 className="text-base font-semibold text-slate-950">Booking Center Pesawat</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Buka daftar booking pesawat dengan filter status flight, badge lifecycle, dan quick action di card booking.
+            </p>
+            <Link
+              href="/admin/bookings?product=pesawat"
+              className="mt-4 inline-flex items-center justify-center rounded-[14px] border border-[#ecd9c2] bg-[#fff7ef] px-4 py-2.5 text-sm font-semibold text-orange-600 transition hover:border-orange-200 hover:bg-orange-50"
+            >
+              Lihat booking pesawat
+            </Link>
           </div>
 
           <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
