@@ -17,11 +17,18 @@ import { formatBookingCode } from "@/lib/merchant-code"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { getBookingProductLabel, resolveBookingProductType, toAdminBookingFilter } from "@/lib/booking-products"
 import { isBookingExpiredForNonPayment, isBookingPastRetentionWindow } from "@/lib/bookings/draft-cleanup"
+import {
+  classifyFlightIssueFailureReason,
+  extractFlightSupplierFailureReason,
+  normalizeFlightIssueReasonFilter,
+  type FlightIssueReasonFilter,
+} from "@/lib/flights/issueFailureReason"
 import { getEscrowStatusTone, getJourneyStageTone, getPaymentStatusTone, normalizeStatus } from "@/lib/status-tones"
-import { cleanupExpiredPendingBookings, handoffBookingToFinance } from "./actions"
+import { bulkRetryAutoIssueFlights, cleanupExpiredPendingBookings, handoffBookingToFinance } from "./actions"
 import {
   recheckAndHoldDharmawisataFlight,
   requestFlightTicketIssue,
+  retryAutoIssueFlightTicket,
   resendFlightTicketEmail,
 } from "./[id]/actions"
 
@@ -58,6 +65,8 @@ type BookingRow = {
   flight_airline_code?: string | null
   flight_airline_name?: string | null
   flight_issue_requested_at?: string | null
+  flight_issue_failure_reason?: string | null
+  flight_supplier_status?: string | null
   supplier_code?: string | null
   supplier_integration_mode?: string | null
 }
@@ -100,6 +109,15 @@ type FlightStatusFilter =
   | "ticketing"
   | "issued"
   | "issue-failed"
+
+type SupplierOrderListRow = {
+  id: string
+  booking_id: string
+  supplier_status: string | null
+  last_error: string | null
+  response_payload: Record<string, unknown> | null
+  created_at: string | null
+}
 
 type PackageRow = {
   id: string
@@ -256,6 +274,19 @@ function canQuickIssueFlightTicket(booking: BookingRow) {
   )
 }
 
+function canQuickRetryAutoIssueFlight(booking: BookingRow) {
+  const lifecycle = normalizeFlightLifecycleStatus(booking.flight_lifecycle_status)
+  const issue = normalizeFlightIssueStatus(booking.flight_issue_status)
+  return (
+    deriveBookingProduct(booking) === "pesawat" &&
+    normalizeStatus(booking.payment_status) === "paid" &&
+    (lifecycle === "issue_failed" || issue === "issue_failed") &&
+    lifecycle !== "issued" &&
+    issue !== "issued" &&
+    !booking.flight_ticket_number
+  )
+}
+
 function canQuickResendFlightTicket(booking: BookingRow) {
   const lifecycle = normalizeFlightLifecycleStatus(booking.flight_lifecycle_status)
   const issue = normalizeFlightIssueStatus(booking.flight_issue_status)
@@ -366,6 +397,14 @@ function flightExceptionSummary(booking: BookingRow) {
     }
   }
   return null
+}
+
+function flightIssueFailureReasonBadge(booking: BookingRow) {
+  const lifecycle = normalizeFlightLifecycleStatus(booking.flight_lifecycle_status)
+  const issue = normalizeFlightIssueStatus(booking.flight_issue_status)
+  if (lifecycle !== "issue_failed" && issue !== "issue_failed") return null
+
+  return classifyFlightIssueFailureReason(booking.flight_issue_failure_reason || "")
 }
 
 function journeyPhase(booking: BookingRow) {
@@ -620,6 +659,13 @@ function matchesFlightStatusFilter(booking: BookingRow, filter: FlightStatusFilt
   return true
 }
 
+function matchesFlightIssueReasonFilter(booking: BookingRow, filter: FlightIssueReasonFilter) {
+  if (filter === "all") return true
+  if (deriveBookingProduct(booking) !== "pesawat") return false
+  const reason = flightIssueFailureReasonBadge(booking)
+  return reason?.value === filter
+}
+
 function buildFilterHref(
   portal: BookingPortal,
   product: ProductFilter,
@@ -628,6 +674,7 @@ function buildFilterHref(
   q: string,
   sort: SortMode,
   flight: FlightStatusFilter = "all",
+  flightReason: FlightIssueReasonFilter = "all",
 ) {
   const basePath = portal === "superadmin" ? "/superadmin/bookings" : "/admin/bookings"
   const params = new URLSearchParams()
@@ -637,6 +684,7 @@ function buildFilterHref(
   if (q) params.set("q", q)
   if (sort !== "created_desc") params.set("sort", sort)
   if (flight !== "all") params.set("flight", flight)
+  if (flightReason !== "all") params.set("flightReason", flightReason)
   const query = params.toString()
   return query ? `${basePath}?${query}` : basePath
 }
@@ -645,7 +693,17 @@ export default async function AdminBookingsPage({
   searchParams,
   portal = "admin",
 }: {
-  searchParams: Promise<{ success?: string; error?: string; product?: string; queue?: string; focus?: string; q?: string; sort?: string; flight?: string }>
+  searchParams: Promise<{
+    success?: string
+    error?: string
+    product?: string
+    queue?: string
+    focus?: string
+    q?: string
+    sort?: string
+    flight?: string
+    flightReason?: string
+  }>
   portal?: BookingPortal
 }) {
   const params = await searchParams
@@ -666,8 +724,12 @@ export default async function AdminBookingsPage({
   const errorMessage = params.error ? String(params.error) : ""
   const requestedProduct = normalizeProductFilter(params.product)
   const activeFlightStatus = accessibleAdminFilters.includes("pesawat") ? normalizeFlightStatusFilter(params.flight) : "all"
+  const activeFlightIssueReason = accessibleAdminFilters.includes("pesawat")
+    ? normalizeFlightIssueReasonFilter(params.flightReason)
+    : "all"
+  const effectiveFlightStatus = activeFlightIssueReason !== "all" ? "issue-failed" : activeFlightStatus
   const activeProduct =
-    activeFlightStatus !== "all"
+    effectiveFlightStatus !== "all" || activeFlightIssueReason !== "all"
       ? "pesawat"
       : requestedProduct === "all" || accessibleAdminFilters.includes(requestedProduct)
         ? requestedProduct
@@ -718,6 +780,27 @@ export default async function AdminBookingsPage({
       booking.flight_airline_code = detail.airline_code
       booking.flight_airline_name = detail.airline_name
       booking.flight_issue_requested_at = detail.issue_requested_at
+    }
+
+    const { data: supplierOrdersData } = await adminSupabase
+      .from("supplier_orders")
+      .select("id, booking_id, supplier_status, last_error, response_payload, created_at")
+      .eq("product_type", "flight")
+      .in("booking_id", flightBookingIds)
+      .order("created_at", { ascending: false })
+
+    const supplierOrdersMap = new Map<string, SupplierOrderListRow>()
+    for (const order of ((supplierOrdersData as SupplierOrderListRow[] | null) || []) as SupplierOrderListRow[]) {
+      if (!supplierOrdersMap.has(order.booking_id)) {
+        supplierOrdersMap.set(order.booking_id, order)
+      }
+    }
+
+    for (const booking of bookings) {
+      const order = supplierOrdersMap.get(booking.id)
+      if (!order) continue
+      booking.flight_supplier_status = order.supplier_status
+      booking.flight_issue_failure_reason = extractFlightSupplierFailureReason(order)
     }
   }
 
@@ -794,9 +877,9 @@ export default async function AdminBookingsPage({
   const searchedFlightBookings = validBookings.filter(
     (booking) => deriveBookingProduct(booking) === "pesawat" && matchesSearchQuery(booking),
   )
-  const flightScopedBookings = searchedBookings.filter((booking) =>
-    matchesFlightStatusFilter(booking, activeFlightStatus),
-  )
+  const flightScopedBookings = searchedBookings
+    .filter((booking) => matchesFlightStatusFilter(booking, effectiveFlightStatus))
+    .filter((booking) => matchesFlightIssueReasonFilter(booking, activeFlightIssueReason))
 
   const filteredBookings = flightScopedBookings.filter((booking) => {
     if (activeQueue === "needs-attention") return isNeedsAttentionBooking(booking) && matchesAttentionFocus(booking, activeFocus)
@@ -833,9 +916,11 @@ export default async function AdminBookingsPage({
   const cleanupPendingCount = bookings.filter((booking) => isBookingExpiredForNonPayment(booking)).length
   const cleanupRetentionCount = bookings.filter((booking) => isBookingPastRetentionWindow(booking)).length
   const queueCountBookings =
-    activeFlightStatus === "all"
+    effectiveFlightStatus === "all" && activeFlightIssueReason === "all"
       ? productScopedBookings
-      : productScopedBookings.filter((booking) => matchesFlightStatusFilter(booking, activeFlightStatus))
+      : productScopedBookings
+          .filter((booking) => matchesFlightStatusFilter(booking, effectiveFlightStatus))
+          .filter((booking) => matchesFlightIssueReasonFilter(booking, activeFlightIssueReason))
   const needsAttentionCount = queueCountBookings.filter((booking) => isNeedsAttentionBooking(booking)).length
   const paymentAttentionCount = queueCountBookings.filter(
     (booking) => isNeedsAttentionBooking(booking) && matchesAttentionFocus(booking, "payment"),
@@ -908,6 +993,43 @@ export default async function AdminBookingsPage({
       count: searchedFlightBookings.filter((booking) => matchesFlightStatusFilter(booking, "issue-failed")).length,
     },
   ]
+  const issueFailedFlightBookings = searchedFlightBookings.filter((booking) =>
+    matchesFlightStatusFilter(booking, "issue-failed"),
+  )
+  const flightIssueReasonFilters: Array<{ value: FlightIssueReasonFilter; label: string; count: number }> = [
+    { value: "all", label: "Semua alasan", count: issueFailedFlightBookings.length },
+    {
+      value: "timeout",
+      label: "Supplier timeout",
+      count: issueFailedFlightBookings.filter((booking) => matchesFlightIssueReasonFilter(booking, "timeout")).length,
+    },
+    {
+      value: "fare-seat",
+      label: "Fare/seat berubah",
+      count: issueFailedFlightBookings.filter((booking) => matchesFlightIssueReasonFilter(booking, "fare-seat")).length,
+    },
+    {
+      value: "pnr-ticket",
+      label: "PNR/tiket kosong",
+      count: issueFailedFlightBookings.filter((booking) => matchesFlightIssueReasonFilter(booking, "pnr-ticket")).length,
+    },
+    {
+      value: "rejected",
+      label: "Supplier rejected",
+      count: issueFailedFlightBookings.filter((booking) => matchesFlightIssueReasonFilter(booking, "rejected")).length,
+    },
+    {
+      value: "deposit",
+      label: "Saldo/deposit",
+      count: issueFailedFlightBookings.filter((booking) => matchesFlightIssueReasonFilter(booking, "deposit")).length,
+    },
+    {
+      value: "unknown",
+      label: "Unknown",
+      count: issueFailedFlightBookings.filter((booking) => matchesFlightIssueReasonFilter(booking, "unknown")).length,
+    },
+  ]
+  const activeFlightIssueReasonMeta = flightIssueReasonFilters.find((filter) => filter.value === activeFlightIssueReason)
   const queueFilters: Array<{ value: QueueFilter; label: string; count: number }> = [
     { value: "all", label: "Semua Queue", count: flightScopedBookings.length },
     { value: "needs-attention", label: "Needs Attention", count: needsAttentionCount },
@@ -987,7 +1109,10 @@ export default async function AdminBookingsPage({
               {activeProduct !== "all" ? <input type="hidden" name="product" value={activeProduct} /> : null}
               {activeQueue !== "all" ? <input type="hidden" name="queue" value={activeQueue} /> : null}
               {activeFocus !== "all" ? <input type="hidden" name="focus" value={activeFocus} /> : null}
-              {activeFlightStatus !== "all" ? <input type="hidden" name="flight" value={activeFlightStatus} /> : null}
+              {effectiveFlightStatus !== "all" ? <input type="hidden" name="flight" value={effectiveFlightStatus} /> : null}
+              {activeFlightIssueReason !== "all" ? (
+                <input type="hidden" name="flightReason" value={activeFlightIssueReason} />
+              ) : null}
             </div>
 
             <div>
@@ -1014,7 +1139,16 @@ export default async function AdminBookingsPage({
                 Terapkan
               </button>
               <Link
-                href={buildFilterHref(portal, activeProduct, activeQueue, activeFocus, "", "created_desc", activeFlightStatus)}
+                href={buildFilterHref(
+                  portal,
+                  activeProduct,
+                  activeQueue,
+                  activeFocus,
+                  "",
+                  "created_desc",
+                  effectiveFlightStatus,
+                  activeFlightIssueReason,
+                )}
                 className="inline-flex items-center justify-center rounded-[18px] border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
               >
                 Reset
@@ -1040,7 +1174,8 @@ export default async function AdminBookingsPage({
                     activeFocus,
                     searchQuery,
                     sortMode,
-                    filter.value === "pesawat" ? activeFlightStatus : "all",
+                    filter.value === "pesawat" ? effectiveFlightStatus : "all",
+                    filter.value === "pesawat" ? activeFlightIssueReason : "all",
                   )}
                   className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
                     isActive
@@ -1064,7 +1199,7 @@ export default async function AdminBookingsPage({
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               {flightStatusFilters.map((filter) => {
-                const isActive = activeFlightStatus === filter.value
+                const isActive = effectiveFlightStatus === filter.value
 
                 return (
                   <Link
@@ -1077,6 +1212,7 @@ export default async function AdminBookingsPage({
                       searchQuery,
                       sortMode,
                       filter.value,
+                      filter.value === "issue-failed" ? activeFlightIssueReason : "all",
                     )}
                     className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                       isActive
@@ -1092,6 +1228,91 @@ export default async function AdminBookingsPage({
                 )
               })}
             </div>
+            <div className="mt-6 border-t border-[#f3dbc3] pt-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">Issue failed reason</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {flightIssueReasonFilters.map((filter) => {
+                  const isActive = activeFlightIssueReason === filter.value
+
+                  return (
+                    <Link
+                      key={filter.value}
+                      href={buildFilterHref(
+                        portal,
+                        "pesawat",
+                        activeQueue,
+                        activeQueue === "needs-attention" ? activeFocus : "all",
+                        searchQuery,
+                        sortMode,
+                        "issue-failed",
+                        filter.value,
+                      )}
+                      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                        isActive
+                          ? "border-rose-200 bg-rose-50 text-rose-700"
+                          : "border-[#ecd9c2] bg-white text-slate-700 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
+                      }`}
+                    >
+                      {filter.label}
+                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
+                        {filter.count > 99 ? "99+" : filter.count}
+                      </span>
+                    </Link>
+                  )
+                })}
+              </div>
+              {activeFlightIssueReason !== "all" ? (
+                <div className="mt-4 rounded-[22px] border border-rose-200 bg-rose-50/70 p-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-rose-500">
+                        Bulk retry guard
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-slate-950">
+                        {activeFlightIssueReasonMeta?.label || "Issue failed reason"}:{" "}
+                        {activeFlightIssueReasonMeta?.count || 0} kandidat
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-slate-600">
+                        Retry batch dibatasi dan tetap melewati guard payment paid, belum issued, dan status issue failed.
+                      </p>
+                    </div>
+                    {canExecuteAdminOps ? (
+                      <form action={bulkRetryAutoIssueFlights} className="flex flex-wrap items-end gap-2">
+                        <input type="hidden" name="portal" value={portal} />
+                        <input type="hidden" name="flight_reason" value={activeFlightIssueReason} />
+                        <label className="text-xs font-semibold text-slate-600">
+                          Limit
+                          <select
+                            name="limit"
+                            defaultValue="5"
+                            className="mt-1 block rounded-[14px] border border-rose-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-rose-300 focus:ring-4 focus:ring-rose-100"
+                          >
+                            <option value="3">3</option>
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                          </select>
+                        </label>
+                        <button
+                          className="rounded-[18px] bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-300"
+                          disabled={!activeFlightIssueReasonMeta?.count || activeFlightIssueReason === "deposit"}
+                        >
+                          Retry batch
+                        </button>
+                      </form>
+                    ) : (
+                      <span className="rounded-[18px] border border-rose-200 bg-white px-4 py-3 text-sm font-semibold text-rose-700">
+                        Butuh role eksekusi admin
+                      </span>
+                    )}
+                  </div>
+                  {activeFlightIssueReason === "deposit" ? (
+                    <p className="mt-3 text-xs leading-5 text-rose-700">
+                      Kategori saldo/deposit tidak diretry massal. Cek saldo Dharmawisata atau hubungi supplier dulu.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
           </section>
         ) : null}
 
@@ -1101,7 +1322,16 @@ export default async function AdminBookingsPage({
             <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Queue yang harus dicek lebih dulu</h2>
             <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-3">
               <Link
-                href={buildFilterHref(portal, activeProduct, "needs-attention", activeFocus, searchQuery, sortMode, activeFlightStatus)}
+                href={buildFilterHref(
+                  portal,
+                  activeProduct,
+                  "needs-attention",
+                  activeFocus,
+                  searchQuery,
+                  sortMode,
+                  effectiveFlightStatus,
+                  activeFlightIssueReason,
+                )}
                 className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Needs Attention</p>
@@ -1109,7 +1339,16 @@ export default async function AdminBookingsPage({
                 <p className="mt-2 text-sm leading-6 text-slate-600">Booking yang belum siap handoff atau status operasionalnya masih macet.</p>
               </Link>
               <Link
-                href={buildFilterHref(portal, activeProduct, "ready", "all", searchQuery, sortMode, activeFlightStatus)}
+                href={buildFilterHref(
+                  portal,
+                  activeProduct,
+                  "ready",
+                  "all",
+                  searchQuery,
+                  sortMode,
+                  effectiveFlightStatus,
+                  activeFlightIssueReason,
+                )}
                 className="rounded-[24px] border border-[#efe1cf] bg-white p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Ready for Finance</p>
@@ -1119,7 +1358,16 @@ export default async function AdminBookingsPage({
                 <p className="mt-2 text-sm leading-6 text-slate-600">Booking yang siap atau sudah otomatis masuk queue finance.</p>
               </Link>
               <Link
-                href={buildFilterHref(portal, activeProduct, "in-finance", "all", searchQuery, sortMode, activeFlightStatus)}
+                href={buildFilterHref(
+                  portal,
+                  activeProduct,
+                  "in-finance",
+                  "all",
+                  searchQuery,
+                  sortMode,
+                  effectiveFlightStatus,
+                  activeFlightIssueReason,
+                )}
                 className="rounded-[24px] border border-[#efe1cf] bg-white p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">In Finance</p>
@@ -1148,7 +1396,8 @@ export default async function AdminBookingsPage({
                       filter.value === "needs-attention" ? activeFocus : "all",
                       searchQuery,
                       sortMode,
-                      activeFlightStatus,
+                      effectiveFlightStatus,
+                      activeFlightIssueReason,
                     )}
                     className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                       isActive
@@ -1186,7 +1435,16 @@ export default async function AdminBookingsPage({
                 return (
                   <Link
                     key={filter.value}
-                    href={buildFilterHref(portal, activeProduct, "needs-attention", filter.value, searchQuery, sortMode, activeFlightStatus)}
+                    href={buildFilterHref(
+                      portal,
+                      activeProduct,
+                      "needs-attention",
+                      filter.value,
+                      searchQuery,
+                      sortMode,
+                      effectiveFlightStatus,
+                      activeFlightIssueReason,
+                    )}
                     className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                       isActive
                         ? "border-orange-200 bg-[#fff7ef] text-orange-600"
@@ -1304,12 +1562,18 @@ export default async function AdminBookingsPage({
                 const actionNow = deriveActionNow(booking)
                 const flightBadge = flightStatusBadge(booking)
                 const flightException = isFlightBookingRow ? flightExceptionSummary(booking) : null
+                const flightIssueReason = isFlightBookingRow ? flightIssueFailureReasonBadge(booking) : null
                 const flightReference = booking.flight_ticket_number || booking.flight_pnr_code || ""
+                const retryAutoIssueAvailable = canQuickRetryAutoIssueFlight(booking)
                 const showQuickRecheckAndHoldFlight = canExecuteAdminOps && canQuickRecheckAndHoldFlight(booking)
+                const showQuickRetryAutoIssueFlight = canExecuteAdminOps && retryAutoIssueAvailable
                 const showQuickIssueFlightTicket = canExecuteAdminOps && canQuickIssueFlightTicket(booking)
                 const showQuickResendFlightTicket = canExecuteAdminOps && canQuickResendFlightTicket(booking)
                 const hasFlightQuickAction =
-                  showQuickRecheckAndHoldFlight || showQuickIssueFlightTicket || showQuickResendFlightTicket
+                  showQuickRecheckAndHoldFlight ||
+                  showQuickRetryAutoIssueFlight ||
+                  showQuickIssueFlightTicket ||
+                  showQuickResendFlightTicket
 
                 return (
                   <article
@@ -1408,6 +1672,22 @@ export default async function AdminBookingsPage({
                         </p>
                         <p className="mt-2 text-sm font-semibold">{flightException.label}</p>
                         <p className="mt-2 text-sm leading-6">{flightException.note}</p>
+                        {flightIssueReason ? (
+                          <div className="mt-3 flex flex-wrap items-start gap-2">
+                            <span
+                              className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${flightIssueReason.tone}`}
+                            >
+                              {flightIssueReason.label}
+                            </span>
+                            <span className="max-w-3xl text-xs leading-5 opacity-90">{flightIssueReason.note}</span>
+                          </div>
+                        ) : null}
+                        {retryAutoIssueAvailable ? (
+                          <div className="mt-3 rounded-[18px] border border-orange-200 bg-white/85 px-3 py-2 text-xs text-orange-800">
+                            <span className="font-semibold">Retry Auto Issue tersedia.</span>{" "}
+                            Auto-pilot bisa dicoba ulang dari daftar ini setelah response supplier dicek.
+                          </div>
+                        ) : null}
                       </div>
                     ) : null}
 
@@ -1443,6 +1723,15 @@ export default async function AdminBookingsPage({
                           <input type="hidden" name="booking_id" value={booking.id} />
                           <button className="rounded-[20px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
                             Recheck & Hold
+                          </button>
+                        </form>
+                      ) : null}
+                      {showQuickRetryAutoIssueFlight ? (
+                        <form action={retryAutoIssueFlightTicket}>
+                          <input type="hidden" name="portal" value={portal} />
+                          <input type="hidden" name="booking_id" value={booking.id} />
+                          <button className="rounded-[20px] bg-orange-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-800">
+                            Retry Auto Issue
                           </button>
                         </form>
                       ) : null}
