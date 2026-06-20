@@ -6,6 +6,14 @@ import { useEffect, useMemo, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { INTERNAL_CHAT_ENGINE, MERCHANT_SUPPORT_ENGINE } from "@/lib/chat-engines"
 
+const FLIGHT_EXCEPTION_NAV_ENGINE = Object.freeze({
+  key: "flight-exception",
+  navHrefSuffix: "/pesawat/ops",
+  unreadCountEndpoint: "/api/admin/flights/exception-count",
+  navRealtimeChannel: "admin-flight-exception-nav-badge-live",
+  realtimeTables: ["flight_booking_details", "bookings", "supplier_orders"] as const,
+})
+
 type AdminNavChild = {
   href: string
   label: string
@@ -186,6 +194,13 @@ export default function AdminNavLinks({
         unreadEndpoint: MERCHANT_SUPPORT_ENGINE.adminUnreadCountEndpoint,
         channelName: `${MERCHANT_SUPPORT_ENGINE.adminRealtimeChannel}-nav`,
         tables: [...MERCHANT_SUPPORT_ENGINE.realtimeTables],
+      },
+      {
+        key: FLIGHT_EXCEPTION_NAV_ENGINE.key,
+        hrefSuffix: FLIGHT_EXCEPTION_NAV_ENGINE.navHrefSuffix,
+        unreadEndpoint: FLIGHT_EXCEPTION_NAV_ENGINE.unreadCountEndpoint,
+        channelName: FLIGHT_EXCEPTION_NAV_ENGINE.navRealtimeChannel,
+        tables: [...FLIGHT_EXCEPTION_NAV_ENGINE.realtimeTables],
       },
     ],
     [],

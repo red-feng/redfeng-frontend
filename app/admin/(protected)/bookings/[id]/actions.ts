@@ -9,6 +9,7 @@ import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { formatBookingCode } from "@/lib/merchant-code"
 import { issueDharmawisataFlightTicket } from "@/lib/flights/dharmawisataTicketIssue"
 import { createDharmawisataFlightBooking, type DharmawisataPassenger } from "@/lib/flights/dharmawisataFlightBooking"
+import { autoIssueFlightTicketAfterPayment } from "@/lib/flights/autoIssue"
 import { sendFlightTicketIssuedEmail } from "@/lib/flights/flightTicketEmail"
 
 type BookingPortal = "admin" | "superadmin"
@@ -1395,6 +1396,62 @@ export async function requestFlightTicketIssue(formData: FormData) {
 
   revalidateBookingDetailPaths(bookingId, portal)
   backToBookingDetailWithState(bookingId, "error", `Issue tiket Dharmawisata gagal: ${failureMessage}`, formData)
+}
+
+export async function retryAutoIssueFlightTicket(formData: FormData) {
+  const portal = resolvePortal(formData)
+  const adminActor = await ensureAdmin(portal)
+  const bookingId = String(formData.get("booking_id") || "").trim()
+
+  if (!bookingId) {
+    redirect(resolvePortalPaths(portal).bookingsPath)
+  }
+
+  const { adminSupabase, booking, flightDetail } = await getFlightBookingForAction(bookingId, formData)
+  const lifecycleStatus = String(flightDetail.lifecycle_status || "").trim().toLowerCase()
+  const issueStatus = String(flightDetail.issue_status || "").trim().toLowerCase()
+
+  if (String(booking.payment_status || "").trim().toLowerCase() !== "paid") {
+    backToBookingDetailWithState(bookingId, "error", "Retry auto issue hanya bisa dijalankan setelah payment verified.", formData)
+  }
+
+  if (lifecycleStatus === "issued" || issueStatus === "issued" || flightDetail.ticket_number) {
+    backToBookingDetailWithState(bookingId, "error", "Tiket sudah issued. Retry auto issue diblokir untuk mencegah duplicate issue.", formData)
+  }
+
+  if (lifecycleStatus !== "issue_failed" && issueStatus !== "issue_failed") {
+    backToBookingDetailWithState(bookingId, "error", "Retry auto issue hanya tersedia untuk booking dengan status issue failed.", formData)
+  }
+
+  const result = await autoIssueFlightTicketAfterPayment(adminSupabase, bookingId)
+
+  await createAdminAuditLog({
+    actorId: adminActor.user.id,
+    actorRole: adminActor.role,
+    targetType: "booking",
+    targetId: bookingId,
+    action: "flight_auto_issue_retry",
+    summary: `Admin menjalankan retry auto issue Pesawat ${formatBookingCode(booking.booking_code, booking.id)}`,
+    metadata: {
+      productType: "flight",
+      status: result.status,
+      skipped: result.skipped,
+      ok: result.ok,
+      message: result.message,
+    },
+  })
+
+  revalidateBookingDetailPaths(bookingId, portal)
+
+  if (result.ok) {
+    backToBookingDetailWithState(bookingId, "success", result.message || "Retry auto issue berhasil. Tiket sudah issued bila supplier mengembalikan nomor tiket.", formData)
+  }
+
+  if (result.skipped) {
+    backToBookingDetailWithState(bookingId, "error", `Retry auto issue ditahan guard: ${result.message}`, formData)
+  }
+
+  backToBookingDetailWithState(bookingId, "error", `Retry auto issue gagal: ${result.message}`, formData)
 }
 
 export async function markFlightTicketIssued(formData: FormData) {

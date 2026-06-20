@@ -29,6 +29,7 @@ import {
   reopenBookingAdminNote,
   requestFlightTicketIssue,
   resendFlightTicketEmail,
+  retryAutoIssueFlightTicket,
   resolveBookingAdminNote,
   verifyFlightPayment,
 } from "./actions"
@@ -282,6 +283,64 @@ function supplierEventTone(value: string | null) {
   return "border-slate-200 bg-slate-50 text-slate-600"
 }
 
+function isAutoPilotFlightEvent(event: SupplierOrderEventRow) {
+  const normalized = normalizeStatus(event.event_type)
+  if (!normalized) return false
+  return normalized.includes("auto") || normalized.includes("dharmawisata") || normalized.includes("email") || event.actor_role === "system"
+}
+
+function autoPilotEventPhase(value: string | null) {
+  const normalized = normalizeStatus(value)
+  if (normalized.includes("hold")) return "Hold"
+  if (normalized.includes("payment")) return "Payment"
+  if (normalized.includes("issue")) return "Issue"
+  if (normalized.includes("issued")) return "Issued"
+  if (normalized.includes("email")) return "Email"
+  return "Auto-pilot"
+}
+
+function autoPilotOutcome(event: SupplierOrderEventRow) {
+  const normalized = normalizeStatus(event.event_type)
+  if (normalized.includes("failed")) {
+    return {
+      label: "Butuh follow up",
+      tone: "border-rose-200 bg-rose-50 text-rose-700",
+    }
+  }
+  if (normalized.includes("skipped") || normalized.includes("manual_required")) {
+    return {
+      label: "Ditahan guard",
+      tone: "border-amber-200 bg-amber-50 text-amber-700",
+    }
+  }
+  if (normalized.includes("started") || normalized.includes("requested")) {
+    return {
+      label: "Diproses",
+      tone: "border-sky-200 bg-sky-50 text-sky-700",
+    }
+  }
+  if (normalized.includes("created") || normalized.includes("issued") || normalized.includes("sent") || normalized.includes("verified")) {
+    return {
+      label: "Selesai",
+      tone: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    }
+  }
+  return {
+    label: "Tercatat",
+    tone: "border-slate-200 bg-slate-50 text-slate-700",
+  }
+}
+
+function formatMetadataLabel(value: string) {
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
+}
+
 function metadataHighlights(metadata: Record<string, unknown> | null) {
   if (!metadata) return []
   const keys = [
@@ -297,6 +356,10 @@ function metadataHighlights(metadata: Record<string, unknown> | null) {
     "customerEmail",
     "message",
     "error",
+    "reason",
+    "policy",
+    "supplierCode",
+    "airlineGroup",
   ]
 
   return keys.flatMap((key) => {
@@ -698,9 +761,16 @@ export default async function AdminBookingDetailPage({
         .select("id, event_type, summary, actor_role, metadata, created_at")
         .eq("supplier_order_id", supplierOrder.id)
         .order("created_at", { ascending: false })
-        .limit(20)
+        .limit(40)
     : { data: [] as SupplierOrderEventRow[] }
   const supplierOrderEvents = (supplierOrderEventsData as SupplierOrderEventRow[] | null) || []
+  const autoPilotEvents = supplierOrderEvents.filter(isAutoPilotFlightEvent)
+  const latestAutoPilotEvent = autoPilotEvents[0] || null
+  const autoPilotFailedCount = autoPilotEvents.filter((event) => normalizeStatus(event.event_type).includes("failed")).length
+  const autoPilotGuardedCount = autoPilotEvents.filter((event) => {
+    const normalized = normalizeStatus(event.event_type)
+    return normalized.includes("skipped") || normalized.includes("manual_required")
+  }).length
 
   const { data: payout } = await adminSupabase
     .from("payout_requests")
@@ -739,6 +809,9 @@ export default async function AdminBookingDetailPage({
   const operationalOwnerCue = getOperationalOwnerCue(booking, locale)
   const attentionReasons = deriveAttentionReasons(booking)
   const auditLogHref = `${portal === "superadmin" ? "/superadmin/audit-log" : "/admin/audit-log"}?target=booking&q=${encodeURIComponent(booking.id)}`
+  const flightIssueFailedQueueHref = portal === "superadmin"
+    ? "/superadmin/bookings?product=pesawat&flight=issue-failed"
+    : "/admin/bookings?product=pesawat&flight=issue-failed"
   const merchantHref = merchant?.id ? (portal === "superadmin" ? `/superadmin/merchants/${merchant.id}` : `/admin/merchants/${merchant.id}`) : ""
   const packageHref = pkg?.id ? (portal === "superadmin" ? `/superadmin/packages/${pkg.id}` : `/admin/packages/${pkg.id}`) : ""
   const productLabel = getBookingProductLabel(
@@ -783,6 +856,14 @@ export default async function AdminBookingDetailPage({
     flightLifecycleStatus !== "ticketing" &&
     flightLifecycleStatus !== "issued" &&
     flightIssueStatus !== "issued"
+  const canRetryAutoIssue =
+    canExecuteAdminOps &&
+    isFlightBooking &&
+    isFlightPaymentVerified &&
+    (flightLifecycleStatus === "issue_failed" || flightIssueStatus === "issue_failed") &&
+    flightLifecycleStatus !== "issued" &&
+    flightIssueStatus !== "issued" &&
+    !flightDetail?.ticket_number
   const canMarkFlightIssued =
     canExecuteAdminOps &&
     isFlightBooking &&
@@ -986,6 +1067,17 @@ export default async function AdminBookingDetailPage({
               <p className="mt-3 text-lg font-semibold text-slate-950">Jejak admin booking ini</p>
               <p className="mt-2 text-sm leading-6 text-slate-600">Lihat auto-queue, handoff manual, dan aksi admin yang pernah tercatat.</p>
             </Link>
+
+            {isFlightBooking ? (
+              <Link
+                href={flightIssueFailedQueueHref}
+                className="rounded-[24px] border border-rose-200 bg-rose-50 p-5 transition hover:-translate-y-0.5 hover:border-rose-300"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-rose-600">Issue failed queue</p>
+                <p className="mt-3 text-lg font-semibold text-slate-950">Lanjut ke antrean gagal</p>
+                <p className="mt-2 text-sm leading-6 text-rose-800">Buka daftar booking pesawat lain yang butuh retry issue atau follow up.</p>
+              </Link>
+            ) : null}
 
             {merchant?.id ? (
               <Link
@@ -1197,6 +1289,16 @@ export default async function AdminBookingDetailPage({
                     </form>
                   ) : null}
 
+                  {canRetryAutoIssue ? (
+                    <form action={retryAutoIssueFlightTicket}>
+                      <input type="hidden" name="portal" value={portal} />
+                      <input type="hidden" name="booking_id" value={booking.id} />
+                      <button className="rounded-[14px] bg-orange-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-orange-700">
+                        Retry Auto Issue
+                      </button>
+                    </form>
+                  ) : null}
+
                   {canResendFlightTicketEmail ? (
                     <form action={resendFlightTicketEmail}>
                       <input type="hidden" name="portal" value={portal} />
@@ -1351,6 +1453,95 @@ export default async function AdminBookingDetailPage({
               </div>
             ) : null}
 
+            <div className="mt-6 rounded-[22px] border border-orange-200 bg-[linear-gradient(180deg,#fff7ed_0%,#ffffff_100%)] p-4">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-600">Auto-pilot log</p>
+                  <h3 className="mt-2 text-lg font-semibold text-slate-950">Kronologi otomatis booking pesawat</h3>
+                  <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500">
+                    Panel ini merangkum aksi otomatis Red Feng: hold supplier, guard/manual review, issue setelah payment, dan pengiriman e-ticket.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                  <span className="rounded-full border border-orange-200 bg-white px-3 py-1 text-orange-700">
+                    {autoPilotEvents.length} auto event
+                  </span>
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-amber-700">
+                    {autoPilotGuardedCount} guard
+                  </span>
+                  <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-rose-700">
+                    {autoPilotFailedCount} gagal
+                  </span>
+                </div>
+              </div>
+
+              {latestAutoPilotEvent ? (
+                <div className="mt-4 rounded-[18px] border border-orange-100 bg-white p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Status terakhir</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold ${autoPilotOutcome(latestAutoPilotEvent).tone}`}>
+                      {autoPilotOutcome(latestAutoPilotEvent).label}
+                    </span>
+                    <span className="text-sm font-semibold text-slate-950">
+                      {formatSupplierEventType(latestAutoPilotEvent.event_type)}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{latestAutoPilotEvent.summary || "-"}</p>
+                  <p className="mt-1 text-xs text-slate-400">{formatDateTime(latestAutoPilotEvent.created_at)}</p>
+                </div>
+              ) : null}
+
+              {autoPilotEvents.length ? (
+                <div className="mt-4 space-y-3">
+                  {autoPilotEvents.map((event, index) => {
+                    const highlights = metadataHighlights(event.metadata)
+                    const outcome = autoPilotOutcome(event)
+
+                    return (
+                      <div key={`auto-${event.id}`} className="grid gap-3 rounded-[18px] border border-orange-100 bg-white p-4 lg:grid-cols-[120px_minmax(0,1fr)]">
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                            Step {autoPilotEvents.length - index}
+                          </p>
+                          <p className="mt-2 text-sm font-semibold text-slate-950">{autoPilotEventPhase(event.event_type)}</p>
+                          <p className="mt-1 text-xs leading-5 text-slate-500">{formatDateTime(event.created_at)}</p>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold ${outcome.tone}`}>
+                              {outcome.label}
+                            </span>
+                            <span className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold ${supplierEventTone(event.event_type)}`}>
+                              {formatSupplierEventType(event.event_type)}
+                            </span>
+                            <span className="text-xs text-slate-400">{event.actor_role || "system"}</span>
+                          </div>
+                          <p className="mt-3 text-sm font-semibold text-slate-900">{event.summary || "-"}</p>
+                          {highlights.length ? (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {highlights.slice(0, 8).map((item) => (
+                                <span
+                                  key={`auto-${event.id}-${item.key}`}
+                                  className="inline-flex max-w-full rounded-[12px] border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-medium text-slate-600"
+                                >
+                                  <span className="mr-1 font-semibold text-slate-800">{formatMetadataLabel(item.key)}:</span>
+                                  <span className="break-all">{item.value}</span>
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="mt-4 rounded-[18px] border border-dashed border-orange-200 bg-white p-4 text-sm text-slate-500">
+                  Belum ada log auto-pilot untuk booking ini.
+                </div>
+              )}
+            </div>
+
             <div className="mt-6 rounded-[22px] border border-slate-200 bg-white p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -1390,7 +1581,7 @@ export default async function AdminBookingDetailPage({
                                 key={`${event.id}-${item.key}`}
                                 className="inline-flex max-w-full rounded-[12px] border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-slate-600"
                               >
-                                <span className="mr-1 font-semibold text-slate-800">{titleCaseStatus(item.key)}:</span>
+                                <span className="mr-1 font-semibold text-slate-800">{formatMetadataLabel(item.key)}:</span>
                                 <span className="break-all">{item.value}</span>
                               </span>
                             ))}

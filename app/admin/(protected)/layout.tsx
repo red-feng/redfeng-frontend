@@ -11,6 +11,7 @@ import { getAccessibleInternalProducts, toAdminProductNavHref } from "@/lib/inte
 import { getBookingProductLabel } from "@/lib/booking-products"
 import { getMerchantSupportUnreadCountForAdmin, loadMerchantSupportRoomsForAdmin } from "@/lib/merchant-support/index"
 import { ADMIN_ACTIVE_BOOKING_BADGE_STATUSES, ADMIN_ACTIVE_PACKAGE_BADGE_STATUSES } from "@/lib/nav-badge-policy"
+import { getFlightExceptionBadgeCount } from "@/lib/flights/exceptionBadge"
 
 export default async function AdminProtectedLayout({
   children,
@@ -56,7 +57,7 @@ export default async function AdminProtectedLayout({
     merchantResult,
     packageResult,
     bookingResult,
-    flightRecheckResult,
+    flightExceptionRawBadgeCount,
     merchantDeletionRequestResult,
     internalChatUnreadBadgeCount,
     merchantSupportRooms,
@@ -73,10 +74,7 @@ export default async function AdminProtectedLayout({
       .from("bookings")
       .select("id", { count: "exact", head: true })
       .in("booking_status", [...ADMIN_ACTIVE_BOOKING_BADGE_STATUSES]),
-    adminSupabase
-      .from("flight_booking_details")
-      .select("booking_id", { count: "exact", head: true })
-      .in("lifecycle_status", ["fare_recheck_required", "fare_rechecked"]),
+    visibleProductTypes.includes("flight") ? getFlightExceptionBadgeCount(adminSupabase) : Promise.resolve(0),
     adminSupabase
       .from("merchant_deletion_requests")
       .select("id", { count: "exact", head: true })
@@ -92,7 +90,7 @@ export default async function AdminProtectedLayout({
   // Package and booking badges should also stay visible while items remain in their active queue.
   const pendingPackagesBadgeCount = packageResult.count || 0
   const financeReadyBadgeCount = bookingResult.count || 0
-  const flightRecheckBadgeCount = visibleProductTypes.includes("flight") ? flightRecheckResult.count || 0 : 0
+  const flightExceptionBadgeCount = visibleProductTypes.includes("flight") ? flightExceptionRawBadgeCount : 0
   const merchantSupportBadgeCount = getMerchantSupportUnreadCountForAdmin(merchantSupportRooms)
   const canAccessPackageTour = visibleProductTypes.includes("package_tour")
 
@@ -118,7 +116,7 @@ export default async function AdminProtectedLayout({
       productType === "package_tour"
         ? pendingPackagesBadgeCount
         : productType === "flight"
-          ? flightRecheckBadgeCount
+          ? flightExceptionBadgeCount
           : 0,
   }))
   const adminNav = isOperationsManager
