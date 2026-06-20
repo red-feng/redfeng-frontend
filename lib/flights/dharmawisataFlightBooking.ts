@@ -13,6 +13,8 @@ export type DharmawisataPassenger = {
   title: string
   firstName: string
   lastName: string
+  birthDate?: string | null
+  gender?: string | null
   email?: string | null
   type?: "Adult" | "Child" | "Infant"
 }
@@ -106,6 +108,29 @@ function passengerType(value: DharmawisataPassenger["type"]) {
   return 0
 }
 
+function normalizeDharmawisataBirthDate(value: string | null | undefined) {
+  const raw = normalizeText(value)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return `${raw}T00:00:00`
+
+  const parsed = new Date(raw)
+  if (!Number.isNaN(parsed.getTime())) {
+    return `${parsed.toISOString().slice(0, 10)}T00:00:00`
+  }
+
+  return ""
+}
+
+function normalizeDharmawisataGender(value: string | null | undefined, title: string | null | undefined) {
+  const normalized = normalizeText(value).toLowerCase()
+  if (["m", "male", "l", "laki-laki", "pria"].includes(normalized)) return "Male"
+  if (["f", "female", "p", "perempuan", "wanita"].includes(normalized)) return "Female"
+
+  const normalizedTitle = normalizeText(title).toUpperCase()
+  if (["MRS", "MS", "MISS"].includes(normalizedTitle)) return "Female"
+  if (["MR", "MSTR"].includes(normalizedTitle)) return "Male"
+  return ""
+}
+
 function buildPassengerPayload(passengers: DharmawisataPassenger[], fallbackEmail?: string | null) {
   return passengers.map((passenger) => ({
     addOns: [],
@@ -113,8 +138,8 @@ function buildPassengerPayload(passengers: DharmawisataPassenger[], fallbackEmai
     title: passenger.title || "MR",
     firstName: passenger.firstName,
     lastName: passenger.lastName || passenger.firstName,
-    birthDate: "0001-01-01T00:00:00",
-    gender: "",
+    birthDate: normalizeDharmawisataBirthDate(passenger.birthDate),
+    gender: normalizeDharmawisataGender(passenger.gender, passenger.title),
     nationality: "ID",
     birthCountry: "ID",
     DocType: "",
@@ -164,6 +189,11 @@ function getMissingRequiredFields(input: DharmawisataFlightBookingInput) {
   if (input.passengers.length < Math.max(1, input.paxAdult + (input.paxChild || 0) + (input.paxInfant || 0))) {
     required.push(["paxDetails", ""])
   }
+
+  input.passengers.forEach((passenger, index) => {
+    if (!normalizeDharmawisataBirthDate(passenger.birthDate)) required.push([`paxDetails[${index}].birthDate`, ""])
+    if (!normalizeDharmawisataGender(passenger.gender, passenger.title)) required.push([`paxDetails[${index}].gender`, ""])
+  })
 
   return required.filter(([, value]) => !normalizeText(value)).map(([key]) => key)
 }

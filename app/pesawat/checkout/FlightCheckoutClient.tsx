@@ -36,6 +36,7 @@ type IconName = "plane" | "seat" | "bag" | "shield" | "help" | "phone" | "edit" 
 type PassengerForm = {
   id: string
   title: string
+  gender: string
   firstName: string
   lastName: string
   noLastName: boolean
@@ -58,6 +59,7 @@ function createPassengerForm(index: number): PassengerForm {
   return {
     id: `passenger-${index}`,
     title: "MR",
+    gender: "M",
     firstName: "",
     lastName: "",
     noLastName: false,
@@ -174,9 +176,16 @@ function isAdultBirthDate(value: string) {
   return age !== null && age >= 12
 }
 
+function inferGenderFromTitle(title: string) {
+  const normalized = title.trim().toUpperCase()
+  if (normalized === "MRS" || normalized === "MS" || normalized === "MISS") return "F"
+  return "M"
+}
+
 function isPassengerComplete(passenger: PassengerForm) {
   return Boolean(
     passenger.firstName.trim() &&
+      passenger.gender.trim() &&
       (passenger.noLastName || passenger.lastName.trim()) &&
       isAdultBirthDate(passenger.birthDate) &&
       passenger.nationality.trim() &&
@@ -444,6 +453,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
         return [
           `PAX ${index + 1}`,
           passenger.title,
+          passenger.gender ? `GENDER ${passenger.gender}` : "",
           passengerName,
           email,
           passenger.birthDate ? `DOB ${passenger.birthDate}` : "",
@@ -516,6 +526,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
           passenger_manifest: manifest,
           passenger_details: passengers.map((passenger) => ({
             title: passenger.title,
+            gender: passenger.gender,
             first_name: passenger.firstName,
             last_name: passenger.lastName,
             no_last_name: passenger.noLastName,
@@ -681,6 +692,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                 const firstNameError = submitted && !passenger.firstName.trim() ? "Nama depan wajib diisi." : ""
                 const lastNameError =
                   submitted && !passenger.noLastName && !passenger.lastName.trim() ? "Nama belakang wajib diisi." : ""
+                const genderError = submitted && !passenger.gender.trim() ? "Jenis kelamin wajib dipilih." : ""
                 const birthDateError =
                   submitted && !passenger.birthDate
                     ? "Tanggal lahir wajib diisi."
@@ -742,18 +754,38 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                             </button>
                           ) : null}
                         </div>
-                        <div className="grid gap-4 md:grid-cols-[130px_1fr_1fr]">
+                        <div className="grid gap-4 md:grid-cols-[120px_160px_1fr_1fr]">
                           <label>
                             <FieldLabel>Gelar</FieldLabel>
                             <select
                               value={passenger.title}
-                              onChange={(event) => updatePassenger(passenger.id, { title: event.target.value })}
+                              onChange={(event) => {
+                                const title = event.target.value
+                                updatePassenger(passenger.id, { title, gender: inferGenderFromTitle(title) })
+                              }}
                               className="h-12 w-full rounded-lg border border-orange-200 bg-white px-3 text-sm outline-none focus:border-[#ff4b00] focus:ring-2 focus:ring-orange-100"
                             >
                               <option>MR</option>
                               <option>MRS</option>
                               <option>MS</option>
                             </select>
+                          </label>
+                          <label>
+                            <FieldLabel>Jenis kelamin</FieldLabel>
+                            <select
+                              value={passenger.gender}
+                              onChange={(event) => updatePassenger(passenger.id, { gender: event.target.value })}
+                              className={`h-12 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 ${
+                                genderError
+                                  ? "border-red-300 focus:border-red-500 focus:ring-red-100"
+                                  : "border-orange-200 focus:border-[#ff4b00] focus:ring-orange-100"
+                              }`}
+                            >
+                              <option value="">Pilih</option>
+                              <option value="M">Laki-laki</option>
+                              <option value="F">Perempuan</option>
+                            </select>
+                            {genderError ? <p className="mt-1 text-xs font-semibold text-red-600">{genderError}</p> : null}
                           </label>
                           <label>
                             <FieldLabel>Nama depan sesuai identitas</FieldLabel>

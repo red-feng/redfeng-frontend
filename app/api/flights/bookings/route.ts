@@ -79,6 +79,17 @@ function normalizePassengerTitle(value: unknown) {
   return ["MR", "MRS", "MS", "MSTR", "MISS"].includes(normalized) ? normalized : "MR"
 }
 
+function normalizePassengerGender(value: unknown, title: string) {
+  const normalized = asString(value).toLowerCase()
+  if (["m", "male", "l", "laki-laki", "pria"].includes(normalized)) return "M"
+  if (["f", "female", "p", "perempuan", "wanita"].includes(normalized)) return "F"
+
+  const normalizedTitle = normalizePassengerTitle(title)
+  if (["MRS", "MS", "MISS"].includes(normalizedTitle)) return "F"
+  if (["MR", "MSTR"].includes(normalizedTitle)) return "M"
+  return ""
+}
+
 function asPositiveInteger(value: unknown, fallback = 1) {
   const parsed = Number.parseInt(String(value || ""), 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
@@ -207,6 +218,7 @@ function parsePassengerDetails(value: unknown, expectedAdults: number) {
     const identityType = asString(passenger.identity_type ?? passenger.identityType)
     const nationality = asString(passenger.nationality) || "Indonesia"
     const birthDate = asString(passenger.birth_date ?? passenger.birthDate)
+    const gender = normalizePassengerGender(passenger.gender, title)
     const age = calculateAgeFromBirthDate(birthDate)
 
     return {
@@ -218,6 +230,7 @@ function parsePassengerDetails(value: unknown, expectedAdults: number) {
       no_last_name: noLastName,
       full_name: fullName,
       birth_date: birthDate,
+      gender,
       identity_type: identityType,
       identity_number: identityNumber,
       nationality,
@@ -237,6 +250,8 @@ function buildDharmawisataPassengers(
     first_name: string
     last_name: string
     full_name?: string
+    birth_date?: string
+    gender?: string
   }> = passengerDetails.length > 0
     ? passengerDetails
     : [
@@ -245,6 +260,8 @@ function buildDharmawisataPassengers(
           first_name: fallbackNameParts.firstName,
           last_name: fallbackNameParts.lastName,
           full_name: fallbackName,
+          birth_date: "",
+          gender: "M",
         },
       ]
 
@@ -252,6 +269,8 @@ function buildDharmawisataPassengers(
     title: normalizePassengerTitle(passenger.title),
     firstName: passenger.first_name || splitPersonName(passenger.full_name || fallbackName).firstName,
     lastName: passenger.last_name || splitPersonName(passenger.full_name || fallbackName).lastName,
+    birthDate: passenger.birth_date || null,
+    gender: passenger.gender || null,
     email: fallbackEmail,
     type: "Adult",
   }))
@@ -303,7 +322,7 @@ export async function POST(req: Request) {
 
     if (Array.isArray(body.passenger_details)) {
       const incompletePassenger = passengerDetails.find(
-        (passenger) => !passenger.full_name || !passenger.identity_number || !passenger.nationality,
+        (passenger) => !passenger.full_name || !passenger.gender || !passenger.identity_number || !passenger.nationality,
       )
       const invalidBirthDatePassenger = passengerDetails.find((passenger) => passenger.age === null)
       const underageAdultPassenger = passengerDetails.find((passenger) => typeof passenger.age === "number" && passenger.age < 12)
@@ -413,7 +432,14 @@ export async function POST(req: Request) {
       passengerManifest: passengerManifest || null,
       passengerDetails: passengerDetails.map((passenger) => ({
         sequenceNo: passenger.sequence_no,
+        title: passenger.title,
         fullName: passenger.full_name,
+        firstName: passenger.first_name,
+        lastName: passenger.last_name,
+        noLastName: passenger.no_last_name,
+        birthDate: passenger.birth_date,
+        gender: passenger.gender,
+        identityType: passenger.identity_type,
         identityNumber: passenger.identity_number,
         nationality: passenger.nationality,
         age: passenger.age,

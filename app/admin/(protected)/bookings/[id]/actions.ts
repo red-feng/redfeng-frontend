@@ -165,6 +165,35 @@ function buildDharmawisataPassengersFromParticipants(
   })
 }
 
+function buildDharmawisataPassengersFromRequestPayload(
+  requestPayload: Record<string, unknown>,
+  fallbackEmail: string,
+): DharmawisataPassenger[] {
+  const passengerDetails = Array.isArray(requestPayload.passengerDetails) ? requestPayload.passengerDetails : []
+
+  return passengerDetails
+    .map((item): DharmawisataPassenger | null => {
+      const passenger = asJsonRecord(item)
+      const fullName = String(passenger.fullName || passenger.full_name || "").trim()
+      const name = splitPersonName(fullName)
+      const firstName = String(passenger.firstName || passenger.first_name || name.firstName || "").trim()
+      const lastName = String(passenger.lastName || passenger.last_name || name.lastName || "").trim()
+
+      if (!firstName) return null
+
+      return {
+        title: normalizePassengerTitle(passenger.title),
+        firstName,
+        lastName,
+        birthDate: String(passenger.birthDate || passenger.birth_date || "").trim() || null,
+        gender: String(passenger.gender || "").trim() || null,
+        email: fallbackEmail,
+        type: "Adult",
+      }
+    })
+    .filter((passenger): passenger is DharmawisataPassenger => Boolean(passenger))
+}
+
 function backToBookingDetailWithState(bookingId: string, type: "success" | "error", message: string, formData: FormData): never {
   const portal = resolvePortal(formData)
   const { bookingDetailPath } = resolvePortalPaths(portal)
@@ -780,7 +809,10 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
   const requestPayload = asJsonRecord(supplierOrder.request_payload)
   const contactName = splitPersonName(customerName)
   const contactPhone = splitIndonesianPhone(customerPhone)
-  const dharmawisataPassengers = buildDharmawisataPassengersFromParticipants(participants || [], customerName, customerEmail)
+  const requestPayloadPassengers = buildDharmawisataPassengersFromRequestPayload(requestPayload, customerEmail)
+  const dharmawisataPassengers = requestPayloadPassengers.length
+    ? requestPayloadPassengers
+    : buildDharmawisataPassengersFromParticipants(participants || [], customerName, customerEmail)
   const paxAdult = Math.max(Number(booking.adult_count || flightDetail.passenger_count || dharmawisataPassengers.length || 1), 1)
   const paxChild = Math.max(Number(booking.child_count || 0), 0)
   const airlineAccessCode =
