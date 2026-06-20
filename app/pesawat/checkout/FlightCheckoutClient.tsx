@@ -139,11 +139,44 @@ function isValidIdentity(passenger: PassengerForm) {
   return passenger.identityNumber.trim().length >= 6
 }
 
+function todayDateInputValue() {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, "0")
+  const day = String(today.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+function isValidBirthDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const parsed = new Date(`${value}T00:00:00`)
+  if (Number.isNaN(parsed.getTime())) return false
+  const today = new Date(`${todayDateInputValue()}T00:00:00`)
+  return parsed.getTime() <= today.getTime()
+}
+
+function calculateAgeFromBirthDate(value: string) {
+  if (!isValidBirthDate(value)) return null
+  const birthDate = new Date(`${value}T00:00:00`)
+  const today = new Date(`${todayDateInputValue()}T00:00:00`)
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const monthDiff = today.getMonth() - birthDate.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age -= 1
+  }
+  return age
+}
+
+function isAdultBirthDate(value: string) {
+  const age = calculateAgeFromBirthDate(value)
+  return age !== null && age >= 12
+}
+
 function isPassengerComplete(passenger: PassengerForm) {
   return Boolean(
     passenger.firstName.trim() &&
       passenger.lastName.trim() &&
-      passenger.birthDate &&
+      isAdultBirthDate(passenger.birthDate) &&
       passenger.nationality.trim() &&
       isValidIdentity(passenger),
   )
@@ -643,7 +676,14 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                 const complete = isPassengerComplete(passenger)
                 const firstNameError = submitted && !passenger.firstName.trim() ? "Nama depan wajib diisi." : ""
                 const lastNameError = submitted && !passenger.lastName.trim() ? "Nama belakang wajib diisi." : ""
-                const birthDateError = submitted && !passenger.birthDate ? "Tanggal lahir wajib diisi." : ""
+                const birthDateError =
+                  submitted && !passenger.birthDate
+                    ? "Tanggal lahir wajib diisi."
+                    : submitted && passenger.birthDate && !isValidBirthDate(passenger.birthDate)
+                      ? "Tanggal lahir tidak boleh di masa depan."
+                      : submitted && passenger.birthDate && !isAdultBirthDate(passenger.birthDate)
+                        ? "Penumpang dewasa harus berusia minimal 12 tahun."
+                        : ""
                 const identityError =
                   submitted && !passenger.identityNumber.trim()
                     ? "Nomor identitas wajib diisi."
@@ -676,6 +716,9 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                     </button>
                     {isOpen ? (
                       <div className="p-4">
+                        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">
+                          Pastikan nama penumpang sama dengan identitas. Penumpang dewasa harus berusia minimal 12 tahun.
+                        </div>
                         <div className="flex flex-wrap justify-end gap-2 pb-4">
                           <button
                             type="button"
@@ -743,6 +786,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                               value={passenger.birthDate}
                               onChange={(event) => updatePassenger(passenger.id, { birthDate: event.target.value })}
                               type="date"
+                              max={todayDateInputValue()}
                               className={`h-12 w-full rounded-lg border bg-white px-4 text-sm outline-none focus:ring-2 ${
                                 birthDateError
                                   ? "border-red-300 focus:border-red-500 focus:ring-red-100"

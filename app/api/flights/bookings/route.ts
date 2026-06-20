@@ -301,11 +301,21 @@ export async function POST(req: Request) {
 
     if (Array.isArray(body.passenger_details)) {
       const incompletePassenger = passengerDetails.find(
-        (passenger) => !passenger.full_name || !passenger.identity_number || !passenger.nationality || passenger.age === null,
+        (passenger) => !passenger.full_name || !passenger.identity_number || !passenger.nationality,
       )
+      const invalidBirthDatePassenger = passengerDetails.find((passenger) => passenger.age === null)
+      const underageAdultPassenger = passengerDetails.find((passenger) => typeof passenger.age === "number" && passenger.age < 12)
 
       if (passengerDetails.length !== passengerMix.adults || incompletePassenger) {
         return NextResponse.json({ error: "Data penumpang belum lengkap untuk checkout pesawat." }, { status: 400 })
+      }
+
+      if (invalidBirthDatePassenger) {
+        return NextResponse.json({ error: "Tanggal lahir penumpang harus valid dan tidak boleh di masa depan." }, { status: 400 })
+      }
+
+      if (underageAdultPassenger) {
+        return NextResponse.json({ error: "Penumpang dewasa harus berusia minimal 12 tahun." }, { status: 400 })
       }
     }
 
