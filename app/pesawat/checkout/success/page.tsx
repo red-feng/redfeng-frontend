@@ -72,6 +72,29 @@ function getSuccessCopy(detail: FlightDetailRow | null) {
   }
 }
 
+function getPaymentGateCopy(detail: FlightDetailRow | null) {
+  const lifecycle = String(detail?.lifecycle_status || "").trim().toLowerCase()
+  const holdUntil = detail?.booking_hold_expires_at ? formatDateTime(detail.booking_hold_expires_at) : ""
+
+  if (lifecycle === "booking_hold_created") {
+    return {
+      label: "Payment Midtrans siap",
+      title: "Hold supplier sudah valid.",
+      body: holdUntil
+        ? `Link pembayaran sudah bisa dibuka dari detail booking. Selesaikan sebelum batas hold ${holdUntil}.`
+        : "Link pembayaran sudah bisa dibuka dari detail booking.",
+      tone: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    }
+  }
+
+  return {
+    label: "Pembayaran belum dibuka",
+    title: "Tidak ada pembayaran yang perlu dilakukan sekarang.",
+    body: "Red Feng sedang recheck fare dan mengamankan hold/PNR ke supplier. Link Midtrans baru dibuka setelah harga dan seat valid.",
+    tone: "border-sky-200 bg-sky-50 text-sky-800",
+  }
+}
+
 function isMissingSchemaColumnError(error: { message?: string | null } | null | undefined) {
   const message = String(error?.message || "").toLowerCase()
   return message.includes("schema cache") && message.includes("column")
@@ -150,6 +173,7 @@ export default async function FlightCheckoutSuccessPage({
   const flightDetail = await getFlightDetailForSuccess(adminSupabase, booking.id)
 
   const copy = getSuccessCopy(flightDetail || null)
+  const paymentGateCopy = getPaymentGateCopy(flightDetail || null)
   const route = `${flightDetail?.origin_airport_code || "-"} -> ${flightDetail?.destination_airport_code || "-"}`
 
   return (
@@ -167,6 +191,12 @@ export default async function FlightCheckoutSuccessPage({
           <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
             {copy.body}
           </p>
+
+          <div className={`mt-6 rounded-[20px] border p-5 ${paymentGateCopy.tone}`}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em]">{paymentGateCopy.label}</p>
+            <h2 className="mt-2 text-lg font-bold">{paymentGateCopy.title}</h2>
+            <p className="mt-2 text-sm leading-7">{paymentGateCopy.body}</p>
+          </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
             <div className="rounded-[18px] border border-orange-100 bg-orange-50 p-4">
@@ -207,7 +237,7 @@ export default async function FlightCheckoutSuccessPage({
               href={`/booking/${booking.id}`}
               className="inline-flex items-center justify-center rounded-[16px] bg-[#ff4b00] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(255,75,0,0.2)] transition hover:bg-[#e64400]"
             >
-              Lihat detail booking
+              Lihat status booking
             </Link>
             <Link
               href="/customer/bookings"

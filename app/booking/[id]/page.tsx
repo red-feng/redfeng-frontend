@@ -157,6 +157,80 @@ function isExpiredDateTime(value: string | null | undefined) {
   return !Number.isNaN(parsed.getTime()) && parsed.getTime() <= Date.now()
 }
 
+function formatFlightHoldDateTime(value: string | null | undefined, locale: Locale) {
+  if (!value) return "-"
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return "-"
+  return parsed.toLocaleString(locale === "en" ? "en-US" : "id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
+function getFlightPaymentGateNotice(
+  flightPaymentGate: FlightPaymentGateRow | null,
+  locale: Locale,
+) {
+  const lifecycle = normalizeStatus(flightPaymentGate?.lifecycle_status || null)
+  const holdExpired = isExpiredDateTime(flightPaymentGate?.booking_hold_expires_at)
+  const holdUntil = formatFlightHoldDateTime(flightPaymentGate?.booking_hold_expires_at, locale)
+
+  if (lifecycle === "booking_hold_created" && !holdExpired) {
+    return {
+      tone: "border-emerald-200 bg-emerald-50 text-emerald-800",
+      title:
+        locale === "en"
+          ? "Payment is open."
+          : locale === "zh"
+            ? "付款已开放。"
+            : "Pembayaran sudah dibuka.",
+      body:
+        locale === "en"
+          ? `The supplier hold is valid${holdUntil !== "-" ? ` until ${holdUntil}` : ""}. Complete payment before the hold expires.`
+          : locale === "zh"
+            ? `供应商锁位有效${holdUntil !== "-" ? `至 ${holdUntil}` : ""}。请在锁位到期前完成付款。`
+            : `Hold supplier valid${holdUntil !== "-" ? ` sampai ${holdUntil}` : ""}. Selesaikan pembayaran sebelum batas hold berakhir.`,
+    }
+  }
+
+  if (holdExpired) {
+    return {
+      tone: "border-amber-200 bg-amber-50 text-amber-800",
+      title:
+        locale === "en"
+          ? "The previous hold has expired."
+          : locale === "zh"
+            ? "之前的锁位已过期。"
+            : "Hold sebelumnya sudah lewat.",
+      body:
+        locale === "en"
+          ? "Red Feng will recheck the fare and secure a fresh hold before reopening payment."
+          : locale === "zh"
+            ? "Red Feng 将重新核验票价并重新锁位后再开放付款。"
+            : "Red Feng akan recheck fare dan membuat hold baru sebelum payment dibuka lagi.",
+    }
+  }
+
+  return {
+    tone: "border-sky-200 bg-sky-50 text-sky-800",
+    title:
+      locale === "en"
+        ? "Payment is not open yet."
+        : locale === "zh"
+          ? "付款暂未开放。"
+          : "Pembayaran belum dibuka.",
+    body:
+      locale === "en"
+        ? "Red Feng is checking fare and seat availability with the supplier. The Midtrans button appears after the hold is valid."
+        : locale === "zh"
+          ? "Red Feng 正在向供应商核验票价和座位。锁位有效后才会显示 Midtrans 按钮。"
+          : "Red Feng sedang cek fare dan ketersediaan seat ke supplier. Tombol Midtrans akan muncul setelah hold valid.",
+  }
+}
+
 function getFlightStatusForBooking(
   booking: BookingDetailRow,
   flightPaymentGate: FlightPaymentGateRow | null,
@@ -665,6 +739,11 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     isFinalPaymentOverdue(booking.pickup_date || null)
   const canStartInitialPayment =
     ["pending", "unpaid", ""].includes(normalizeStatus(booking.payment_status)) && canOpenFlightPayment
+  const isWaitingFlightPaymentGate =
+    isFlightBooking &&
+    ["pending", "unpaid", ""].includes(normalizeStatus(booking.payment_status)) &&
+    !canOpenFlightPayment
+  const flightPaymentGateNotice = isFlightBooking ? getFlightPaymentGateNotice(flightPaymentGate || null, locale) : null
   const phase = resolveJourneyPhase(booking, locale)
   const flightStatus = isFlightBooking ? getFlightStatusForBooking(booking, flightPaymentGate || null, locale) : null
   const openedFromCheckout = resolvedSearchParams.from_checkout === "1"
@@ -744,6 +823,16 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                     <p className="mt-2 text-base font-semibold">{flightPaymentGate.ticket_number}</p>
                   </div>
                 ) : null}
+              </div>
+            ) : null}
+            {flightStatus.code === "issued" && (flightPaymentGate?.pnr_code || flightPaymentGate?.ticket_number) ? (
+              <div className="mt-5">
+                <a
+                  href={`/booking/${booking.id}/e-ticket`}
+                  className="inline-flex rounded-2xl border border-emerald-300 bg-white/80 px-5 py-3 text-sm font-semibold transition hover:bg-white"
+                >
+                  Lihat E-ticket Red Feng
+                </a>
               </div>
             ) : null}
           </section>
@@ -1047,6 +1136,13 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
           <div className="flex flex-col gap-2">
             <h2 className="text-xl font-semibold text-slate-900">{t.bookingActions}</h2>
           </div>
+
+          {isWaitingFlightPaymentGate && flightPaymentGateNotice ? (
+            <div className={`mt-5 rounded-[22px] border p-5 text-sm leading-7 ${flightPaymentGateNotice.tone}`}>
+              <p className="font-semibold">{flightPaymentGateNotice.title}</p>
+              <p className="mt-1">{flightPaymentGateNotice.body}</p>
+            </div>
+          ) : null}
 
           <div className="mt-6 flex flex-wrap gap-3">
             {canStartInitialPayment && hasCompleteParticipants ? (
