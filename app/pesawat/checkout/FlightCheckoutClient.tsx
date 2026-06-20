@@ -38,6 +38,7 @@ type PassengerForm = {
   title: string
   firstName: string
   lastName: string
+  noLastName: boolean
   birthDate: string
   nationality: string
   identityType: string
@@ -59,6 +60,7 @@ function createPassengerForm(index: number): PassengerForm {
     title: "MR",
     firstName: "",
     lastName: "",
+    noLastName: false,
     birthDate: "",
     nationality: "Indonesia",
     identityType: "KTP",
@@ -175,7 +177,7 @@ function isAdultBirthDate(value: string) {
 function isPassengerComplete(passenger: PassengerForm) {
   return Boolean(
     passenger.firstName.trim() &&
-      passenger.lastName.trim() &&
+      (passenger.noLastName || passenger.lastName.trim()) &&
       isAdultBirthDate(passenger.birthDate) &&
       passenger.nationality.trim() &&
       isValidIdentity(passenger),
@@ -428,6 +430,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
     updatePassenger(id, {
       firstName: contactFirstName,
       lastName: contactLastName,
+      noLastName: !contactLastName.trim(),
     })
   }
 
@@ -515,6 +518,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
             title: passenger.title,
             first_name: passenger.firstName,
             last_name: passenger.lastName,
+            no_last_name: passenger.noLastName,
             birth_date: passenger.birthDate,
             nationality: passenger.nationality,
             identity_type: passenger.identityType,
@@ -675,7 +679,8 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                 const isOpen = openPassengerId === passenger.id
                 const complete = isPassengerComplete(passenger)
                 const firstNameError = submitted && !passenger.firstName.trim() ? "Nama depan wajib diisi." : ""
-                const lastNameError = submitted && !passenger.lastName.trim() ? "Nama belakang wajib diisi." : ""
+                const lastNameError =
+                  submitted && !passenger.noLastName && !passenger.lastName.trim() ? "Nama belakang wajib diisi." : ""
                 const birthDateError =
                   submitted && !passenger.birthDate
                     ? "Tanggal lahir wajib diisi."
@@ -764,20 +769,35 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                             />
                             {firstNameError ? <p className="mt-1 text-xs font-semibold text-red-600">{firstNameError}</p> : null}
                           </label>
-                          <label>
+                          <div>
                             <FieldLabel>Nama belakang sesuai identitas</FieldLabel>
                             <input
                               value={passenger.lastName}
                               onChange={(event) => updatePassenger(passenger.id, { lastName: event.target.value })}
                               placeholder="Contoh: Santoso"
+                              disabled={passenger.noLastName}
                               className={`h-12 w-full rounded-lg border bg-white px-4 text-sm outline-none focus:ring-2 ${
                                 lastNameError
                                   ? "border-red-300 focus:border-red-500 focus:ring-red-100"
-                                  : "border-orange-200 focus:border-[#ff4b00] focus:ring-orange-100"
+                                  : "border-orange-200 focus:border-[#ff4b00] focus:ring-orange-100 disabled:bg-neutral-100 disabled:text-neutral-400"
                               }`}
                             />
+                            <label className="mt-3 flex items-start gap-2 text-xs font-semibold text-neutral-700">
+                              <input
+                                type="checkbox"
+                                checked={passenger.noLastName}
+                                onChange={(event) =>
+                                  updatePassenger(passenger.id, {
+                                    noLastName: event.target.checked,
+                                    lastName: event.target.checked ? "" : passenger.lastName,
+                                  })
+                                }
+                                className="mt-0.5 h-4 w-4 rounded border-orange-200 text-[#ff4b00] focus:ring-orange-200"
+                              />
+                              <span>Penumpang tidak punya nama belakang di identitas</span>
+                            </label>
                             {lastNameError ? <p className="mt-1 text-xs font-semibold text-red-600">{lastNameError}</p> : null}
-                          </label>
+                          </div>
                         </div>
                         <div className="mt-4 grid gap-4 md:grid-cols-[1fr_1fr_1.6fr]">
                           <label>

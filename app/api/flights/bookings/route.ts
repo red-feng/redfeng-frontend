@@ -200,7 +200,8 @@ function parsePassengerDetails(value: unknown, expectedAdults: number) {
     const passenger = asRecord(item) || {}
     const title = normalizePassengerTitle(passenger.title)
     const firstName = asString(passenger.first_name ?? passenger.firstName)
-    const lastName = asString(passenger.last_name ?? passenger.lastName)
+    const noLastName = passenger.no_last_name === true || passenger.noLastName === true
+    const lastName = noLastName ? "" : asString(passenger.last_name ?? passenger.lastName)
     const fullName = [firstName, lastName].filter(Boolean).join(" ").trim()
     const identityNumber = asString(passenger.identity_number ?? passenger.identityNumber)
     const identityType = asString(passenger.identity_type ?? passenger.identityType)
@@ -214,6 +215,7 @@ function parsePassengerDetails(value: unknown, expectedAdults: number) {
       title,
       first_name: firstName,
       last_name: lastName,
+      no_last_name: noLastName,
       full_name: fullName,
       birth_date: birthDate,
       identity_type: identityType,
