@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 export async function GET(
-  request: Request,
+  _request: Request,
   context: { params: Promise<{ slug: string }> }
 ) {
   try {

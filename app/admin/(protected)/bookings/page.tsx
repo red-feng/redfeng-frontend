@@ -8,6 +8,7 @@ import {
   normalizeFlightIssueStatus,
   normalizeFlightLifecycleStatus,
 } from "@/lib/affiliate-suppliers"
+import { getFlightAutomationPolicy } from "@/lib/flights/automationPolicy"
 import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
@@ -54,6 +55,11 @@ type BookingRow = {
   flight_ticket_number?: string | null
   flight_pnr_code?: string | null
   flight_supplier_order_id?: string | null
+  flight_airline_code?: string | null
+  flight_airline_name?: string | null
+  flight_issue_requested_at?: string | null
+  supplier_code?: string | null
+  supplier_integration_mode?: string | null
 }
 
 type FlightBookingDetailRow = {
@@ -63,6 +69,9 @@ type FlightBookingDetailRow = {
   ticket_number: string | null
   pnr_code: string | null
   supplier_order_id: string | null
+  airline_code: string | null
+  airline_name: string | null
+  issue_requested_at: string | null
 }
 
 type ProductFilter =
@@ -83,6 +92,11 @@ type FlightStatusFilter =
   | "recheck"
   | "hold"
   | "payment-verified"
+  | "auto-exception"
+  | "airasia-manual"
+  | "paid-not-issued"
+  | "hold-stuck"
+  | "ticketing-slow"
   | "ticketing"
   | "issued"
   | "issue-failed"
@@ -101,9 +115,11 @@ type MerchantRow = {
 
 type SupplierRow = {
   id: string
+  supplier_code: string | null
   supplier_name: string | null
   internal_display_name: string | null
   internal_alias: string | null
+  integration_mode: string | null
 }
 
 function formatDate(value: string | null) {
@@ -123,6 +139,13 @@ function daysSince(value: string | null | undefined) {
   if (Number.isNaN(parsed.getTime())) return 0
   const diff = Date.now() - parsed.getTime()
   return Math.floor(diff / (1000 * 60 * 60 * 24))
+}
+
+function hoursSince(value: string | null | undefined) {
+  if (!value) return Number.POSITIVE_INFINITY
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return Number.POSITIVE_INFINITY
+  return Math.max(0, Math.floor((Date.now() - parsed.getTime()) / 3600000))
 }
 
 function formatMoney(value: number | null) {
@@ -241,6 +264,108 @@ function canQuickResendFlightTicket(booking: BookingRow) {
     (lifecycle === "issued" || issue === "issued") &&
     Boolean(booking.flight_ticket_number || booking.flight_pnr_code)
   )
+}
+
+function isTerminalFlightBooking(booking: BookingRow) {
+  const lifecycle = normalizeFlightLifecycleStatus(booking.flight_lifecycle_status)
+  const issue = normalizeFlightIssueStatus(booking.flight_issue_status)
+  return lifecycle === "issued" || lifecycle === "cancelled" || lifecycle === "refund_required" || issue === "issued" || issue === "cancelled" || issue === "refunded"
+}
+
+function getBookingFlightAutomationPolicy(booking: BookingRow) {
+  return getFlightAutomationPolicy({
+    airlineCode: booking.flight_airline_code,
+    airlineName: booking.flight_airline_name,
+    supplierCode: booking.supplier_code,
+    integrationMode: booking.supplier_integration_mode,
+  })
+}
+
+function isAirAsiaManualFlight(booking: BookingRow) {
+  return (
+    deriveBookingProduct(booking) === "pesawat" &&
+    getBookingFlightAutomationPolicy(booking).airlineGroup === "airasia" &&
+    !isTerminalFlightBooking(booking)
+  )
+}
+
+function isPaidFlightWaitingIssue(booking: BookingRow) {
+  if (deriveBookingProduct(booking) !== "pesawat") return false
+  const lifecycle = normalizeFlightLifecycleStatus(booking.flight_lifecycle_status)
+  const issue = normalizeFlightIssueStatus(booking.flight_issue_status)
+  return normalizeStatus(booking.payment_status) === "paid" && lifecycle === "payment_verified" && issue !== "issued"
+}
+
+function isHoldStuckFlight(booking: BookingRow) {
+  if (deriveBookingProduct(booking) !== "pesawat") return false
+  const lifecycle = normalizeFlightLifecycleStatus(booking.flight_lifecycle_status)
+  const policy = getBookingFlightAutomationPolicy(booking)
+  return (
+    policy.autoHold &&
+    (lifecycle === "fare_recheck_required" || lifecycle === "fare_rechecked" || !lifecycle) &&
+    hoursSince(booking.created_at) >= 1
+  )
+}
+
+function isSlowTicketingFlight(booking: BookingRow) {
+  if (deriveBookingProduct(booking) !== "pesawat") return false
+  const lifecycle = normalizeFlightLifecycleStatus(booking.flight_lifecycle_status)
+  return lifecycle === "ticketing" && hoursSince(booking.flight_issue_requested_at || booking.created_at) >= 1
+}
+
+function isFlightAutoException(booking: BookingRow) {
+  const lifecycle = normalizeFlightLifecycleStatus(booking.flight_lifecycle_status)
+  const issue = normalizeFlightIssueStatus(booking.flight_issue_status)
+  return (
+    isAirAsiaManualFlight(booking) ||
+    isPaidFlightWaitingIssue(booking) ||
+    isHoldStuckFlight(booking) ||
+    isSlowTicketingFlight(booking) ||
+    lifecycle === "issue_failed" ||
+    issue === "issue_failed"
+  )
+}
+
+function flightExceptionSummary(booking: BookingRow) {
+  const lifecycle = normalizeFlightLifecycleStatus(booking.flight_lifecycle_status)
+  const issue = normalizeFlightIssueStatus(booking.flight_issue_status)
+
+  if (lifecycle === "issue_failed" || issue === "issue_failed") {
+    return {
+      label: "Issue Failed",
+      note: "Cek response supplier, lalu retry issue atau follow up customer.",
+      tone: "border-rose-200 bg-rose-50 text-rose-700",
+    }
+  }
+  if (isAirAsiaManualFlight(booking)) {
+    return {
+      label: "AirAsia Manual",
+      note: "Booking ditahan dari auto-pilot karena pengecualian saldo/deposit Dharmawisata.",
+      tone: "border-amber-200 bg-amber-50 text-amber-700",
+    }
+  }
+  if (isPaidFlightWaitingIssue(booking)) {
+    return {
+      label: "Paid Belum Issued",
+      note: "Payment sudah paid. Auto-pilot akan issue bila policy supplier aman, admin bisa cek bila tertahan.",
+      tone: "border-sky-200 bg-sky-50 text-sky-700",
+    }
+  }
+  if (isSlowTicketingFlight(booking)) {
+    return {
+      label: "Ticketing Lambat",
+      note: "Status ticketing sudah lebih dari 1 jam. Cek response supplier atau lakukan retry manual.",
+      tone: "border-orange-200 bg-orange-50 text-orange-700",
+    }
+  }
+  if (isHoldStuckFlight(booking)) {
+    return {
+      label: "Hold Tertahan",
+      note: "Booking masih di gate recheck/hold. Cek fare dan hold sebelum payment dibuka.",
+      tone: "border-orange-200 bg-orange-50 text-orange-700",
+    }
+  }
+  return null
 }
 
 function journeyPhase(booking: BookingRow) {
@@ -363,6 +488,15 @@ function deriveActionNow(booking: BookingRow) {
 }
 
 function hasCompleteAdminData(booking: BookingRow, bookingTitle: string | null | undefined) {
+  if (deriveBookingProduct(booking) === "pesawat") {
+    return Boolean(
+      bookingTitle &&
+        booking.customer_name &&
+        booking.total_amount !== null &&
+        booking.subtotal_amount !== null,
+    )
+  }
+
   return Boolean(
     bookingTitle &&
       booking.customer_name &&
@@ -450,6 +584,11 @@ function normalizeFlightStatusFilter(value: string | undefined): FlightStatusFil
     normalized === "recheck" ||
     normalized === "hold" ||
     normalized === "payment-verified" ||
+    normalized === "auto-exception" ||
+    normalized === "airasia-manual" ||
+    normalized === "paid-not-issued" ||
+    normalized === "hold-stuck" ||
+    normalized === "ticketing-slow" ||
     normalized === "ticketing" ||
     normalized === "issued" ||
     normalized === "issue-failed"
@@ -469,6 +608,11 @@ function matchesFlightStatusFilter(booking: BookingRow, filter: FlightStatusFilt
   if (filter === "recheck") return lifecycle === "fare_recheck_required" || lifecycle === "fare_rechecked" || !lifecycle
   if (filter === "hold") return lifecycle === "booking_hold_created" || lifecycle === "pending_payment"
   if (filter === "payment-verified") return lifecycle === "payment_verified"
+  if (filter === "auto-exception") return isFlightAutoException(booking)
+  if (filter === "airasia-manual") return isAirAsiaManualFlight(booking)
+  if (filter === "paid-not-issued") return isPaidFlightWaitingIssue(booking)
+  if (filter === "hold-stuck") return isHoldStuckFlight(booking)
+  if (filter === "ticketing-slow") return isSlowTicketingFlight(booking)
   if (filter === "ticketing") return lifecycle === "ticketing" || issue === "ticketing"
   if (filter === "issued") return lifecycle === "issued" || issue === "issued"
   if (filter === "issue-failed") return lifecycle === "issue_failed" || issue === "issue_failed"
@@ -553,7 +697,7 @@ export default async function AdminBookingsPage({
   if (flightBookingIds.length > 0) {
     const { data: flightDetailsData } = await adminSupabase
       .from("flight_booking_details")
-      .select("booking_id, lifecycle_status, issue_status, ticket_number, pnr_code, supplier_order_id")
+      .select("booking_id, lifecycle_status, issue_status, ticket_number, pnr_code, supplier_order_id, airline_code, airline_name, issue_requested_at")
       .in("booking_id", flightBookingIds)
 
     const flightDetailsMap = new Map(
@@ -571,6 +715,9 @@ export default async function AdminBookingsPage({
       booking.flight_ticket_number = detail.ticket_number
       booking.flight_pnr_code = detail.pnr_code
       booking.flight_supplier_order_id = detail.supplier_order_id
+      booking.flight_airline_code = detail.airline_code
+      booking.flight_airline_name = detail.airline_name
+      booking.flight_issue_requested_at = detail.issue_requested_at
     }
   }
 
@@ -591,7 +738,7 @@ export default async function AdminBookingsPage({
     supplierIds.length > 0
       ? await adminSupabase
           .from("suppliers")
-          .select("id, supplier_name, internal_display_name, internal_alias")
+          .select("id, supplier_code, supplier_name, internal_display_name, internal_alias, integration_mode")
           .in("id", supplierIds)
           .returns<SupplierRow[]>()
       : { data: [] as SupplierRow[] }
@@ -610,8 +757,19 @@ export default async function AdminBookingsPage({
       getVisibleSupplierLabel(supplier),
     ]),
   )
+  const supplierRowsById = new Map(
+    (((suppliersData as SupplierRow[] | null) || []) as SupplierRow[]).map((supplier) => [supplier.id, supplier]),
+  )
+  for (const booking of bookings) {
+    const supplier = supplierRowsById.get(booking.supplier_id || "")
+    if (!supplier) continue
+    booking.supplier_code = supplier.supplier_code
+    booking.supplier_integration_mode = supplier.integration_mode
+  }
   const validBookings = bookings.filter(
-    (booking) => hasCompleteAdminData(booking, getBookingHeadline(booking, packageMap.get(booking.package_id || ""))) && isVisiblePaidBooking(booking),
+    (booking) =>
+      hasCompleteAdminData(booking, getBookingHeadline(booking, packageMap.get(booking.package_id || ""))) &&
+      (deriveBookingProduct(booking) === "pesawat" || isVisiblePaidBooking(booking)),
   )
   const incompleteBookings = bookings.filter(
     (booking) => !hasCompleteAdminData(booking, getBookingHeadline(booking, packageMap.get(booking.package_id || ""))),
@@ -710,12 +868,37 @@ export default async function AdminBookingsPage({
   ]
   const flightStatusFilters: Array<{ value: FlightStatusFilter; label: string; count: number }> = [
     { value: "all", label: "Semua Pesawat", count: searchedFlightBookings.length },
+    {
+      value: "auto-exception",
+      label: "Auto Exception",
+      count: searchedFlightBookings.filter((booking) => matchesFlightStatusFilter(booking, "auto-exception")).length,
+    },
+    {
+      value: "airasia-manual",
+      label: "AirAsia Manual",
+      count: searchedFlightBookings.filter((booking) => matchesFlightStatusFilter(booking, "airasia-manual")).length,
+    },
+    {
+      value: "hold-stuck",
+      label: "Hold Tertahan",
+      count: searchedFlightBookings.filter((booking) => matchesFlightStatusFilter(booking, "hold-stuck")).length,
+    },
+    {
+      value: "paid-not-issued",
+      label: "Paid Belum Issued",
+      count: searchedFlightBookings.filter((booking) => matchesFlightStatusFilter(booking, "paid-not-issued")).length,
+    },
     { value: "recheck", label: "Perlu Recheck", count: searchedFlightBookings.filter((booking) => matchesFlightStatusFilter(booking, "recheck")).length },
     { value: "hold", label: "Hold/PNR", count: searchedFlightBookings.filter((booking) => matchesFlightStatusFilter(booking, "hold")).length },
     {
       value: "payment-verified",
       label: "Payment Verified",
       count: searchedFlightBookings.filter((booking) => matchesFlightStatusFilter(booking, "payment-verified")).length,
+    },
+    {
+      value: "ticketing-slow",
+      label: "Ticketing Lambat",
+      count: searchedFlightBookings.filter((booking) => matchesFlightStatusFilter(booking, "ticketing-slow")).length,
     },
     { value: "ticketing", label: "Ticketing", count: searchedFlightBookings.filter((booking) => matchesFlightStatusFilter(booking, "ticketing")).length },
     { value: "issued", label: "Issued", count: searchedFlightBookings.filter((booking) => matchesFlightStatusFilter(booking, "issued")).length },
@@ -1120,6 +1303,7 @@ export default async function AdminBookingsPage({
                 const attentionReasons = deriveAttentionReasons(booking)
                 const actionNow = deriveActionNow(booking)
                 const flightBadge = flightStatusBadge(booking)
+                const flightException = isFlightBookingRow ? flightExceptionSummary(booking) : null
                 const flightReference = booking.flight_ticket_number || booking.flight_pnr_code || ""
                 const showQuickRecheckAndHoldFlight = canExecuteAdminOps && canQuickRecheckAndHoldFlight(booking)
                 const showQuickIssueFlightTicket = canExecuteAdminOps && canQuickIssueFlightTicket(booking)
@@ -1216,6 +1400,16 @@ export default async function AdminBookingsPage({
                         </div>
                       </div>
                     )}
+
+                    {flightException ? (
+                      <div className={`mt-4 rounded-[24px] border p-4 ${flightException.tone}`}>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] opacity-80">
+                          Flight exception
+                        </p>
+                        <p className="mt-2 text-sm font-semibold">{flightException.label}</p>
+                        <p className="mt-2 text-sm leading-6">{flightException.note}</p>
+                      </div>
+                    ) : null}
 
                      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                       <div className="rounded-[20px] border border-white bg-white p-4">

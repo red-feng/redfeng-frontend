@@ -12,6 +12,7 @@ import { resolvePackageTranslation } from "@/lib/package-pricing"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 import { buildAppUrl } from "@/lib/site-config"
 import { markTransactionPromoRedemptionsApplied, revertReservedTransactionPromoRedemptions } from "@/lib/transaction-promo-redemptions"
+import { autoIssueFlightTicketAfterPayment } from "@/lib/flights/autoIssue"
 
 type LocalizedPackageEmailRow = {
   title?: string | null
@@ -225,6 +226,10 @@ export async function POST(req: Request) {
 
       if (isFlightBooking(booking)) {
         await markFlightPaymentVerified(supabase, booking.id)
+        const autoIssueResult = await autoIssueFlightTicketAfterPayment(supabase, booking.id)
+        if (!autoIssueResult.ok && !autoIssueResult.skipped) {
+          console.error("AUTO FLIGHT ISSUE ERROR (webhook):", autoIssueResult.message)
+        }
       }
 
       if (resolvedPaymentType !== "dp" && !isFlightBooking(booking)) {

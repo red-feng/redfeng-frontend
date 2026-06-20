@@ -13,6 +13,7 @@ import { normalizeLocale, type Locale } from "@/lib/i18n"
 import { resolvePackageTranslation } from "@/lib/package-pricing"
 import { buildAppUrl } from "@/lib/site-config"
 import { markTransactionPromoRedemptionsApplied } from "@/lib/transaction-promo-redemptions"
+import { autoIssueFlightTicketAfterPayment } from "@/lib/flights/autoIssue"
 
 function resolveOrder(orderId: string) {
   const match = orderId.match(/^(.*?)-(dp|full)(?:-.+)?$/i)
@@ -281,6 +282,10 @@ export async function POST(req: Request) {
 
       if (isFlightBooking(booking)) {
         await markFlightPaymentVerified(supabase, booking.id)
+        const autoIssueResult = await autoIssueFlightTicketAfterPayment(supabase, booking.id)
+        if (!autoIssueResult.ok && !autoIssueResult.skipped) {
+          console.error("AUTO FLIGHT ISSUE ERROR (sync):", autoIssueResult.message)
+        }
       }
 
       if (resolvedPaymentType !== "dp" && !isFlightBooking(booking)) {

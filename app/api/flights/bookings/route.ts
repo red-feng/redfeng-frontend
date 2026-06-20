@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { calculateBookingAmounts, getFinanceSettings } from "@/lib/finance/settings"
+import { getFlightAutomationPolicy } from "@/lib/flights/automationPolicy"
 import { createDharmawisataFlightBooking, type DharmawisataPassenger } from "@/lib/flights/dharmawisataFlightBooking"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient as createServerClient } from "@/lib/supabase/server"
@@ -511,7 +512,13 @@ export async function POST(req: Request) {
     const contactNameParts = splitPersonName(customerName)
     const contactPhone = splitIndonesianPhone(customerPhone)
     const dharmawisataPassengers = buildDharmawisataPassengers(passengerDetails, customerName, customerEmail)
-    const shouldAutoBookDharmawisata = supplier.supplier_code === "DHARMAWISATA_H2H" && supplier.integration_mode === "api"
+    const automationPolicy = getFlightAutomationPolicy({
+      airlineCode,
+      airlineName: asString(body.airline),
+      supplierCode: supplier.supplier_code,
+      integrationMode: supplier.integration_mode,
+    })
+    const shouldAutoBookDharmawisata = supplier.supplier_code === "DHARMAWISATA_H2H" && automationPolicy.autoHold
 
     const bookingApiResult = shouldAutoBookDharmawisata
       ? await createDharmawisataFlightBooking({
@@ -544,8 +551,8 @@ export async function POST(req: Request) {
       : {
           ok: false,
           skipped: true,
-          mode: "manual_unconfigured" as const,
-          message: "Supplier Dharmawisata belum memakai mode API, jadi hold dilakukan manual.",
+          mode: supplier.integration_mode === "api" ? "manual_incomplete_data" as const : "manual_unconfigured" as const,
+          message: automationPolicy.reason,
           bookingCode: null,
           bookingDate: null,
           timeLimit: null,
@@ -553,9 +560,10 @@ export async function POST(req: Request) {
           bookingCodeAirline: null,
           airlineAccessCode: null,
           raw: {
-            bookingMode: "manual_non_api_supplier",
+            bookingMode: automationPolicy.manualReviewRequired ? "manual_policy_review" : "manual_non_api_supplier",
             supplierCode: supplier.supplier_code,
             integrationMode: supplier.integration_mode,
+            automationPolicy,
           },
         }
 
@@ -654,6 +662,7 @@ export async function POST(req: Request) {
           lifecycleStatus: "fare_recheck_required",
           mode: bookingApiResult.mode,
           message: bookingApiResult.message,
+          automationPolicy,
           raw: bookingApiResult.raw,
         },
       })

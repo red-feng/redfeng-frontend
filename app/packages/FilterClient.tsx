@@ -579,18 +579,6 @@ export default function FilterClient({
     locale === "en" ? "Open filters" : locale === "zh" ? "打开筛选" : "Buka filter"
   const mobileCloseLabel =
     locale === "en" ? "Close" : locale === "zh" ? "关闭" : "Tutup"
-  const trustTitle =
-    locale === "en"
-      ? "Safe and trusted booking"
-      : locale === "zh"
-        ? "安全可靠的预订"
-        : "Pemesanan aman dan terpercaya"
-  const trustBody =
-    locale === "en"
-      ? "Secure transactions, protected customer data, and support when you need it."
-      : locale === "zh"
-        ? "安全交易、客户数据受保护，并在需要时提供支持。"
-        : "Transaksi lebih aman, data customer terlindungi, dan dukungan saat Anda membutuhkannya."
   const exploreTitle =
     locale === "en"
       ? `Explore ${selectedCountry || "tour destinations"}`

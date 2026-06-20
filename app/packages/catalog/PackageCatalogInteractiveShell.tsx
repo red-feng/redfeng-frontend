@@ -385,15 +385,6 @@ export default function PackageCatalogInteractiveShell({
   const showChipScrollLeft = !isStickySearchExpanded && canScrollChipLeft
   const showChipScrollRight = !isStickySearchExpanded && canScrollChipRight
 
-  const scrollToSearch = () => {
-    const target = searchSectionRef.current
-    if (!target) return
-
-    const headerOffset = typeof window !== "undefined" && window.innerWidth >= 1024 ? 72 : 52
-    const top = target.getBoundingClientRect().top + window.scrollY - headerOffset
-    window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" })
-  }
-
   const scrollToHeader = () => {
     const target = document.getElementById("top")
     if (target) {

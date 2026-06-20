@@ -8,6 +8,7 @@ import {
   normalizeFlightIssueStatus,
   normalizeFlightLifecycleStatus,
 } from "@/lib/affiliate-suppliers"
+import { getFlightAutomationPolicy, type FlightAutomationPolicy } from "@/lib/flights/automationPolicy"
 import { getAccessibleInternalProducts, hasInternalProductAccess } from "@/lib/internal-product-access"
 import { formatBookingCode } from "@/lib/merchant-code"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -41,6 +42,7 @@ type FlightDetailRow = {
   supplier_order_id: string | null
   lifecycle_status: string | null
   issue_status: string | null
+  airline_code: string | null
   airline_name: string | null
   flight_number: string | null
   origin_airport_code: string | null
@@ -52,24 +54,44 @@ type FlightDetailRow = {
   pnr_code: string | null
   ticket_number: string | null
   booking_hold_expires_at: string | null
+  issue_requested_at: string | null
   fare_reference_id: string | null
   notes: string | null
 }
 
 type SupplierRow = {
   id: string
+  supplier_code: string | null
   supplier_name: string | null
   internal_display_name: string | null
   internal_alias: string | null
+  integration_mode: string | null
 }
 
 type FlightOpsCard = {
   booking: BookingRow
   detail: FlightDetailRow
   supplierLabel: string
+  automationPolicy: FlightAutomationPolicy
 }
 
 type OpsColumnKey = "recheck" | "hold" | "payment" | "ticketing" | "issued" | "follow_up"
+type FlightExceptionKind =
+  | "airasia_manual"
+  | "hold_needed"
+  | "payment_verified_waiting_issue"
+  | "issue_failed"
+  | "ticketing_slow"
+
+type FlightException = {
+  kind: FlightExceptionKind
+  card: FlightOpsCard
+  title: string
+  detail: string
+  tone: string
+  actionHref: string
+  actionLabel: string
+}
 
 const opsColumns: Array<{ key: OpsColumnKey; title: string; note: string; tone: string }> = [
   {
@@ -142,6 +164,12 @@ function isIssueFailedAlert(card: FlightOpsCard) {
     normalizeFlightLifecycleStatus(card.detail.lifecycle_status) === "issue_failed" ||
     normalizeFlightIssueStatus(card.detail.issue_status) === "issue_failed"
   )
+}
+
+function isTerminalFlight(card: FlightOpsCard) {
+  const lifecycle = normalizeFlightLifecycleStatus(card.detail.lifecycle_status)
+  const issue = normalizeFlightIssueStatus(card.detail.issue_status)
+  return lifecycle === "issued" || lifecycle === "cancelled" || lifecycle === "refund_required" || issue === "issued" || issue === "cancelled" || issue === "refunded"
 }
 
 function formatCabin(value: string | null) {
@@ -217,6 +245,7 @@ function canQuickResend(card: FlightOpsCard) {
 }
 
 function actionHint(card: FlightOpsCard) {
+  if (card.automationPolicy.manualReviewRequired) return card.automationPolicy.reason
   if (canQuickRecheckAndHold(card)) return "Recheck dan hold booking ke Dharmawisata."
   if (canQuickIssue(card)) return "Payment verified. Lanjut request issue tiket."
   if (canQuickResend(card)) return "Tiket issued. E-ticket bisa dikirim ulang."
@@ -224,6 +253,79 @@ function actionHint(card: FlightOpsCard) {
   if (lifecycle === "booking_hold_created" || lifecycle === "pending_payment") return "Tunggu customer menyelesaikan pembayaran Midtrans."
   if (lifecycle === "ticketing") return "Pantau hasil issue tiket atau follow up manual bila gagal."
   return "Buka detail untuk validasi data dan follow up."
+}
+
+function buildFlightException(card: FlightOpsCard): FlightException | null {
+  const lifecycle = normalizeFlightLifecycleStatus(card.detail.lifecycle_status)
+  const issue = normalizeFlightIssueStatus(card.detail.issue_status)
+  const paymentStatus = normalizeStatus(card.booking.payment_status)
+  const bookingCode = formatBookingCode(card.booking.booking_code, card.booking.id)
+
+  if (isIssueFailedAlert(card)) {
+    return {
+      kind: "issue_failed",
+      card,
+      title: "Issue tiket gagal",
+      detail: card.detail.notes || "Cek response supplier, lalu retry issue atau follow up customer.",
+      tone: "border-rose-200 bg-rose-50 text-rose-800",
+      actionHref: `/admin/bookings/${card.booking.id}`,
+      actionLabel: "Buka detail",
+    }
+  }
+
+  if (card.automationPolicy.airlineGroup === "airasia" && !isTerminalFlight(card)) {
+    return {
+      kind: "airasia_manual",
+      card,
+      title: "AirAsia butuh review manual",
+      detail: `${bookingCode} ditahan dari auto-pilot karena pengecualian saldo/deposit Dharmawisata untuk AirAsia.`,
+      tone: "border-amber-200 bg-amber-50 text-amber-800",
+      actionHref: `/admin/bookings/${card.booking.id}`,
+      actionLabel: "Review manual",
+    }
+  }
+
+  if (paymentStatus === "paid" && lifecycle === "payment_verified" && issue !== "issued") {
+    return {
+      kind: "payment_verified_waiting_issue",
+      card,
+      title: "Paid, menunggu issue",
+      detail: "Midtrans sudah verified. Auto-pilot akan issue jika policy dan endpoint supplier aman.",
+      tone: "border-sky-200 bg-sky-50 text-sky-800",
+      actionHref: `/admin/bookings/${card.booking.id}`,
+      actionLabel: "Cek ticketing",
+    }
+  }
+
+  if (lifecycle === "ticketing" && hoursSince(card.detail.issue_requested_at || card.booking.created_at) >= 1) {
+    return {
+      kind: "ticketing_slow",
+      card,
+      title: "Ticketing terlalu lama",
+      detail: "Status masih ticketing lebih dari 1 jam. Cek response issue dan supplier order.",
+      tone: "border-orange-200 bg-orange-50 text-orange-800",
+      actionHref: `/admin/bookings/${card.booking.id}`,
+      actionLabel: "Cek supplier",
+    }
+  }
+
+  if (
+    (lifecycle === "fare_recheck_required" || lifecycle === "fare_rechecked" || !lifecycle) &&
+    card.automationPolicy.autoHold &&
+    hoursSince(card.booking.created_at) >= 1
+  ) {
+    return {
+      kind: "hold_needed",
+      card,
+      title: "Hold belum terbentuk",
+      detail: "Booking masih di gate recheck/hold. Jalankan hold atau cek error supplier sebelum payment dibuka.",
+      tone: "border-orange-200 bg-orange-50 text-orange-800",
+      actionHref: `/admin/bookings/${card.booking.id}`,
+      actionLabel: "Cek hold",
+    }
+  }
+
+  return null
 }
 
 export default async function AdminFlightOpsBoardPage() {
@@ -263,7 +365,7 @@ export default async function AdminFlightOpsBoardPage() {
       ? await adminSupabase
           .from("flight_booking_details")
           .select(
-            "booking_id, supplier_order_id, lifecycle_status, issue_status, airline_name, flight_number, origin_airport_code, destination_airport_code, departure_at, arrival_at, cabin_class, passenger_count, pnr_code, ticket_number, booking_hold_expires_at, fare_reference_id, notes",
+            "booking_id, supplier_order_id, lifecycle_status, issue_status, airline_code, airline_name, flight_number, origin_airport_code, destination_airport_code, departure_at, arrival_at, cabin_class, passenger_count, pnr_code, ticket_number, booking_hold_expires_at, issue_requested_at, fare_reference_id, notes",
           )
           .in("booking_id", bookingIds)
       : { data: [] as FlightDetailRow[] }
@@ -280,26 +382,35 @@ export default async function AdminFlightOpsBoardPage() {
     supplierIds.length > 0
       ? await adminSupabase
           .from("suppliers")
-          .select("id, supplier_name, internal_display_name, internal_alias")
+          .select("id, supplier_code, supplier_name, internal_display_name, internal_alias, integration_mode")
           .in("id", supplierIds)
           .returns<SupplierRow[]>()
       : { data: [] as SupplierRow[] }
 
-  const supplierMap = new Map(
-    (((suppliersData as SupplierRow[] | null) || []) as SupplierRow[]).map((supplier) => [
+  const supplierRows = ((suppliersData as SupplierRow[] | null) || []) as SupplierRow[]
+  const supplierLabelMap = new Map(
+    supplierRows.map((supplier) => [
       supplier.id,
       getVisibleSupplierLabel(supplier),
     ]),
   )
+  const supplierMap = new Map(supplierRows.map((supplier) => [supplier.id, supplier]))
 
   const cards: FlightOpsCard[] = bookings
     .map((booking) => {
       const detail = flightDetailMap.get(booking.id)
       if (!detail) return null
+      const supplier = supplierMap.get(booking.supplier_id || "")
       return {
         booking,
         detail,
-        supplierLabel: supplierMap.get(booking.supplier_id || "") || "Reservation Partner",
+        supplierLabel: supplierLabelMap.get(booking.supplier_id || "") || "Reservation Partner",
+        automationPolicy: getFlightAutomationPolicy({
+          airlineCode: detail.airline_code,
+          airlineName: detail.airline_name,
+          supplierCode: supplier?.supplier_code,
+          integrationMode: supplier?.integration_mode,
+        }),
       }
     })
     .filter(Boolean) as FlightOpsCard[]
@@ -319,7 +430,12 @@ export default async function AdminFlightOpsBoardPage() {
   const newRecheckRequests = cards.filter(isNewRecheckRequest)
   const latestNewRecheckRequests = newRecheckRequests.slice(0, 3)
   const issueFailedAlerts = cards.filter(isIssueFailedAlert)
-  const latestIssueFailedAlerts = issueFailedAlerts.slice(0, 3)
+  const flightExceptions = cards.map(buildFlightException).filter(Boolean) as FlightException[]
+  const latestFlightExceptions = flightExceptions.slice(0, 6)
+  const airAsiaManualCount = flightExceptions.filter((exception) => exception.kind === "airasia_manual").length
+  const paidWaitingIssueCount = flightExceptions.filter((exception) => exception.kind === "payment_verified_waiting_issue").length
+  const holdNeededCount = flightExceptions.filter((exception) => exception.kind === "hold_needed").length
+  const slowTicketingCount = flightExceptions.filter((exception) => exception.kind === "ticketing_slow").length
 
   return (
     <AdminProductWorkspace
@@ -334,52 +450,79 @@ export default async function AdminFlightOpsBoardPage() {
       secondaryActionLabel="Diagnostics Dharmawisata"
       preparedModules={["Recheck fare", "Hold/PNR", "Midtrans payment", "Ticket issue", "E-ticket resend", "Follow up"]}
     >
-      {issueFailedAlerts.length > 0 ? (
-        <section className="rounded-[22px] border border-rose-200 bg-rose-50 p-5 shadow-[0_18px_44px_rgba(225,29,72,0.08)]">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-rose-600">Ticket issue alert</p>
-              <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950">
-                {issueFailedAlerts.length} booking pesawat butuh follow up issue ticket.
-              </h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-rose-800">
-                Customer melihat status aman sementara tim Red Feng perlu cek Dharmawisata, retry issue, atau menghubungi customer bila ada perubahan fare/seat.
-              </p>
-            </div>
-            <Link
-              href="/admin/bookings?product=pesawat&flight=issue-failed"
-              className="inline-flex rounded-[14px] bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700"
-            >
-              Buka issue failed
-            </Link>
+      <section className="rounded-[22px] border border-[#eee3d9] bg-white p-5 shadow-[0_18px_44px_rgba(15,23,42,0.05)]">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-600">Auto-pilot exception center</p>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950">
+              {flightExceptions.length} booking perlu dicek admin.
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              Auto-pilot tetap berjalan untuk airline normal. Admin hanya turun tangan untuk AirAsia, hold yang tertahan, payment paid yang belum issued, dan ticketing yang terlalu lama.
+            </p>
           </div>
+          <Link
+            href="/admin/bookings?product=pesawat&flight=auto-exception"
+            className="inline-flex items-center justify-center rounded-[14px] bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
+            Buka semua perhatian
+          </Link>
+        </div>
 
-          <div className="mt-4 grid gap-3 lg:grid-cols-3">
-            {latestIssueFailedAlerts.map((card) => {
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-[18px] border border-amber-200 bg-amber-50 p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-700">AirAsia manual</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-950">{airAsiaManualCount}</p>
+            <p className="mt-1 text-xs leading-5 text-amber-800">Ditahan dari auto-pilot karena exception saldo supplier.</p>
+          </div>
+          <div className="rounded-[18px] border border-orange-200 bg-orange-50 p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-700">Hold tertahan</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-950">{holdNeededCount}</p>
+            <p className="mt-1 text-xs leading-5 text-orange-800">Butuh cek fare/hold sebelum payment dibuka.</p>
+          </div>
+          <div className="rounded-[18px] border border-sky-200 bg-sky-50 p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-sky-700">Paid belum issued</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-950">{paidWaitingIssueCount}</p>
+            <p className="mt-1 text-xs leading-5 text-sky-800">Payment verified, menunggu issue atau retry.</p>
+          </div>
+          <div className="rounded-[18px] border border-rose-200 bg-rose-50 p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-rose-700">Issue/lambat</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-950">{issueFailedAlerts.length + slowTicketingCount}</p>
+            <p className="mt-1 text-xs leading-5 text-rose-800">Issue gagal atau ticketing lebih dari 1 jam.</p>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+          {latestFlightExceptions.length === 0 ? (
+            <div className="rounded-[18px] border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-800">
+              Tidak ada exception aktif. Auto-pilot sedang bersih.
+            </div>
+          ) : (
+            latestFlightExceptions.map((exception) => {
+              const card = exception.card
               const route = `${card.detail.origin_airport_code || "-"} -> ${card.detail.destination_airport_code || "-"}`
 
               return (
                 <Link
-                  key={card.booking.id}
-                  href={`/admin/bookings/${card.booking.id}`}
-                  className="rounded-[18px] border border-rose-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-rose-300 hover:shadow-[0_14px_34px_rgba(225,29,72,0.12)]"
+                  key={`${exception.kind}-${card.booking.id}`}
+                  href={exception.actionHref}
+                  className={`rounded-[18px] border p-4 transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(15,23,42,0.08)] ${exception.tone}`}
                 >
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-rose-600">
-                    Issue failed
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-slate-950">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] opacity-80">
                     {formatBookingCode(card.booking.booking_code, card.booking.id)}
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">{route}</p>
-                  <p className="mt-3 line-clamp-2 text-xs leading-5 text-rose-700">
-                    {card.detail.notes || "Cek response supplier dan tentukan retry/refund/follow up customer."}
-                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-950">{exception.title}</p>
+                  <p className="mt-1 text-xs text-slate-600">{route}</p>
+                  <p className="mt-3 line-clamp-2 text-xs leading-5">{exception.detail}</p>
+                  <span className="mt-3 inline-flex rounded-[12px] bg-white/70 px-3 py-1.5 text-xs font-semibold text-slate-800">
+                    {exception.actionLabel}
+                  </span>
                 </Link>
               )
-            })}
-          </div>
-        </section>
-      ) : null}
+            })
+          )}
+        </div>
+      </section>
 
       {newRecheckRequests.length > 0 ? (
         <section className="rounded-[22px] border border-orange-200 bg-orange-50 p-5 shadow-[0_18px_44px_rgba(249,115,22,0.08)]">
