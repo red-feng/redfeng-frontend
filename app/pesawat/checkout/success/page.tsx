@@ -18,6 +18,7 @@ type BookingRow = {
   user_id: string | null
   total_amount: number | null
   created_at: string | null
+  expiry_time: string | null
 }
 
 type FlightDetailRow = {
@@ -72,17 +73,20 @@ function getSuccessCopy(detail: FlightDetailRow | null) {
   }
 }
 
-function getPaymentGateCopy(detail: FlightDetailRow | null) {
+function getPaymentGateCopy(detail: FlightDetailRow | null, booking: BookingRow) {
   const lifecycle = String(detail?.lifecycle_status || "").trim().toLowerCase()
   const holdUntil = detail?.booking_hold_expires_at ? formatDateTime(detail.booking_hold_expires_at) : ""
+  const paymentUntil = booking.expiry_time ? formatDateTime(booking.expiry_time) : ""
 
   if (lifecycle === "booking_hold_created") {
     return {
       label: "Payment Midtrans siap",
       title: "Hold supplier sudah valid.",
-      body: holdUntil
-        ? `Link pembayaran sudah bisa dibuka dari detail booking. Selesaikan sebelum batas hold ${holdUntil}.`
-        : "Link pembayaran sudah bisa dibuka dari detail booking.",
+      body: paymentUntil
+        ? `Link pembayaran sudah bisa dibuka dari detail booking. Selesaikan pembayaran maksimal ${paymentUntil}.`
+        : holdUntil
+          ? `Link pembayaran sudah bisa dibuka dari detail booking. Selesaikan sebelum batas hold ${holdUntil}.`
+          : "Link pembayaran sudah bisa dibuka dari detail booking.",
       tone: "border-emerald-200 bg-emerald-50 text-emerald-800",
     }
   }
@@ -158,7 +162,7 @@ export default async function FlightCheckoutSuccessPage({
   const adminSupabase = createAdminClient()
   const { data: booking } = await adminSupabase
     .from("bookings")
-    .select("id, booking_code, customer_name, customer_email, user_id, total_amount, created_at")
+    .select("id, booking_code, customer_name, customer_email, user_id, total_amount, created_at, expiry_time")
     .eq("id", bookingId)
     .maybeSingle<BookingRow>()
 
@@ -173,7 +177,7 @@ export default async function FlightCheckoutSuccessPage({
   const flightDetail = await getFlightDetailForSuccess(adminSupabase, booking.id)
 
   const copy = getSuccessCopy(flightDetail || null)
-  const paymentGateCopy = getPaymentGateCopy(flightDetail || null)
+  const paymentGateCopy = getPaymentGateCopy(flightDetail || null, booking)
   const route = `${flightDetail?.origin_airport_code || "-"} -> ${flightDetail?.destination_airport_code || "-"}`
 
   return (

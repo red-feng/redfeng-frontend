@@ -44,6 +44,7 @@ type BookingDetailRow = {
   exchange_rate_date?: string | null
   booking_status: string | null
   payment_status: string | null
+  expiry_time?: string | null
   booking_product_type?: string | null
   package_id: string | null
   escrow_status: string | null
@@ -680,7 +681,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
   const { data: booking, error } = await adminSupabase
     .from("bookings")
-    .select("id, booking_code, customer_name, customer_email, customer_phone, pickup_date, adult_count, child_count, payment_type, dp_amount, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, customer_admin_fee_percent, customer_tax_percent, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, booking_product_type, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at, promo_code, promo_discount_amount, promo_snapshot, user_id")
+    .select("id, booking_code, customer_name, customer_email, customer_phone, pickup_date, adult_count, child_count, payment_type, dp_amount, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, customer_admin_fee_percent, customer_tax_percent, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, expiry_time, booking_product_type, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at, promo_code, promo_discount_amount, promo_snapshot, user_id")
     .eq("id", id)
     .single<BookingDetailRow>()
 
@@ -715,9 +716,10 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const canOpenFlightPayment =
     !isFlightBooking ||
     Boolean(
-      flightPaymentGate &&
+        flightPaymentGate &&
         isFlightPaymentReadyStatus(flightPaymentGate.lifecycle_status) &&
-        !isExpiredDateTime(flightPaymentGate.booking_hold_expires_at),
+        !isExpiredDateTime(flightPaymentGate.booking_hold_expires_at) &&
+        !isExpiredDateTime(booking.expiry_time),
     )
   const adultCount = Math.max(Number(booking.adult_count || 0), 0)
   const childCount = Math.max(Number(booking.child_count || 0), 0)

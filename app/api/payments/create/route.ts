@@ -7,6 +7,7 @@ import { deleteDraftBooking, isDraftBookingDeletable } from "@/lib/bookings/draf
 import { formatFinalPaymentDueLabel, isFinalPaymentOverdue } from "@/lib/booking/final-payment-deadline"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 import { createMidtransSnapClient } from "@/lib/payments/midtrans"
+import { isFlightPaymentDeadlineExpired } from "@/lib/flights/paymentDeadline"
 
 function resolveEnabledPayments(paymentMethod: string | null | undefined) {
   const normalizedMethod = resolveActiveCustomerPaymentMethod(paymentMethod)
@@ -211,8 +212,26 @@ export async function POST(req: Request) {
       )
     }
 
+    const isFlightProduct = String(booking.booking_product_type || "").trim().toLowerCase() === "flight"
+    if (
+      isFlightProduct &&
+      ["pending", "unpaid", ""].includes(normalizeStatus(booking.payment_status)) &&
+      isFlightPaymentDeadlineExpired(booking.expiry_time)
+    ) {
+      if (isDraftBookingDeletable(booking)) {
+        await deleteDraftBooking(supabase, booking.id)
+      }
+
+      const expiredMessage =
+        activeLocale === "en"
+          ? "The flight payment window has expired. Please search and book the flight again."
+          : "Batas pembayaran pesawat 5 menit sudah lewat. Silakan cari dan booking ulang penerbangan."
+
+      return NextResponse.json({ error: expiredMessage }, { status: 410 })
+    }
+
     const flightGateCopy = getFlightPaymentGateCopy(activeLocale)
-    if (String(booking.booking_product_type || "").trim().toLowerCase() === "flight") {
+    if (isFlightProduct) {
       const { data: flightDetail } = await supabase
         .from("flight_booking_details")
         .select("lifecycle_status, booking_hold_expires_at")

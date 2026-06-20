@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { calculateBookingAmounts, getFinanceSettings } from "@/lib/finance/settings"
 import { getFlightAutomationPolicy } from "@/lib/flights/automationPolicy"
 import { createDharmawisataFlightBooking, type DharmawisataPassenger } from "@/lib/flights/dharmawisataFlightBooking"
+import { getFlightPaymentDeadline } from "@/lib/flights/paymentDeadline"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 
@@ -608,6 +609,7 @@ export async function POST(req: Request) {
     if (bookingApiResult.ok) {
       const now = new Date().toISOString()
       const holdExpiresAt = normalizeDateTimeForDb(bookingApiResult.timeLimit)
+      const paymentDeadline = getFlightPaymentDeadline(holdExpiresAt, new Date(now)).toISOString()
       const apiSupplierReference = bookingApiResult.referenceNo || bookingApiResult.bookingCodeAirline || null
       const apiBookingCode = bookingApiResult.bookingCode || null
 
@@ -631,6 +633,7 @@ export async function POST(req: Request) {
         .update({
           supplier_booking_reference: apiSupplierReference,
           supplier_order_status: "confirmed",
+          expiry_time: paymentDeadline,
         })
         .eq("id", booking.id)
 

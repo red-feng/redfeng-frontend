@@ -11,6 +11,7 @@ import { issueDharmawisataFlightTicket } from "@/lib/flights/dharmawisataTicketI
 import { createDharmawisataFlightBooking, type DharmawisataPassenger } from "@/lib/flights/dharmawisataFlightBooking"
 import { autoIssueFlightTicketAfterPayment } from "@/lib/flights/autoIssue"
 import { sendFlightTicketIssuedEmail } from "@/lib/flights/flightTicketEmail"
+import { getFlightPaymentDeadline } from "@/lib/flights/paymentDeadline"
 
 type BookingPortal = "admin" | "superadmin"
 const FLIGHT_TICKET_ISSUE_LOCK_TTL_MS = 10 * 60 * 1000
@@ -654,6 +655,7 @@ export async function markFlightFareRechecked(formData: FormData) {
   const hasHoldReference = Boolean(supplierReference || bookingHoldExpiresAt)
   const nextLifecycleStatus = "booking_hold_created"
   const nextSupplierStatus = "confirmed"
+  const paymentDeadline = getFlightPaymentDeadline(bookingHoldExpiresAt, new Date(now)).toISOString()
 
   if (String(booking.payment_status || "").toLowerCase() === "paid") {
     backToBookingDetailWithState(bookingId, "error", "Fare recheck tidak perlu dibuka lagi karena payment sudah verified.", formData)
@@ -685,6 +687,7 @@ export async function markFlightFareRechecked(formData: FormData) {
     .update({
       supplier_booking_reference: supplierReference || booking.supplier_booking_reference || null,
       supplier_order_status: nextSupplierStatus,
+      expiry_time: paymentDeadline,
     })
     .eq("id", bookingId)
 
@@ -907,6 +910,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
 
   const now = new Date().toISOString()
   const holdExpiresAt = normalizeDateTimeForDb(holdResult.timeLimit)
+  const paymentDeadline = getFlightPaymentDeadline(holdExpiresAt, new Date(now)).toISOString()
   const apiSupplierReference = holdResult.referenceNo || holdResult.bookingCodeAirline || null
   const apiBookingCode = holdResult.bookingCode || null
 
@@ -937,6 +941,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
     .update({
       supplier_booking_reference: apiSupplierReference,
       supplier_order_status: "confirmed",
+      expiry_time: paymentDeadline,
     })
     .eq("id", bookingId)
 

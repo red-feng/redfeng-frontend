@@ -31,6 +31,7 @@ type BookingRow = {
   display_subtotal_amount?: number | null
   payment_status: string | null
   booking_status: string | null
+  expiry_time?: string | null
   escrow_status: string | null
   merchant_arrived_at: string | null
   merchant_picked_up_at: string | null
@@ -219,7 +220,8 @@ function canOpenFlightPayment(booking: BookingRow) {
   if (!isFlightBooking(booking)) return false
   return (
     normalizeStatus(booking.flight_lifecycle_status) === "booking_hold_created" &&
-    !isExpiredDateTime(booking.flight_booking_hold_expires_at)
+    !isExpiredDateTime(booking.flight_booking_hold_expires_at) &&
+    !isExpiredDateTime(booking.expiry_time)
   )
 }
 
@@ -636,7 +638,7 @@ export default async function CustomerDashboardPage() {
     const adminBookingsResult = await adminSupabase
       .from("bookings")
       .select(
-        "id, package_id, booking_product_type, booking_code, customer_email, created_at, pickup_date, payment_type, final_payment_amount, total_amount, display_currency, display_subtotal_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
+        "id, package_id, booking_product_type, booking_code, customer_email, created_at, pickup_date, payment_type, final_payment_amount, total_amount, display_currency, display_subtotal_amount, payment_status, booking_status, expiry_time, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
       )
       .eq("customer_email", user.email)
 
@@ -649,7 +651,7 @@ export default async function CustomerDashboardPage() {
     const fallbackBookingsResult = await adminSupabase
       .from("bookings")
       .select(
-        "id, package_id, booking_product_type, booking_code, customer_email, created_at, payment_type, final_payment_amount, total_amount, display_currency, display_subtotal_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
+        "id, package_id, booking_product_type, booking_code, customer_email, created_at, payment_type, final_payment_amount, total_amount, display_currency, display_subtotal_amount, payment_status, booking_status, expiry_time, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
       )
       .eq("customer_email", user.email)
 
