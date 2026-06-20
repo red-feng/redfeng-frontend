@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import BookingPaymentButton from "@/app/components/BookingPaymentButton"
+import FlightPaymentCountdown from "@/app/components/FlightPaymentCountdown"
 import { cancelDraftBooking, confirmCustomerPickedUp } from "./actions"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatPackageMoney } from "@/lib/package-pricing"
@@ -1144,6 +1145,9 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               <p className="font-semibold">{flightPaymentGateNotice.title}</p>
               <p className="mt-1">{flightPaymentGateNotice.body}</p>
             </div>
+          ) : null}
+          {canStartInitialPayment && hasCompleteParticipants && isFlightBooking ? (
+            <FlightPaymentCountdown deadline={booking.expiry_time} locale={locale} refreshOnExpire className="mt-5 max-w-sm" />
           ) : null}
 
           <div className="mt-6 flex flex-wrap gap-3">

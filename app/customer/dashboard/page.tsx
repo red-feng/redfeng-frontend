@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { formatBookingCode, formatCustomerCode } from "@/lib/merchant-code"
 import { createClient } from "@/lib/supabase/server"
 import BookingPaymentButton from "@/app/components/BookingPaymentButton"
+import FlightPaymentCountdown from "@/app/components/FlightPaymentCountdown"
 import { confirmCustomerPickedUp } from "@/app/booking/[id]/actions"
 import { getCurrentLocale } from "@/lib/locale"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
@@ -984,6 +985,11 @@ export default async function CustomerDashboardPage() {
                       {actionHint ? (
                         <div className={`mt-5 rounded-[20px] border px-4 py-4 text-sm leading-7 ${actionHint.tone}`}>
                           {actionHint.text}
+                        </div>
+                      ) : null}
+                      {canPayFlightInitial ? (
+                        <div className="mt-4">
+                          <FlightPaymentCountdown deadline={booking.expiry_time} locale={locale} compact refreshOnExpire />
                         </div>
                       ) : null}
 

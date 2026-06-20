@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import BookingPaymentButton from "@/app/components/BookingPaymentButton"
+import FlightPaymentCountdown from "@/app/components/FlightPaymentCountdown"
 import { confirmCustomerPickedUp } from "@/app/booking/[id]/actions"
 import {
   formatFinalPaymentDueLabel,
@@ -716,13 +717,18 @@ export default async function CustomerBookingsPage() {
                       </div>
                     </div>
 
-                    {actionHint ? (
-                      <div className={`mt-5 rounded-[20px] border px-4 py-4 text-sm leading-7 ${actionHint.tone}`}>
-                        {actionHint.text}
-                      </div>
-                    ) : null}
+                      {actionHint ? (
+                        <div className={`mt-5 rounded-[20px] border px-4 py-4 text-sm leading-7 ${actionHint.tone}`}>
+                          {actionHint.text}
+                        </div>
+                      ) : null}
+                      {canPayFlightInitial ? (
+                        <div className="mt-4">
+                          <FlightPaymentCountdown deadline={booking.expiry_time} locale={locale} compact refreshOnExpire />
+                        </div>
+                      ) : null}
 
-                    {isDpPaid ? (
+                      {isDpPaid ? (
                       <div className="mt-5 rounded-[24px] border border-amber-200 bg-[linear-gradient(135deg,#fff8e7_0%,#fff2cf_100%)] p-5 text-amber-900">
                         <div className="flex flex-wrap items-start justify-between gap-4">
                           <div>

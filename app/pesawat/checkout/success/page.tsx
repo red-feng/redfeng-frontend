@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import FlightPaymentCountdown from "@/app/components/FlightPaymentCountdown"
 import SimplePublicLogoHeader from "@/app/components/SimplePublicLogoHeader"
 import { getCustomerFlightStatus } from "@/lib/flights/customerFlightStatus"
 import { formatBookingCode } from "@/lib/merchant-code"
@@ -200,6 +201,9 @@ export default async function FlightCheckoutSuccessPage({
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em]">{paymentGateCopy.label}</p>
             <h2 className="mt-2 text-lg font-bold">{paymentGateCopy.title}</h2>
             <p className="mt-2 text-sm leading-7">{paymentGateCopy.body}</p>
+            {flightDetail?.lifecycle_status === "booking_hold_created" ? (
+              <FlightPaymentCountdown deadline={booking.expiry_time} refreshOnExpire className="mt-4" />
+            ) : null}
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
