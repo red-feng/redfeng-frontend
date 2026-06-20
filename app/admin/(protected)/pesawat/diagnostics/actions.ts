@@ -119,38 +119,57 @@ function buildResultPayload(value: unknown) {
   return JSON.stringify(value)
 }
 
+function isMissingSchemaObjectError(error: { message?: string | null; code?: string | null } | null | undefined) {
+  const message = String(error?.message || "").toLowerCase()
+  const code = String(error?.code || "").toLowerCase()
+  return (
+    code === "pgrst200" ||
+    code === "pgrst204" ||
+    message.includes("schema cache") ||
+    message.includes("could not find") ||
+    message.includes("does not exist")
+  )
+}
+
 export async function checkFlightSchemaReadiness() {
   await ensureFlightAdmin()
   const adminSupabase = createAdminClient()
   const startedAt = Date.now()
-  const tableNames = Array.from(new Set(FLIGHT_SCHEMA_REQUIRED_COLUMNS.map(([tableName]) => tableName)))
 
-  const { data, error } = await adminSupabase
-    .schema("information_schema")
-    .from("columns")
-    .select("table_name, column_name")
-    .eq("table_schema", "public")
-    .in("table_name", tableNames)
+  const checks = await Promise.all(
+    FLIGHT_SCHEMA_REQUIRED_COLUMNS.map(async ([tableName, columnName]) => {
+      const { error } = await adminSupabase.from(tableName).select(columnName).limit(1)
+      return {
+        tableName,
+        columnName,
+        ok: !error,
+        error,
+      }
+    }),
+  )
+  const unexpectedError = checks.find((check) => check.error && !isMissingSchemaObjectError(check.error))
 
-  if (error) {
+  if (unexpectedError) {
     diagnosticsRedirect({
       panel: "schema",
       status: "error",
       result: buildResultPayload({
         title: "Schema readiness gagal dibaca",
         elapsedMs: Date.now() - startedAt,
-        error: error.message,
+        error: unexpectedError.error?.message || "Unknown schema check error",
+        tableName: unexpectedError.tableName,
+        columnName: unexpectedError.columnName,
       }),
     })
   }
 
-  const available = new Set(
-    ((data as Array<{ table_name?: string | null; column_name?: string | null }> | null) || [])
-      .map((column) => `${column.table_name || ""}.${column.column_name || ""}`),
-  )
-  const missingColumns = FLIGHT_SCHEMA_REQUIRED_COLUMNS
-    .filter(([tableName, columnName]) => !available.has(`${tableName}.${columnName}`))
-    .map(([tableName, columnName]) => ({ tableName, columnName }))
+  const missingColumns = checks
+    .filter((check) => !check.ok)
+    .map((check) => ({
+      tableName: check.tableName,
+      columnName: check.columnName,
+      error: check.error?.message || "",
+    }))
 
   diagnosticsRedirect({
     panel: "schema",
