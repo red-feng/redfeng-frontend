@@ -20,6 +20,9 @@ type HotelAvailabilityRequestRow = {
   customer_email: string | null
   estimated_total_amount: number | string
   quoted_total_amount: number | string | null
+  booking_id: string | null
+  quote_expires_at: string | null
+  quote_payload: Record<string, unknown> | null
   currency: string
   created_at: string
 }
@@ -45,6 +48,19 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", year: "numeric" }).format(new Date(`${value}T00:00:00`))
 }
 
+function formatDateTime(value: string | null) {
+  if (!value) return "-"
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return "-"
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(parsed)
+}
+
 export default async function AdminHotelWorkspacePage({
   searchParams,
 }: {
@@ -56,7 +72,7 @@ export default async function AdminHotelWorkspacePage({
   const adminSupabase = createAdminClient()
   const { data: requests, error } = await adminSupabase
     .from("hotel_availability_requests")
-    .select("id, request_code, status, hotel_name, hotel_location, property_type, checkin_date, checkout_date, night_count, adult_count, child_count, room_count, customer_name, customer_phone, customer_email, estimated_total_amount, quoted_total_amount, currency, created_at")
+    .select("id, request_code, status, hotel_name, hotel_location, property_type, checkin_date, checkout_date, night_count, adult_count, child_count, room_count, customer_name, customer_phone, customer_email, estimated_total_amount, quoted_total_amount, booking_id, quote_expires_at, quote_payload, currency, created_at")
     .order("created_at", { ascending: false })
     .limit(12)
 
@@ -69,13 +85,13 @@ export default async function AdminHotelWorkspacePage({
       productType="hotel"
       productLabel="Hotel"
       description="Submenu admin untuk Hotel dipisahkan agar inventory kamar, supplier, rate plan, dan operasional hotel bisa punya workflow sendiri."
-      statusLabel="Manual check aktif"
-      statusNote="Katalog Hotel sudah bisa menerima request availability manual. Booking/checkout live tetap menunggu inventory dan rate plan supplier."
+      statusLabel="Quote + payment guard aktif"
+      statusNote="Admin validasi availability/rate plan, kirim quote, lalu sistem membuat booking hotel dan membuka payment Midtrans berbatas waktu."
       primaryActionHref="/hotel/catalog"
       primaryActionLabel="Buka katalog Hotel"
       secondaryActionHref="/admin/dashboard"
       secondaryActionLabel="Kembali ke dashboard admin"
-      preparedModules={["Availability request", "Manual supplier check", "Quote follow up", "Future live inventory"]}
+      preparedModules={["Availability request", "Supplier check", "Quote payment link", "Auto booking after paid"]}
     >
       <section className="grid gap-4 md:grid-cols-3">
         <div className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
@@ -125,6 +141,9 @@ export default async function AdminHotelWorkspacePage({
           <div className="mt-5 space-y-4">
             {rows.map((request) => (
               <article key={request.id} className="rounded-[18px] border border-[#f0e6dd] bg-[#fffdfa] p-4">
+                {(() => {
+                  const quotePayload = request.quote_payload || {}
+                  return (
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -142,6 +161,15 @@ export default async function AdminHotelWorkspacePage({
                       <span className="font-semibold text-slate-900">{request.customer_name}</span> | {request.customer_phone}
                       {request.customer_email ? ` | ${request.customer_email}` : ""}
                     </p>
+                    {request.booking_id ? (
+                      <div className="mt-4 rounded-[12px] border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                        <p className="font-semibold">Payment link siap</p>
+                        <a href={`/booking/${request.booking_id}`} className="mt-1 inline-flex font-semibold text-emerald-700 underline underline-offset-4">
+                          /booking/{request.booking_id}
+                        </a>
+                        <p className="mt-1 text-xs">Batas bayar: {formatDateTime(request.quote_expires_at)}</p>
+                      </div>
+                    ) : null}
                   </div>
 
                   <form action={updateHotelAvailabilityRequestAction} className="rounded-[16px] border border-[#eadfd5] bg-white p-3">
@@ -159,6 +187,17 @@ export default async function AdminHotelWorkspacePage({
                         <span className="text-xs font-semibold text-slate-600">Quote total</span>
                         <input name="quoted_total_amount" type="number" min="0" step="1000" defaultValue={request.quoted_total_amount ? String(request.quoted_total_amount) : ""} placeholder="Contoh: 2500000" className="mt-1 w-full rounded-[12px] border border-slate-200 px-3 py-2 text-sm outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100" />
                       </label>
+                      <div className="grid gap-2 rounded-[12px] border border-slate-100 bg-slate-50 p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Kode Dharmawisata</p>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <input name="supplier_hotel_id" defaultValue={String(quotePayload.supplier_hotel_id || "")} placeholder="Hotel ID" className="rounded-[10px] border border-slate-200 px-3 py-2 text-xs outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100" />
+                          <input name="supplier_internal_code" defaultValue={String(quotePayload.supplier_internal_code || "")} placeholder="Internal code" className="rounded-[10px] border border-slate-200 px-3 py-2 text-xs outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100" />
+                          <input name="supplier_room_id" defaultValue={String(quotePayload.supplier_room_id || "")} placeholder="Room ID" className="rounded-[10px] border border-slate-200 px-3 py-2 text-xs outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100" />
+                          <input name="supplier_breakfast_id" defaultValue={String(quotePayload.supplier_breakfast_id || "")} placeholder="Breakfast ID" className="rounded-[10px] border border-slate-200 px-3 py-2 text-xs outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100" />
+                          <input name="supplier_country_id" defaultValue={String(quotePayload.supplier_country_id || "")} placeholder="Country ID" className="rounded-[10px] border border-slate-200 px-3 py-2 text-xs outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100" />
+                          <input name="supplier_city_id" defaultValue={String(quotePayload.supplier_city_id || "")} placeholder="City ID" className="rounded-[10px] border border-slate-200 px-3 py-2 text-xs outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100" />
+                        </div>
+                      </div>
                       <label className="block">
                         <span className="text-xs font-semibold text-slate-600">Catatan follow up</span>
                         <textarea name="admin_note" rows={2} className="mt-1 w-full rounded-[12px] border border-slate-200 px-3 py-2 text-sm outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100" />
@@ -169,6 +208,8 @@ export default async function AdminHotelWorkspacePage({
                     </div>
                   </form>
                 </div>
+                  )
+                })()}
               </article>
             ))}
           </div>

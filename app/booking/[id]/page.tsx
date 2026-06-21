@@ -707,6 +707,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
   const participants = (participantRows as BookingParticipantRow[] | null) || []
   const isFlightBooking = normalizeStatus(booking.booking_product_type || null) === "flight"
+  const isHotelBooking = normalizeStatus(booking.booking_product_type || null) === "hotel"
   const { data: flightPaymentGate } = isFlightBooking
     ? await adminSupabase
         .from("flight_booking_details")
@@ -722,6 +723,9 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
         !isExpiredDateTime(flightPaymentGate.booking_hold_expires_at) &&
         !isExpiredDateTime(booking.expiry_time),
     )
+  const canOpenHotelPayment =
+    !isHotelBooking ||
+    !isExpiredDateTime(booking.expiry_time)
   const adultCount = Math.max(Number(booking.adult_count || 0), 0)
   const childCount = Math.max(Number(booking.child_count || 0), 0)
   const expectedParticipantCount = adultCount + childCount
@@ -741,7 +745,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     normalizeStatus(booking.payment_status) === "dp_paid" &&
     isFinalPaymentOverdue(booking.pickup_date || null)
   const canStartInitialPayment =
-    ["pending", "unpaid", ""].includes(normalizeStatus(booking.payment_status)) && canOpenFlightPayment
+    ["pending", "unpaid", ""].includes(normalizeStatus(booking.payment_status)) && canOpenFlightPayment && canOpenHotelPayment
   const isWaitingFlightPaymentGate =
     isFlightBooking &&
     ["pending", "unpaid", ""].includes(normalizeStatus(booking.payment_status)) &&
@@ -1146,7 +1150,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               <p className="mt-1">{flightPaymentGateNotice.body}</p>
             </div>
           ) : null}
-          {canStartInitialPayment && hasCompleteParticipants && isFlightBooking ? (
+          {canStartInitialPayment && hasCompleteParticipants && (isFlightBooking || isHotelBooking) ? (
             <FlightPaymentCountdown deadline={booking.expiry_time} locale={locale} refreshOnExpire className="mt-5 max-w-sm" />
           ) : null}
 

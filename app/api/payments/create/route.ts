@@ -8,6 +8,7 @@ import { formatFinalPaymentDueLabel, isFinalPaymentOverdue } from "@/lib/booking
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 import { createMidtransSnapClient } from "@/lib/payments/midtrans"
 import { isFlightPaymentDeadlineExpired } from "@/lib/flights/paymentDeadline"
+import { isHotelPaymentDeadlineExpired } from "@/lib/hotels/paymentDeadline"
 
 function resolveEnabledPayments(paymentMethod: string | null | undefined) {
   const normalizedMethod = resolveActiveCustomerPaymentMethod(paymentMethod)
@@ -32,12 +33,21 @@ type FlightPaymentGateRow = {
   booking_hold_expires_at: string | null
 }
 
+type HotelPaymentGateRow = {
+  lifecycle_status: string | null
+}
+
 function normalizeStatus(value: string | null | undefined) {
   return String(value || "").trim().toLowerCase()
 }
 
 function isFlightPaymentReadyStatus(value: string | null | undefined) {
   return normalizeStatus(value) === "booking_hold_created"
+}
+
+function isHotelPaymentReadyStatus(value: string | null | undefined) {
+  const normalized = normalizeStatus(value)
+  return normalized === "quote_ready" || normalized === "pending_payment"
 }
 
 function isExpiredDateTime(value: string | null | undefined) {
@@ -152,6 +162,20 @@ function getFlightPaymentGateCopy(locale: Locale) {
   }
 }
 
+function getHotelPaymentGateCopy(locale: Locale) {
+  if (locale === "en") {
+    return {
+      notReady: "Hotel payment is not open yet. Red Feng must validate room availability and final price first.",
+      quoteExpired: "The hotel payment window has expired. Please ask Red Feng to refresh the hotel quote.",
+    }
+  }
+
+  return {
+    notReady: "Pembayaran hotel belum dibuka. Red Feng harus validasi kamar dan harga final terlebih dahulu.",
+    quoteExpired: "Batas pembayaran hotel sudah lewat. Minta Red Feng memperbarui quote hotel.",
+  }
+}
+
 export async function POST(req: Request) {
   let activeLocale: Locale = "id"
   try {
@@ -213,6 +237,7 @@ export async function POST(req: Request) {
     }
 
     const isFlightProduct = String(booking.booking_product_type || "").trim().toLowerCase() === "flight"
+    const isHotelProduct = String(booking.booking_product_type || "").trim().toLowerCase() === "hotel"
     if (
       isFlightProduct &&
       ["pending", "unpaid", ""].includes(normalizeStatus(booking.payment_status)) &&
@@ -230,6 +255,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: expiredMessage }, { status: 410 })
     }
 
+    const hotelGateCopy = getHotelPaymentGateCopy(activeLocale)
+    if (
+      isHotelProduct &&
+      ["pending", "unpaid", ""].includes(normalizeStatus(booking.payment_status)) &&
+      isHotelPaymentDeadlineExpired(booking.expiry_time)
+    ) {
+      return NextResponse.json({ error: hotelGateCopy.quoteExpired }, { status: 410 })
+    }
+
     const flightGateCopy = getFlightPaymentGateCopy(activeLocale)
     if (isFlightProduct) {
       const { data: flightDetail } = await supabase
@@ -244,6 +278,18 @@ export async function POST(req: Request) {
 
       if (isExpiredDateTime(flightDetail.booking_hold_expires_at)) {
         return NextResponse.json({ error: flightGateCopy.holdExpired }, { status: 409 })
+      }
+    }
+
+    if (isHotelProduct) {
+      const { data: hotelDetail } = await supabase
+        .from("hotel_booking_details")
+        .select("lifecycle_status")
+        .eq("booking_id", booking.id)
+        .maybeSingle<HotelPaymentGateRow>()
+
+      if (!hotelDetail || !isHotelPaymentReadyStatus(hotelDetail.lifecycle_status)) {
+        return NextResponse.json({ error: hotelGateCopy.notReady }, { status: 409 })
       }
     }
 

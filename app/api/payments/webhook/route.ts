@@ -13,6 +13,7 @@ import { normalizeLocale, type Locale } from "@/lib/i18n"
 import { buildAppUrl } from "@/lib/site-config"
 import { markTransactionPromoRedemptionsApplied, revertReservedTransactionPromoRedemptions } from "@/lib/transaction-promo-redemptions"
 import { autoIssueFlightTicketAfterPayment } from "@/lib/flights/autoIssue"
+import { autoIssueHotelAfterPayment } from "@/lib/hotels/autoIssue"
 
 type LocalizedPackageEmailRow = {
   title?: string | null
@@ -91,6 +92,10 @@ function isFlightBooking(booking: { booking_product_type?: string | null }) {
   return normalizeStatus(booking.booking_product_type) === "flight"
 }
 
+function isHotelBooking(booking: { booking_product_type?: string | null }) {
+  return normalizeStatus(booking.booking_product_type) === "hotel"
+}
+
 async function markFlightPaymentVerified(
   supabase: SupabaseClient,
   bookingId: string,
@@ -108,6 +113,30 @@ async function markFlightPaymentVerified(
 
   await supabase
     .from("flight_booking_details")
+    .update({
+      lifecycle_status: "payment_verified",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("booking_id", bookingId)
+}
+
+async function markHotelPaymentVerified(
+  supabase: SupabaseClient,
+  bookingId: string,
+) {
+  const { data: hotelDetail } = await supabase
+    .from("hotel_booking_details")
+    .select("lifecycle_status")
+    .eq("booking_id", bookingId)
+    .maybeSingle<{ lifecycle_status: string | null }>()
+
+  const currentStatus = normalizeStatus(hotelDetail?.lifecycle_status)
+  if (["booking_submitted", "issued", "issue_failed", "cancelled", "refund_required"].includes(currentStatus)) {
+    return
+  }
+
+  await supabase
+    .from("hotel_booking_details")
     .update({
       lifecycle_status: "payment_verified",
       updated_at: new Date().toISOString(),
@@ -183,6 +212,14 @@ export async function POST(req: Request) {
                 }
               }
 
+              if (isHotelBooking(booking)) {
+                return {
+                  payment_status: "paid",
+                  booking_status: "confirmed",
+                  escrow_status: "payment_verified",
+                }
+              }
+
               if (booking.merchant_picked_up_at) {
                 return {
                   payment_status: "paid",
@@ -232,7 +269,15 @@ export async function POST(req: Request) {
         }
       }
 
-      if (resolvedPaymentType !== "dp" && !isFlightBooking(booking)) {
+      if (isHotelBooking(booking)) {
+        await markHotelPaymentVerified(supabase, booking.id)
+        const autoIssueResult = await autoIssueHotelAfterPayment(supabase, booking.id)
+        if (!autoIssueResult.ok && !autoIssueResult.skipped) {
+          console.error("AUTO HOTEL ISSUE ERROR (webhook):", autoIssueResult.message)
+        }
+      }
+
+      if (resolvedPaymentType !== "dp" && !isFlightBooking(booking) && !isHotelBooking(booking)) {
         const queueResult = await queueBookingToFinance({
           adminSupabase: supabase,
           bookingId: booking.id,
@@ -244,7 +289,7 @@ export async function POST(req: Request) {
         }
       }
 
-      if (!isFlightBooking(booking)) {
+      if (!isFlightBooking(booking) && !isHotelBooking(booking)) {
         const { data: siblingDrafts } = await supabase
           .from("bookings")
           .select("id, payment_status, booking_status")
