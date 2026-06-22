@@ -41,6 +41,29 @@ type CitySearchLogRow = {
   created_at: string
 }
 
+type HotelCityMappingRow = {
+  id: string
+  destination_key: string
+  destination_label: string
+  country_id: string
+  city_id: string
+  country_name: string | null
+  city_name: string | null
+  is_active: boolean
+}
+
+type HotelAvailabilityRequestHint = {
+  id: string
+  hotel_id: string | null
+  hotel_name: string | null
+  hotel_location: string | null
+  checkin_date: string | null
+  checkout_date: string | null
+  room_count: number | null
+  child_count: number | null
+  quote_payload: unknown
+}
+
 type HotelCoreDefaults = {
   requestId?: string
   hotelId?: string
@@ -52,6 +75,23 @@ type HotelCoreDefaults = {
   roomCount?: string
   childCount?: string
   destinationLabel?: string
+}
+
+type HotelOption = {
+  value: string
+  label: string
+}
+
+type HotelCoreDatalistIds = {
+  hotelId: string
+  countryId: string
+  cityId: string
+}
+
+type HotelCoreOptionGroups = {
+  hotelOptions: HotelOption[]
+  countryOptions: HotelOption[]
+  cityOptions: HotelOption[]
 }
 
 function getDefaultDate(offsetDays: number) {
@@ -78,6 +118,86 @@ function asText(value: unknown) {
 
 function asRecord(value: unknown): ResultRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as ResultRecord) : {}
+}
+
+function normalizeInputDate(value: unknown) {
+  const raw = asText(value)
+  if (!raw) return ""
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10)
+
+  const parsed = new Date(raw)
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10)
+}
+
+function getRoomRequestItems(value: unknown) {
+  return Array.isArray(value) ? value.map(asRecord) : []
+}
+
+function getRoomCountFromPayload(value: unknown) {
+  const rooms = getRoomRequestItems(value)
+  return rooms.length > 0 ? String(rooms.length) : ""
+}
+
+function getChildCountFromPayload(value: unknown) {
+  const room = getRoomRequestItems(value)[0]
+  return room ? asText(room.childNum) : ""
+}
+
+function addUniqueOption(options: HotelOption[], seen: Set<string>, value: string, label: string) {
+  const normalized = value.trim()
+  if (!normalized || seen.has(normalized)) return
+  seen.add(normalized)
+  options.push({ value: normalized, label })
+}
+
+function buildHotelCoreOptions(input: {
+  mappings: HotelCityMappingRow[]
+  defaults: HotelCoreDefaults
+  requestPayload: ResultRecord
+  activeRequest: HotelAvailabilityRequestHint | null
+}) {
+  const hotelOptions: HotelOption[] = []
+  const countryOptions: HotelOption[] = []
+  const cityOptions: HotelOption[] = []
+  const seenHotels = new Set<string>()
+  const seenCountries = new Set<string>()
+  const seenCities = new Set<string>()
+  const quotePayload = asRecord(input.activeRequest?.quote_payload)
+
+  addUniqueOption(hotelOptions, seenHotels, input.defaults.hotelId || "", "Hotel ID dari form aktif")
+  addUniqueOption(hotelOptions, seenHotels, asText(input.requestPayload.hotelID), "Hotel ID dari hasil test")
+  addUniqueOption(hotelOptions, seenHotels, asText(quotePayload.supplier_hotel_id), "Hotel ID supplier dari request")
+  addUniqueOption(
+    hotelOptions,
+    seenHotels,
+    input.activeRequest?.hotel_id || "",
+    input.activeRequest?.hotel_name ? `${input.activeRequest.hotel_name} (${input.activeRequest.hotel_id})` : "Hotel ID customer request",
+  )
+
+  addUniqueOption(countryOptions, seenCountries, input.defaults.countryId || "", "Country dari form aktif")
+  addUniqueOption(countryOptions, seenCountries, asText(input.requestPayload.countryID), "Country dari hasil test")
+  addUniqueOption(countryOptions, seenCountries, asText(quotePayload.supplier_country_id), "Country supplier dari request")
+
+  addUniqueOption(cityOptions, seenCities, input.defaults.cityId || "", "City dari form aktif")
+  addUniqueOption(cityOptions, seenCities, asText(input.requestPayload.cityID), "City dari hasil test")
+  addUniqueOption(cityOptions, seenCities, asText(quotePayload.supplier_city_id), "City supplier dari request")
+
+  input.mappings.forEach((mapping) => {
+    addUniqueOption(
+      countryOptions,
+      seenCountries,
+      mapping.country_id,
+      `${mapping.country_id}${mapping.country_name ? ` - ${mapping.country_name}` : ""}`,
+    )
+    addUniqueOption(
+      cityOptions,
+      seenCities,
+      mapping.city_id,
+      `${mapping.destination_label || mapping.city_name || mapping.city_id} (${mapping.country_id}/${mapping.city_id})`,
+    )
+  })
+
+  return { hotelOptions, countryOptions, cityOptions }
 }
 
 function formatDateTime(value: string) {
@@ -154,12 +274,14 @@ function Field({
   defaultValue,
   type = "text",
   placeholder,
+  listId,
 }: {
   label: string
   name: string
   defaultValue?: string | number
   type?: string
   placeholder?: string
+  listId?: string
 }) {
   return (
     <label className="block text-sm font-semibold text-slate-700">
@@ -169,6 +291,7 @@ function Field({
         name={name}
         defaultValue={defaultValue}
         placeholder={placeholder}
+        list={listId}
         className="mt-2 h-11 w-full rounded-[10px] border border-[#e8d8ca] bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
       />
     </label>
@@ -238,13 +361,47 @@ function TestCard({
   )
 }
 
-function HotelCoreFields({ defaults = {} }: { defaults?: HotelCoreDefaults }) {
+function HotelCoreDatalists({ ids, options }: { ids: HotelCoreDatalistIds; options: HotelCoreOptionGroups }) {
+  return (
+    <>
+      <datalist id={ids.hotelId}>
+        {options.hotelOptions.map((option) => (
+          <option key={`${option.value}-${option.label}`} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </datalist>
+      <datalist id={ids.countryId}>
+        {options.countryOptions.map((option) => (
+          <option key={`${option.value}-${option.label}`} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </datalist>
+      <datalist id={ids.cityId}>
+        {options.cityOptions.map((option) => (
+          <option key={`${option.value}-${option.label}`} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </datalist>
+    </>
+  )
+}
+
+function HotelCoreFields({
+  defaults = {},
+  datalistIds,
+}: {
+  defaults?: HotelCoreDefaults
+  datalistIds?: HotelCoreDatalistIds
+}) {
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="Hotel ID" name="hotel_id" defaultValue={defaults.hotelId} placeholder="Dari Hotel/Search atau AvailableRooms" />
-        <Field label="Country ID" name="country_id" defaultValue={defaults.countryId} placeholder="Contoh: ID" />
-        <Field label="City ID" name="city_id" defaultValue={defaults.cityId} placeholder="Dari endpoint city" />
+        <Field label="Hotel ID" name="hotel_id" defaultValue={defaults.hotelId} placeholder="Pilih atau ketik Hotel ID" listId={datalistIds?.hotelId} />
+        <Field label="Country ID" name="country_id" defaultValue={defaults.countryId} placeholder="Pilih atau ketik Country ID" listId={datalistIds?.countryId} />
+        <Field label="City ID" name="city_id" defaultValue={defaults.cityId} placeholder="Pilih atau ketik City ID" listId={datalistIds?.cityId} />
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="Check-in" name="checkin_date" type="date" defaultValue={defaults.checkinDate || getDefaultDate(7)} />
@@ -474,26 +631,67 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
   const result = parseResult(params.result)
   const resultTitle = asText(result?.title) || "Belum ada hasil test"
   const resultRows = summarizeResult(result)
+  const requestPayload = asRecord(result?.request)
+  const requestId = params.request_id || asText(result?.requestId)
+  const adminSupabase = createAdminClient()
+  const [{ data: citySearchLogs }, { data: cityMappings }, { data: activeRequest }] = await Promise.all([
+    adminSupabase
+      .from("dharmawisata_hotel_city_search_logs")
+      .select("id, country_id, city_name_filter, status, resp_message, city_count, created_at")
+      .order("created_at", { ascending: false })
+      .limit(8),
+    adminSupabase
+      .from("dharmawisata_hotel_city_mappings")
+      .select("id, destination_key, destination_label, country_id, city_id, country_name, city_name, is_active")
+      .eq("is_active", true)
+      .order("destination_label", { ascending: true }),
+    requestId
+      ? adminSupabase
+          .from("hotel_availability_requests")
+          .select("id, hotel_id, hotel_name, hotel_location, checkin_date, checkout_date, room_count, child_count, quote_payload")
+          .eq("id", requestId)
+          .maybeSingle<HotelAvailabilityRequestHint>()
+      : Promise.resolve({ data: null }),
+  ])
+  const activeRequestHint = (activeRequest || null) as HotelAvailabilityRequestHint | null
+  const activeQuotePayload = asRecord(activeRequestHint?.quote_payload)
   const coreDefaults: HotelCoreDefaults = {
-    requestId: params.request_id || asText(result?.requestId),
-    hotelId: params.hotel_id || "",
-    countryId: params.country_id || "",
-    cityId: params.city_id || "",
-    checkinDate: params.checkin_date || "",
-    checkoutDate: params.checkout_date || "",
-    paxPassport: params.pax_passport || "ID",
-    roomCount: params.room_count || "",
-    childCount: params.child_count || "",
+    requestId,
+    hotelId:
+      params.hotel_id ||
+      asText(requestPayload.hotelID) ||
+      asText(activeQuotePayload.supplier_hotel_id) ||
+      activeRequestHint?.hotel_id ||
+      "",
+    countryId: params.country_id || asText(requestPayload.countryID) || asText(activeQuotePayload.supplier_country_id) || "",
+    cityId: params.city_id || asText(requestPayload.cityID) || asText(activeQuotePayload.supplier_city_id) || "",
+    checkinDate: params.checkin_date || normalizeInputDate(requestPayload.checkInDate) || activeRequestHint?.checkin_date || "",
+    checkoutDate: params.checkout_date || normalizeInputDate(requestPayload.checkOutDate) || activeRequestHint?.checkout_date || "",
+    paxPassport: params.pax_passport || asText(requestPayload.paxPassport) || "ID",
+    roomCount:
+      params.room_count ||
+      getRoomCountFromPayload(requestPayload.roomRequest) ||
+      (activeRequestHint?.room_count ? String(activeRequestHint.room_count) : ""),
+    childCount:
+      params.child_count ||
+      getChildCountFromPayload(requestPayload.roomRequest) ||
+      (typeof activeRequestHint?.child_count === "number" ? String(activeRequestHint.child_count) : ""),
     destinationLabel: params.destination_label || "",
   }
   const hasCityPrefill = Boolean(coreDefaults.countryId && coreDefaults.cityId)
-  const adminSupabase = createAdminClient()
-  const { data: citySearchLogs } = await adminSupabase
-    .from("dharmawisata_hotel_city_search_logs")
-    .select("id, country_id, city_name_filter, status, resp_message, city_count, created_at")
-    .order("created_at", { ascending: false })
-    .limit(8)
   const cityLogs = (citySearchLogs || []) as CitySearchLogRow[]
+  const activeCityMappings = (cityMappings || []) as HotelCityMappingRow[]
+  const datalistIds: HotelCoreDatalistIds = {
+    hotelId: "hotel-diagnostics-hotel-id",
+    countryId: "hotel-diagnostics-country-id",
+    cityId: "hotel-diagnostics-city-id",
+  }
+  const coreOptions = buildHotelCoreOptions({
+    mappings: activeCityMappings,
+    defaults: coreDefaults,
+    requestPayload,
+    activeRequest: activeRequestHint,
+  })
 
   return (
     <AdminProductWorkspace
@@ -508,6 +706,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
       secondaryActionLabel="Buka katalog Hotel"
       preparedModules={["Schema readiness", "Login token", "City ID search", "Available rooms", "Price policy", "Booking payload", "Voucher readiness"]}
     >
+      <HotelCoreDatalists ids={datalistIds} options={coreOptions} />
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_480px]">
         <div className="space-y-5">
           <TestCard
@@ -541,7 +740,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
           >
             <form action={testHotelCitySearch} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-[180px_minmax(0,1fr)]">
-                <Field label="Country ID" name="country_id" defaultValue="ID" placeholder="Contoh: ID" />
+                <Field label="Country ID" name="country_id" defaultValue={coreDefaults.countryId || "ID"} placeholder="Pilih atau ketik Country ID" listId={datalistIds.countryId} />
                 <Field label="Nama kota" name="city_name_filter" defaultValue="Jakarta" placeholder="Jakarta, Bali, Surabaya" />
               </div>
               <div className="flex flex-wrap items-center gap-3">
@@ -568,7 +767,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
                   {coreDefaults.countryId}/{coreDefaults.cityId}. Lengkapi Hotel ID dari hasil Search5 atau direktori sebelum test.
                 </div>
               ) : null}
-              <HotelCoreFields defaults={coreDefaults} />
+              <HotelCoreFields defaults={coreDefaults} datalistIds={datalistIds} />
               <button type="submit" className="rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
                 Test available rooms
               </button>
@@ -581,7 +780,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
             description="Validasi harga final, komisi, cancellation policy, dan flag isEnableBooking sebelum quote dikirim ke customer."
           >
             <form action={testHotelPricePolicy} className="space-y-4">
-              <HotelCoreFields defaults={coreDefaults} />
+              <HotelCoreFields defaults={coreDefaults} datalistIds={datalistIds} />
               <HotelRateFields />
               <button type="submit" className="rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
                 Test price and policy
@@ -596,7 +795,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
             tone="amber"
           >
             <form action={previewHotelBookingPayload} className="space-y-4">
-              <HotelCoreFields defaults={coreDefaults} />
+              <HotelCoreFields defaults={coreDefaults} datalistIds={datalistIds} />
               <HotelRateFields />
               <GuestFields />
               <button type="submit" className="rounded-[12px] bg-amber-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-amber-800">

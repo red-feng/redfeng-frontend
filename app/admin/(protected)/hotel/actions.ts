@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { getOptionalEnv } from "@/lib/env"
 import { getAccessibleInternalProducts, hasInternalProductAccess } from "@/lib/internal-product-access"
+import { autoIssueHotelAfterPayment } from "@/lib/hotels/autoIssue"
 import { getHotelPaymentDeadline } from "@/lib/hotels/paymentDeadline"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
@@ -58,6 +60,12 @@ function getMissingSupplierQuoteFields(input: {
   ]
     .filter(([, value]) => !value)
     .map(([label]) => label)
+}
+
+function isHotelStagingPaymentSimulationAllowed() {
+  const allowed = getOptionalEnv("ALLOW_HOTEL_STAGING_PAYMENT_SIMULATION").toLowerCase() === "true"
+  const baseUrl = getOptionalEnv("DHARMAWISATA_H2H_BASE_URL").toLowerCase()
+  return allowed && baseUrl.includes("uat")
 }
 
 function splitCustomerName(value: string) {
@@ -370,4 +378,71 @@ export async function updateHotelAvailabilityRequestAction(formData: FormData) {
 
   revalidatePath("/admin/hotel")
   redirect(`/admin/hotel?success=${encodeURIComponent("Request hotel diupdate.")}${bookingLink}`)
+}
+
+export async function simulateHotelPaidInStagingAction(formData: FormData) {
+  const bookingId = normalizeText(formData.get("booking_id"))
+  if (!bookingId) redirect("/admin/hotel?error=Booking%20hotel%20tidak%20valid")
+
+  if (!isHotelStagingPaymentSimulationAllowed()) {
+    redirect(
+      `/admin/hotel?error=${encodeURIComponent(
+        "Simulasi paid hotel hanya aktif jika ALLOW_HOTEL_STAGING_PAYMENT_SIMULATION=true dan Dharmawisata base URL memakai UAT.",
+      )}`,
+    )
+  }
+
+  const adminSupabase = await assertHotelAdminAccess()
+  const { data: booking, error: bookingError } = await adminSupabase
+    .from("bookings")
+    .select("id, booking_product_type, payment_status")
+    .eq("id", bookingId)
+    .maybeSingle<{ id: string; booking_product_type: string | null; payment_status: string | null }>()
+
+  if (bookingError || !booking || String(booking.booking_product_type || "").toLowerCase() !== "hotel") {
+    redirect("/admin/hotel?error=Booking%20hotel%20tidak%20ditemukan")
+  }
+
+  if (String(booking.payment_status || "").toLowerCase() === "paid") {
+    redirect("/admin/hotel?error=Booking%20hotel%20sudah%20paid")
+  }
+
+  const { data: hotelDetail } = await adminSupabase
+    .from("hotel_booking_details")
+    .select("lifecycle_status")
+    .eq("booking_id", bookingId)
+    .maybeSingle<{ lifecycle_status: string | null }>()
+
+  const lifecycle = String(hotelDetail?.lifecycle_status || "").toLowerCase()
+  if (!["pending_payment", "quote_ready"].includes(lifecycle)) {
+    redirect(`/admin/hotel?error=${encodeURIComponent("Detail hotel belum siap untuk simulasi paid staging.")}`)
+  }
+
+  const nowIso = new Date().toISOString()
+  await adminSupabase
+    .from("bookings")
+    .update({
+      payment_status: "paid",
+      booking_status: "confirmed",
+      escrow_status: "payment_verified",
+      updated_at: nowIso,
+    })
+    .eq("id", bookingId)
+
+  await adminSupabase
+    .from("hotel_booking_details")
+    .update({
+      lifecycle_status: "payment_verified",
+      updated_at: nowIso,
+    })
+    .eq("booking_id", bookingId)
+
+  const result = await autoIssueHotelAfterPayment(adminSupabase, bookingId)
+  revalidatePath("/admin/hotel")
+
+  if (!result.ok && !result.skipped) {
+    redirect(`/admin/hotel?error=${encodeURIComponent(`Simulasi paid berjalan, tetapi Hotel/Booking gagal: ${result.message}`)}`)
+  }
+
+  redirect(`/admin/hotel?success=${encodeURIComponent("Simulasi paid staging selesai dan Hotel/Booking diproses.")}`)
 }

@@ -1,6 +1,7 @@
 import AdminProductWorkspace from "@/app/components/AdminProductWorkspace"
+import { getOptionalEnv } from "@/lib/env"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { updateHotelAvailabilityRequestAction } from "./actions"
+import { simulateHotelPaidInStagingAction, updateHotelAvailabilityRequestAction } from "./actions"
 
 type HotelAvailabilityRequestRow = {
   id: string
@@ -84,6 +85,27 @@ function buildAvailableRoomsDiagnosticsHref(request: HotelAvailabilityRequestRow
   return `/admin/hotel/diagnostics?${params.toString()}`
 }
 
+function isSupplierQuoteComplete(quotePayload: Record<string, unknown>) {
+  return Boolean(
+    asText(quotePayload.supplier_hotel_id) &&
+      asText(quotePayload.supplier_internal_code) &&
+      asText(quotePayload.supplier_room_id) &&
+      asText(quotePayload.supplier_breakfast_id) &&
+      asText(quotePayload.supplier_country_id) &&
+      asText(quotePayload.supplier_city_id),
+  )
+}
+
+function getRequestChecklist(request: HotelAvailabilityRequestRow, quotePayload: Record<string, unknown>) {
+  return [
+    ["Request customer", true],
+    ["Data supplier lengkap", isSupplierQuoteComplete(quotePayload)],
+    ["Quote total", Number(request.quoted_total_amount || 0) > 0],
+    ["Payment link dibuat", Boolean(request.booking_id)],
+    ["Batas bayar aktif", Boolean(request.quote_expires_at && new Date(request.quote_expires_at).getTime() > Date.now())],
+  ] as const
+}
+
 export default async function AdminHotelWorkspacePage({
   searchParams,
 }: {
@@ -102,6 +124,9 @@ export default async function AdminHotelWorkspacePage({
   const rows = (requests || []) as HotelAvailabilityRequestRow[]
   const pendingCount = rows.filter((row) => ["availability_requested", "checking_supplier"].includes(row.status)).length
   const quoteCount = rows.filter((row) => row.status === "quote_sent").length
+  const stagingSimulationEnabled =
+    getOptionalEnv("ALLOW_HOTEL_STAGING_PAYMENT_SIMULATION").toLowerCase() === "true" &&
+    getOptionalEnv("DHARMAWISATA_H2H_BASE_URL").toLowerCase().includes("uat")
 
   return (
     <AdminProductWorkspace
@@ -139,6 +164,11 @@ export default async function AdminHotelWorkspacePage({
       ) : null}
       {errorMessage ? (
         <div className="rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{decodeURIComponent(errorMessage)}</div>
+      ) : null}
+      {stagingSimulationEnabled ? (
+        <div className="rounded-[16px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
+          Mode staging hotel aktif: tombol simulasi paid akan menandai booking sebagai paid lalu memproses Hotel/Booking ke Dharmawisata UAT.
+        </div>
       ) : null}
 
       <section className="grid gap-4 md:grid-cols-2">
@@ -179,6 +209,7 @@ export default async function AdminHotelWorkspacePage({
               <article key={request.id} className="rounded-[18px] border border-[#f0e6dd] bg-[#fffdfa] p-4">
                 {(() => {
                   const quotePayload = request.quote_payload || {}
+                  const checklist = getRequestChecklist(request, quotePayload)
                   return (
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
                   <div>
@@ -204,8 +235,27 @@ export default async function AdminHotelWorkspacePage({
                           /booking/{request.booking_id}
                         </a>
                         <p className="mt-1 text-xs">Batas bayar: {formatDateTime(request.quote_expires_at)}</p>
+                        {stagingSimulationEnabled ? (
+                          <form action={simulateHotelPaidInStagingAction} className="mt-3">
+                            <input type="hidden" name="booking_id" value={request.booking_id} />
+                            <button type="submit" className="rounded-[10px] border border-amber-300 bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-900 transition hover:bg-amber-200">
+                              Simulasi paid staging
+                            </button>
+                          </form>
+                        ) : null}
                       </div>
                     ) : null}
+                    <div className="mt-4 rounded-[12px] border border-slate-200 bg-white px-3 py-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Checklist test hotel</p>
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        {checklist.map(([label, done]) => (
+                          <div key={label} className="flex items-center gap-2 text-xs text-slate-600">
+                            <span className={`h-2.5 w-2.5 rounded-full ${done ? "bg-emerald-500" : "bg-slate-300"}`} />
+                            <span className={done ? "font-semibold text-slate-800" : ""}>{label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                     <div className="mt-4 flex flex-wrap gap-2">
                       <a href={buildAvailableRoomsDiagnosticsHref(request)} className="rounded-[12px] bg-slate-950 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800">
                         Cek availability Dharmawisata
