@@ -94,6 +94,12 @@ function diagnosticsRedirect(params: Record<string, string>) {
   redirect(`/admin/pesawat/diagnostics?${searchParams.toString()}`)
 }
 
+function rethrowNextRedirect(error: unknown) {
+  const digest =
+    error && typeof error === "object" && "digest" in error ? String((error as { digest?: unknown }).digest || "") : ""
+  if (digest.startsWith("NEXT_REDIRECT")) throw error
+}
+
 async function ensureFlightAdmin() {
   const supabase = await createClient("admin")
   const adminSupabase = createAdminClient()
@@ -244,6 +250,7 @@ export async function testDharmawisataLogin() {
       }),
     })
   } catch (error) {
+    rethrowNextRedirect(error)
     diagnosticsRedirect({
       panel: "login",
       status: "error",
@@ -442,6 +449,7 @@ export async function testDharmawisataSearch(formData: FormData) {
       }),
     })
   } catch (error) {
+    rethrowNextRedirect(error)
     diagnosticsRedirect({
       panel: "search",
       status: "error",

@@ -96,6 +96,12 @@ function diagnosticsRedirect(params: Record<string, string>) {
   redirect(`/admin/hotel/diagnostics?${searchParams.toString()}`)
 }
 
+function rethrowNextRedirect(error: unknown) {
+  const digest =
+    error && typeof error === "object" && "digest" in error ? String((error as { digest?: unknown }).digest || "") : ""
+  if (digest.startsWith("NEXT_REDIRECT")) throw error
+}
+
 function buildResultPayload(value: unknown) {
   return JSON.stringify(value)
 }
@@ -401,6 +407,7 @@ export async function testHotelLogin() {
       }),
     })
   } catch (error) {
+    rethrowNextRedirect(error)
     diagnosticsRedirect({
       panel: "login",
       status: "error",
@@ -476,6 +483,7 @@ export async function testHotelCitySearch(formData: FormData) {
       }),
     })
   } catch (error) {
+    rethrowNextRedirect(error)
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
     await recordHotelCitySearchLog({
       countryID,
@@ -626,6 +634,7 @@ export async function testHotelAvailableRooms(formData: FormData) {
       }),
     })
   } catch (error) {
+    rethrowNextRedirect(error)
     diagnosticsRedirect({
       panel: "available",
       status: "error",
@@ -797,6 +806,7 @@ export async function testHotelPricePolicy(formData: FormData) {
       }),
     })
   } catch (error) {
+    rethrowNextRedirect(error)
     diagnosticsRedirect({
       panel: "price-policy",
       status: "error",
