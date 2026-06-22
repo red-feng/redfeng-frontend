@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { createAndIssueDharmawisataHotelBooking } from "@/lib/hotels/dharmawisataHotelBooking"
+import { createDharmawisataHotelBookingAfterPayment } from "@/lib/hotels/dharmawisataHotelBooking"
 
 type JsonRecord = Record<string, unknown>
 
@@ -103,7 +103,7 @@ export async function autoIssueHotelAfterPayment(supabase: SupabaseClient, booki
   }
 
   const lifecycle = normalizeText(hotelDetail.lifecycle_status).toLowerCase()
-  if (["booking_submitted", "issued"].includes(lifecycle)) {
+  if (["booking_submitted", "booking_confirmed", "issued"].includes(lifecycle)) {
     return { ok: true, skipped: true, message: "Hotel sudah diproses supplier." }
   }
 
@@ -156,7 +156,7 @@ export async function autoIssueHotelAfterPayment(supabase: SupabaseClient, booki
     .eq("booking_id", bookingId)
 
   const guest = splitName(booking.customer_name)
-  const result = await createAndIssueDharmawisataHotelBooking({
+  const result = await createDharmawisataHotelBookingAfterPayment({
     bookingCode: booking.booking_code || booking.id,
     hotelId: hotelDetail.hotel_id,
     countryId: normalizeText(quotePayload.supplier_country_id),
@@ -190,7 +190,7 @@ export async function autoIssueHotelAfterPayment(supabase: SupabaseClient, booki
   await supabase
     .from("hotel_booking_details")
     .update({
-      lifecycle_status: "issued",
+      lifecycle_status: "booking_confirmed",
       reservation_no: result.reservationNo,
       voucher_no: result.voucherNo,
       supplier_booking_status: result.bookingStatus,
@@ -206,7 +206,7 @@ export async function autoIssueHotelAfterPayment(supabase: SupabaseClient, booki
     .update({
       supplier_id: supplierId,
       supplier_booking_reference: result.reservationNo || result.voucherNo,
-      supplier_order_status: "issued",
+      supplier_order_status: "confirmed",
       booking_status: "confirmed",
       updated_at: new Date().toISOString(),
     })
@@ -218,7 +218,7 @@ export async function autoIssueHotelAfterPayment(supabase: SupabaseClient, booki
       .update({
         supplier_order_id: result.reservationNo,
         supplier_reference: result.voucherNo || result.reservationNo,
-        supplier_status: "issued",
+        supplier_status: "confirmed",
         response_payload: result.raw,
         confirmed_at: new Date().toISOString(),
         synced_at: new Date().toISOString(),

@@ -173,7 +173,6 @@ function summarizeEnv() {
     "DHARMAWISATA_H2H_HOTEL_AVAILABLE_ROOMS_PATH",
     "DHARMAWISATA_H2H_HOTEL_PRICE_POLICY_PATH",
     "DHARMAWISATA_H2H_HOTEL_BOOKING_PATH",
-    "DHARMAWISATA_H2H_HOTEL_ISSUE_PATH",
     "DHARMAWISATA_H2H_HOTEL_BOOKING_DETAIL_PATH",
   ]
 
@@ -834,8 +833,9 @@ export async function previewHotelBookingPayload(formData: FormData) {
         missingFields.length > 0
           ? `Payload booking belum lengkap: ${missingFields.join(", ")}.`
           : "Payload booking hotel siap secara struktur. Submit asli hanya dilakukan setelah payment Midtrans sukses.",
-      missingFields,
-      payload,
-    }),
-  })
-}
+        missingFields,
+        payload,
+        hotelBookingNote: "Hotel Dharmawisata langsung payment/confirm saat Hotel/Booking. Endpoint ini hanya boleh dipanggil setelah customer paid.",
+      }),
+    })
+  }

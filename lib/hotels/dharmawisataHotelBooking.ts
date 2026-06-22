@@ -160,28 +160,13 @@ async function fetchBookingDetail(reservationNo: string, accessToken: string) {
   })
 }
 
-async function issueHotelReservation(reservationNo: string, accessToken: string) {
-  const issuePath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_ISSUE_PATH") || "/Hotel/Issued"
-  const credentials = getDharmawisataCredentials()
-
-  return dharmawisataJsonFetch({
-    path: issuePath,
-    method: "POST",
-    body: {
-      reservationNo,
-      userID: credentials.userId,
-      accessToken,
-    },
-  })
-}
-
 function isSuccessResponse(raw: JsonRecord) {
   const status = normalizeText(raw.status).toUpperCase()
   if (status === "FAILED" || status === "ERROR") return false
   return Boolean(pickString(raw, ["reservationNo", "voucherNo"]) || status === "SUCCESS")
 }
 
-export async function createAndIssueDharmawisataHotelBooking(
+export async function createDharmawisataHotelBookingAfterPayment(
   input: DharmawisataHotelBookingInput,
 ): Promise<DharmawisataHotelBookingResult> {
   const bookingPath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_BOOKING_PATH") || "/Hotel/Booking"
@@ -246,23 +231,26 @@ export async function createAndIssueDharmawisataHotelBooking(
     const bookingRaw = asRecord(bookingResponse) || { response: bookingResponse }
     const reservationNo = pickString(bookingRaw, ["reservationNo"])
 
-    let issueRaw: unknown = null
     let detailRaw: unknown = null
     if (reservationNo && isSuccessResponse(bookingRaw)) {
-      issueRaw = await issueHotelReservation(reservationNo, accessToken)
-      detailRaw = await fetchBookingDetail(reservationNo, accessToken)
+      try {
+        detailRaw = await fetchBookingDetail(reservationNo, accessToken)
+      } catch (detailError) {
+        detailRaw = {
+          warning: detailError instanceof Error ? detailError.message : "Hotel booking detail belum bisa dibaca.",
+        }
+      }
     }
 
     const detailRecord = asRecord(detailRaw) || null
-    const issueRecord = asRecord(issueRaw) || null
-    const finalRecord = detailRecord || issueRecord || bookingRaw
-    const ok = isSuccessResponse(finalRecord)
+    const finalRecord = detailRecord && isSuccessResponse(detailRecord) ? detailRecord : bookingRaw
+    const ok = isSuccessResponse(bookingRaw)
 
     return {
       ok,
       skipped: false,
       mode: "api",
-      message: pickString(finalRecord, ["respMessage", "message"]) || (ok ? "Hotel Dharmawisata issued." : "Hotel Dharmawisata belum berhasil issued."),
+      message: pickString(finalRecord, ["respMessage", "message"]) || (ok ? "Hotel Dharmawisata booking confirmed." : "Hotel Dharmawisata booking belum berhasil."),
       reservationNo: pickString(finalRecord, ["reservationNo"]) || reservationNo,
       voucherNo: pickString(finalRecord, ["voucherNo"]),
       bookingStatus: pickString(finalRecord, ["bookingStatus"]),
@@ -270,9 +258,10 @@ export async function createAndIssueDharmawisataHotelBooking(
       issuedTimeLimit: pickString(finalRecord, ["issuedTimeLimit"]),
       raw: {
         bookingMode: "api",
+        hotelBookingFinalAction: "Hotel/Booking",
+        note: "Dharmawisata hotel langsung payment saat Hotel/Booking; Hotel/Issued tidak dipanggil sebagai langkah wajib.",
         request: summarizeRequest(payload),
         bookingResponse: bookingRaw,
-        issueResponse: issueRaw,
         detailResponse: detailRaw,
       },
     }
@@ -292,3 +281,5 @@ export async function createAndIssueDharmawisataHotelBooking(
     }
   }
 }
+
+export const createAndIssueDharmawisataHotelBooking = createDharmawisataHotelBookingAfterPayment

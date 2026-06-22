@@ -40,6 +40,26 @@ function toPositiveInteger(value: unknown, fallback = 0, min = 0) {
   return Math.max(Math.floor(toPositiveNumber(value, fallback)), min)
 }
 
+function getMissingSupplierQuoteFields(input: {
+  supplierHotelId: string
+  supplierInternalCode: string
+  supplierRoomId: string
+  supplierBreakfastId: string
+  supplierCountryId: string
+  supplierCityId: string
+}) {
+  return [
+    ["Hotel ID", input.supplierHotelId],
+    ["Internal code", input.supplierInternalCode],
+    ["Room ID", input.supplierRoomId],
+    ["Breakfast ID", input.supplierBreakfastId],
+    ["Country ID", input.supplierCountryId],
+    ["City ID", input.supplierCityId],
+  ]
+    .filter(([, value]) => !value)
+    .map(([label]) => label)
+}
+
 function splitCustomerName(value: string) {
   const parts = normalizeText(value as unknown as FormDataEntryValue).split(" ").filter(Boolean)
   return {
@@ -283,6 +303,29 @@ export async function updateHotelAvailabilityRequestAction(formData: FormData) {
     redirect("/admin/hotel?error=Quote%20hotel%20tidak%20valid")
   }
 
+  if (status === "quote_sent") {
+    if (!quotedTotalAmount || quotedTotalAmount <= 0) {
+      redirect("/admin/hotel?error=Quote%20total%20wajib%20diisi%20sebelum%20payment%20hotel%20dibuka")
+    }
+
+    const missingSupplierFields = getMissingSupplierQuoteFields({
+      supplierHotelId,
+      supplierInternalCode,
+      supplierRoomId,
+      supplierBreakfastId,
+      supplierCountryId,
+      supplierCityId,
+    })
+
+    if (missingSupplierFields.length > 0) {
+      redirect(
+        `/admin/hotel?error=${encodeURIComponent(
+          `Data supplier wajib lengkap sebelum payment hotel dibuka: ${missingSupplierFields.join(", ")}.`,
+        )}`,
+      )
+    }
+  }
+
   const adminSupabase = await assertHotelAdminAccess()
   const nowIso = new Date().toISOString()
   const { error } = await adminSupabase
@@ -311,14 +354,11 @@ export async function updateHotelAvailabilityRequestAction(formData: FormData) {
 
   let bookingLink = ""
   if (status === "quote_sent") {
-    if (!quotedTotalAmount || quotedTotalAmount <= 0) {
-      redirect("/admin/hotel?error=Quote%20total%20wajib%20diisi%20sebelum%20payment%20hotel%20dibuka")
-    }
-
+    const finalQuotedTotalAmount = Number(quotedTotalAmount || 0)
     const bookingResult = await createHotelBookingFromQuote({
       adminSupabase,
       requestId,
-      quotedTotalAmount,
+      quotedTotalAmount: finalQuotedTotalAmount,
     })
 
     if (!bookingResult.ok || !bookingResult.bookingId) {
