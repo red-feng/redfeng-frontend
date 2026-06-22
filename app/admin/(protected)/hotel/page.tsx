@@ -89,8 +89,8 @@ export default async function AdminHotelWorkspacePage({
       statusNote="Admin validasi availability/rate plan, kirim quote, lalu sistem membuat booking hotel dan membuka payment Midtrans berbatas waktu."
       primaryActionHref="/hotel/catalog"
       primaryActionLabel="Buka katalog Hotel"
-      secondaryActionHref="/admin/dashboard"
-      secondaryActionLabel="Kembali ke dashboard admin"
+      secondaryActionHref="/admin/hotel/diagnostics"
+      secondaryActionLabel="Buka diagnostics hotel"
       preparedModules={["Availability request", "Supplier check", "Quote payment link", "Auto booking after paid"]}
     >
       <section className="grid gap-4 md:grid-cols-3">
