@@ -460,7 +460,7 @@ function HotelCoreFields({
           name="pax_passport"
           defaultValue={defaults.paxPassport || "ID"}
           options={[
-            ["ID", "KTP / WNI (ID)"],
+            ["ID", "ID"],
             ["PASSPORT", "Paspor"],
           ]}
         />
