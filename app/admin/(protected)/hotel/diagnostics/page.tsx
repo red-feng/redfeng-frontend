@@ -6,6 +6,7 @@ import {
   checkHotelSchemaReadiness,
   previewHotelBookingPayload,
   saveHotelCityMappingFromDiagnostics,
+  saveHotelSupplierRateFromDiagnostics,
   testHotelAvailableRooms,
   testHotelCitySearch,
   testHotelLogin,
@@ -16,6 +17,7 @@ type SearchParams = Promise<{
   panel?: string
   status?: string
   result?: string
+  request_id?: string
   hotel_id?: string
   country_id?: string
   city_id?: string
@@ -40,6 +42,7 @@ type CitySearchLogRow = {
 }
 
 type HotelCoreDefaults = {
+  requestId?: string
   hotelId?: string
   countryId?: string
   cityId?: string
@@ -104,6 +107,25 @@ function getCityCandidates(result: ResultRecord | null) {
       }
     })
     .filter((city) => city.name && city.id && city.countryId)
+}
+
+function getHotelRateCandidates(result: ResultRecord | null) {
+  const candidates = Array.isArray(result?.rateCandidates) ? result.rateCandidates : []
+  return candidates
+    .map((candidate) => {
+      const row = asRecord(candidate)
+      return {
+        internalCode: asText(row.internalCode),
+        roomId: asText(row.roomId),
+        breakfastId: asText(row.breakfastId),
+        roomName: asText(row.roomName),
+        rateName: asText(row.rateName),
+        totalPrice: asText(row.totalPrice),
+        currency: asText(row.currency) || "IDR",
+        cancellationPolicy: asText(row.cancellationPolicy),
+      }
+    })
+    .filter((candidate) => candidate.internalCode || candidate.roomId || candidate.breakfastId)
 }
 
 function getStatusClasses(status?: string) {
@@ -318,6 +340,72 @@ function CityMappingCandidates({ result }: { result: ResultRecord | null }) {
   )
 }
 
+function SupplierRateCandidates({ result, requestId }: { result: ResultRecord | null; requestId: string }) {
+  const candidates = getHotelRateCandidates(result)
+  if (candidates.length === 0) return null
+
+  const requestPayload = asRecord(result?.request)
+  const supplierHotelId = asText(requestPayload.hotelID)
+  const supplierCountryId = asText(requestPayload.countryID)
+  const supplierCityId = asText(requestPayload.cityID)
+
+  return (
+    <section className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-slate-950">Kandidat Rate AvailableRooms</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            Simpan salah satu kandidat ke request customer agar field supplier di admin hotel terisi otomatis.
+          </p>
+        </div>
+        <Link href="/admin/hotel" className="rounded-[10px] border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 transition hover:bg-orange-100">
+          Queue hotel
+        </Link>
+      </div>
+      <div className="mt-4 space-y-3">
+        {candidates.map((candidate, index) => {
+          const canSave = Boolean(requestId && supplierHotelId && supplierCountryId && supplierCityId && candidate.internalCode && candidate.roomId && candidate.breakfastId)
+          return (
+            <form key={`${candidate.internalCode}-${candidate.roomId}-${candidate.breakfastId}-${index}`} action={saveHotelSupplierRateFromDiagnostics} className="rounded-[14px] border border-slate-200 bg-slate-50 p-3">
+              <input type="hidden" name="request_id" value={requestId} />
+              <input type="hidden" name="supplier_hotel_id" value={supplierHotelId} />
+              <input type="hidden" name="supplier_country_id" value={supplierCountryId} />
+              <input type="hidden" name="supplier_city_id" value={supplierCityId} />
+              <input type="hidden" name="supplier_internal_code" value={candidate.internalCode} />
+              <input type="hidden" name="supplier_room_id" value={candidate.roomId} />
+              <input type="hidden" name="supplier_breakfast_id" value={candidate.breakfastId} />
+              <input type="hidden" name="quoted_total_amount" value={candidate.totalPrice} />
+              <input type="hidden" name="room_name" value={candidate.roomName} />
+              <input type="hidden" name="rate_name" value={candidate.rateName} />
+              <input type="hidden" name="cancellation_policy" value={candidate.cancellationPolicy} />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-950">{candidate.roomName || candidate.rateName || `Rate ${index + 1}`}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Internal {candidate.internalCode || "-"} | Room {candidate.roomId || "-"} | Breakfast {candidate.breakfastId || "-"}
+                  </p>
+                  {candidate.totalPrice ? (
+                    <p className="mt-1 text-xs font-semibold text-orange-700">
+                      {candidate.currency} {Number(candidate.totalPrice).toLocaleString("id-ID")}
+                    </p>
+                  ) : null}
+                </div>
+                <button
+                  type="submit"
+                  disabled={!canSave}
+                  className="rounded-[12px] bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                >
+                  {requestId ? "Simpan ke request" : "Butuh request"}
+                </button>
+              </div>
+            </form>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
 function CitySearchHistory({ logs }: { logs: CitySearchLogRow[] }) {
   return (
     <section className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
@@ -387,6 +475,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
   const resultTitle = asText(result?.title) || "Belum ada hasil test"
   const resultRows = summarizeResult(result)
   const coreDefaults: HotelCoreDefaults = {
+    requestId: params.request_id || asText(result?.requestId),
     hotelId: params.hotel_id || "",
     countryId: params.country_id || "",
     cityId: params.city_id || "",
@@ -472,6 +561,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
             description="Cek kamar tersedia berdasarkan Hotel ID, tanggal stay, jumlah kamar, dan komposisi anak. Test ini read-only."
           >
             <form action={testHotelAvailableRooms} className="space-y-4">
+              <input type="hidden" name="request_id" value={coreDefaults.requestId || ""} />
               {hasCityPrefill ? (
                 <div className="rounded-[14px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800">
                   Mapping kota aktif terisi: {coreDefaults.destinationLabel ? `${coreDefaults.destinationLabel} - ` : ""}
@@ -554,6 +644,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
           </section>
 
           <CityMappingCandidates result={result} />
+          <SupplierRateCandidates result={result} requestId={coreDefaults.requestId || ""} />
           <CitySearchHistory logs={cityLogs} />
 
           <section className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">

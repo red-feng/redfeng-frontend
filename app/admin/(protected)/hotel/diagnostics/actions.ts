@@ -15,6 +15,17 @@ import { createClient } from "@/lib/supabase/server"
 
 type JsonRecord = Record<string, unknown>
 
+type HotelRateCandidate = {
+  internalCode: string
+  roomId: string
+  breakfastId: string
+  roomName: string
+  rateName: string
+  totalPrice: number | null
+  currency: string
+  cancellationPolicy: string
+}
+
 const HOTEL_SCHEMA_REQUIRED_COLUMNS = [
   ["bookings", "booking_product_type"],
   ["bookings", "fulfillment_mode"],
@@ -61,6 +72,23 @@ function asDateTime(value: unknown) {
 
 function asRecord(value: unknown): JsonRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : {}
+}
+
+function firstString(record: JsonRecord, keys: string[]) {
+  for (const key of keys) {
+    const value = asString(record[key])
+    if (value) return value
+  }
+  return ""
+}
+
+function firstNumber(record: JsonRecord, keys: string[]) {
+  for (const key of keys) {
+    const value = record[key]
+    const parsed = typeof value === "number" ? value : Number(asString(value).replace(/[^\d.-]/g, ""))
+    if (Number.isFinite(parsed)) return parsed
+  }
+  return null
 }
 
 function diagnosticsRedirect(params: Record<string, string>) {
@@ -237,6 +265,54 @@ function summarizeHotelResponse(value: unknown) {
     voucherNo: asString(body.voucherNo),
     bookingStatus: asString(body.bookingStatus),
   }
+}
+
+function collectHotelRateCandidates(
+  value: unknown,
+  inherited: Partial<HotelRateCandidate> = {},
+  candidates: HotelRateCandidate[] = [],
+  depth = 0,
+) {
+  if (depth > 6 || candidates.length >= 12) return candidates
+
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectHotelRateCandidates(item, inherited, candidates, depth + 1))
+    return candidates
+  }
+
+  const record = asRecord(value)
+  if (Object.keys(record).length === 0) return candidates
+
+  const next: Partial<HotelRateCandidate> = {
+    internalCode: firstString(record, ["internalCode", "InternalCode", "internal_code"]) || inherited.internalCode || "",
+    roomId: firstString(record, ["roomID", "roomId", "RoomID", "room_id"]) || inherited.roomId || "",
+    breakfastId: firstString(record, ["breakfast", "breakfastID", "breakfastId", "Breakfast", "BreakfastID", "breakfast_id"]) || inherited.breakfastId || "",
+    roomName: firstString(record, ["roomName", "RoomName", "roomTypeName", "RoomTypeName", "name", "Name"]) || inherited.roomName || "",
+    rateName: firstString(record, ["rateName", "RateName", "ratePlanName", "RatePlanName", "boardName", "BoardName"]) || inherited.rateName || "",
+    totalPrice: firstNumber(record, ["totalPrice", "TotalPrice", "price", "Price", "sellPrice", "SellPrice", "amount", "Amount"]) ?? inherited.totalPrice ?? null,
+    currency: firstString(record, ["currency", "Currency"]) || inherited.currency || "IDR",
+    cancellationPolicy: firstString(record, ["cancellationPolicy", "CancellationPolicy", "policy", "Policy"]) || inherited.cancellationPolicy || "",
+  }
+
+  if (next.internalCode || next.roomId || next.breakfastId) {
+    const candidate = {
+      internalCode: next.internalCode || "",
+      roomId: next.roomId || "",
+      breakfastId: next.breakfastId || "",
+      roomName: next.roomName || "",
+      rateName: next.rateName || "",
+      totalPrice: next.totalPrice ?? null,
+      currency: next.currency || "IDR",
+      cancellationPolicy: next.cancellationPolicy || "",
+    }
+    const key = `${candidate.internalCode}|${candidate.roomId}|${candidate.breakfastId}`
+    if (!candidates.some((item) => `${item.internalCode}|${item.roomId}|${item.breakfastId}` === key)) {
+      candidates.push(candidate)
+    }
+  }
+
+  Object.values(record).forEach((item) => collectHotelRateCandidates(item, next, candidates, depth + 1))
+  return candidates
 }
 
 export async function checkHotelSchemaReadiness() {
@@ -496,6 +572,7 @@ export async function saveHotelCityMappingFromDiagnostics(formData: FormData) {
 export async function testHotelAvailableRooms(formData: FormData) {
   await ensureHotelAdmin()
   const startedAt = Date.now()
+  const requestId = asString(formData.get("request_id"))
 
   try {
     const auth = await dharmawisataLogin({ language: 1 })
@@ -508,8 +585,10 @@ export async function testHotelAvailableRooms(formData: FormData) {
       diagnosticsRedirect({
         panel: "available",
         status: "error",
+        ...(requestId ? { request_id: requestId } : {}),
         result: buildResultPayload({
           title: "Payload AvailableRooms belum lengkap",
+          requestId,
           missingFields,
         }),
       })
@@ -531,14 +610,18 @@ export async function testHotelAvailableRooms(formData: FormData) {
       },
     })
     const summary = summarizeHotelResponse(response)
+    const rateCandidates = collectHotelRateCandidates(response).slice(0, 8)
 
     diagnosticsRedirect({
       panel: "available",
       status: String(summary.status).toUpperCase() === "SUCCESS" ? "success" : "warning",
+      ...(requestId ? { request_id: requestId } : {}),
       result: buildResultPayload({
         title: "AvailableRooms hotel selesai",
         elapsedMs: Date.now() - startedAt,
+        requestId,
         request: { ...payload, accessToken: "present-redacted" },
+        rateCandidates,
         ...summary,
       }),
     })
@@ -546,13 +629,119 @@ export async function testHotelAvailableRooms(formData: FormData) {
     diagnosticsRedirect({
       panel: "available",
       status: "error",
+      ...(requestId ? { request_id: requestId } : {}),
       result: buildResultPayload({
         title: "AvailableRooms hotel gagal",
         elapsedMs: Date.now() - startedAt,
+        requestId,
         error: error instanceof Error ? error.message : "Unknown error",
       }),
     })
   }
+}
+
+export async function saveHotelSupplierRateFromDiagnostics(formData: FormData) {
+  await ensureHotelAdmin()
+  const requestId = asString(formData.get("request_id"))
+  const supplierHotelId = asString(formData.get("supplier_hotel_id"))
+  const supplierInternalCode = asString(formData.get("supplier_internal_code"))
+  const supplierRoomId = asString(formData.get("supplier_room_id"))
+  const supplierBreakfastId = asString(formData.get("supplier_breakfast_id"))
+  const supplierCountryId = asString(formData.get("supplier_country_id"))
+  const supplierCityId = asString(formData.get("supplier_city_id"))
+  const quotedTotalAmount = asNumber(formData.get("quoted_total_amount"), 0)
+  const roomName = asString(formData.get("room_name"))
+  const rateName = asString(formData.get("rate_name"))
+  const cancellationPolicy = asString(formData.get("cancellation_policy"))
+
+  if (!requestId || !supplierHotelId || !supplierInternalCode || !supplierRoomId || !supplierBreakfastId || !supplierCountryId || !supplierCityId) {
+    diagnosticsRedirect({
+      panel: "available",
+      status: "error",
+      ...(requestId ? { request_id: requestId } : {}),
+      result: buildResultPayload({
+        title: "Rate supplier belum bisa disimpan",
+        requestId,
+        error: "Request ID, hotel ID, countryID, cityID, internalCode, roomID, dan breakfast wajib tersedia.",
+      }),
+    })
+    return
+  }
+
+  const adminSupabase = createAdminClient()
+  const { data: request, error: requestError } = await adminSupabase
+    .from("hotel_availability_requests")
+    .select("quote_payload")
+    .eq("id", requestId)
+    .maybeSingle<{ quote_payload: JsonRecord | null }>()
+
+  if (requestError || !request) {
+    diagnosticsRedirect({
+      panel: "available",
+      status: "error",
+      request_id: requestId,
+      result: buildResultPayload({
+        title: "Request hotel tidak ditemukan",
+        requestId,
+        error: requestError?.message || "Request hotel tidak ditemukan.",
+      }),
+    })
+    return
+  }
+
+  const existingQuotePayload = asRecord(request.quote_payload)
+  const nowIso = new Date().toISOString()
+  const nextQuotePayload = {
+    ...existingQuotePayload,
+    supplier_hotel_id: supplierHotelId,
+    supplier_internal_code: supplierInternalCode,
+    supplier_room_id: supplierRoomId,
+    supplier_breakfast_id: supplierBreakfastId,
+    supplier_country_id: supplierCountryId,
+    supplier_city_id: supplierCityId,
+    room_name: roomName || existingQuotePayload.room_name || null,
+    rate_name: rateName || existingQuotePayload.rate_name || null,
+    cancellation_policy: cancellationPolicy || existingQuotePayload.cancellation_policy || null,
+    quoted_total_amount: quotedTotalAmount > 0 ? quotedTotalAmount : existingQuotePayload.quoted_total_amount || null,
+    supplier_rate_saved_at: nowIso,
+    supplier_rate_source: "hotel_diagnostics_available_rooms",
+    updated_at: nowIso,
+  }
+
+  const updatePayload: {
+    status: string
+    quote_payload: JsonRecord
+    updated_at: string
+    quoted_total_amount?: number
+  } = {
+    status: "available",
+    quote_payload: nextQuotePayload,
+    updated_at: nowIso,
+  }
+
+  if (quotedTotalAmount > 0) {
+    updatePayload.quoted_total_amount = quotedTotalAmount
+  }
+
+  const { error } = await adminSupabase
+    .from("hotel_availability_requests")
+    .update(updatePayload)
+    .eq("id", requestId)
+
+  if (error) {
+    diagnosticsRedirect({
+      panel: "available",
+      status: "error",
+      request_id: requestId,
+      result: buildResultPayload({
+        title: "Rate supplier gagal disimpan",
+        requestId,
+        error: error.message || "Database menolak update rate supplier.",
+      }),
+    })
+  }
+
+  redirect(`/admin/hotel?success=${encodeURIComponent("Rate supplier hotel disimpan dari AvailableRooms.")}`)
 }
 
 export async function testHotelPricePolicy(formData: FormData) {
