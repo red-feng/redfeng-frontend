@@ -77,6 +77,12 @@ type HotelCoreDefaults = {
   destinationLabel?: string
 }
 
+type HotelRateDefaults = {
+  internalCode?: string
+  roomId?: string
+  breakfastId?: string
+}
+
 type HotelOption = {
   value: string
   label: string
@@ -88,10 +94,22 @@ type HotelCoreDatalistIds = {
   cityId: string
 }
 
+type HotelRateDatalistIds = {
+  internalCode: string
+  roomId: string
+  breakfastId: string
+}
+
 type HotelCoreOptionGroups = {
   hotelOptions: HotelOption[]
   countryOptions: HotelOption[]
   cityOptions: HotelOption[]
+}
+
+type HotelRateOptionGroups = {
+  internalCodeOptions: HotelOption[]
+  roomOptions: HotelOption[]
+  breakfastOptions: HotelOption[]
 }
 
 function getDefaultDate(offsetDays: number) {
@@ -198,6 +216,37 @@ function buildHotelCoreOptions(input: {
   })
 
   return { hotelOptions, countryOptions, cityOptions }
+}
+
+function buildHotelRateOptions(input: {
+  defaults: HotelRateDefaults
+  result: ResultRecord | null
+  activeRequest: HotelAvailabilityRequestHint | null
+}) {
+  const internalCodeOptions: HotelOption[] = []
+  const roomOptions: HotelOption[] = []
+  const breakfastOptions: HotelOption[] = []
+  const seenInternalCodes = new Set<string>()
+  const seenRooms = new Set<string>()
+  const seenBreakfasts = new Set<string>()
+  const quotePayload = asRecord(input.activeRequest?.quote_payload)
+  const rateCandidates = getHotelRateCandidates(input.result)
+
+  addUniqueOption(internalCodeOptions, seenInternalCodes, input.defaults.internalCode || "", "Internal code dari form aktif")
+  addUniqueOption(internalCodeOptions, seenInternalCodes, asText(quotePayload.supplier_internal_code), "Internal code supplier dari request")
+  addUniqueOption(roomOptions, seenRooms, input.defaults.roomId || "", "Room ID dari form aktif")
+  addUniqueOption(roomOptions, seenRooms, asText(quotePayload.supplier_room_id), "Room ID supplier dari request")
+  addUniqueOption(breakfastOptions, seenBreakfasts, input.defaults.breakfastId || "", "Breakfast ID dari form aktif")
+  addUniqueOption(breakfastOptions, seenBreakfasts, asText(quotePayload.supplier_breakfast_id), "Breakfast ID supplier dari request")
+
+  rateCandidates.forEach((candidate) => {
+    const label = [candidate.roomName, candidate.rateName].filter(Boolean).join(" - ") || "Kandidat AvailableRooms"
+    addUniqueOption(internalCodeOptions, seenInternalCodes, candidate.internalCode, label)
+    addUniqueOption(roomOptions, seenRooms, candidate.roomId, label)
+    addUniqueOption(breakfastOptions, seenBreakfasts, candidate.breakfastId, label)
+  })
+
+  return { internalCodeOptions, roomOptions, breakfastOptions }
 }
 
 function formatDateTime(value: string) {
@@ -406,7 +455,15 @@ function HotelCoreFields({
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="Check-in" name="checkin_date" type="date" defaultValue={defaults.checkinDate || getDefaultDate(7)} />
         <Field label="Check-out" name="checkout_date" type="date" defaultValue={defaults.checkoutDate || getDefaultDate(8)} />
-        <Field label="Passport" name="pax_passport" defaultValue={defaults.paxPassport || "ID"} />
+        <SelectField
+          label="Identitas tamu"
+          name="pax_passport"
+          defaultValue={defaults.paxPassport || "ID"}
+          options={[
+            ["ID", "KTP / WNI (ID)"],
+            ["PASSPORT", "Paspor"],
+          ]}
+        />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Jumlah kamar" name="room_count" type="number" defaultValue={defaults.roomCount || 1} />
@@ -416,12 +473,46 @@ function HotelCoreFields({
   )
 }
 
-function HotelRateFields() {
+function HotelRateDatalists({ ids, options }: { ids: HotelRateDatalistIds; options: HotelRateOptionGroups }) {
+  return (
+    <>
+      <datalist id={ids.internalCode}>
+        {options.internalCodeOptions.map((option) => (
+          <option key={`${option.value}-${option.label}`} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </datalist>
+      <datalist id={ids.roomId}>
+        {options.roomOptions.map((option) => (
+          <option key={`${option.value}-${option.label}`} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </datalist>
+      <datalist id={ids.breakfastId}>
+        {options.breakfastOptions.map((option) => (
+          <option key={`${option.value}-${option.label}`} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </datalist>
+    </>
+  )
+}
+
+function HotelRateFields({
+  defaults = {},
+  datalistIds,
+}: {
+  defaults?: HotelRateDefaults
+  datalistIds?: HotelRateDatalistIds
+}) {
   return (
     <div className="grid gap-4 sm:grid-cols-3">
-      <Field label="Internal code" name="internal_code" placeholder="Dari room/rate supplier" />
-      <Field label="Room ID" name="room_id" placeholder="Dari room/rate supplier" />
-      <Field label="Breakfast ID" name="breakfast_id" placeholder="Dari room/rate supplier" />
+      <Field label="Internal code" name="internal_code" defaultValue={defaults.internalCode} placeholder="Pilih atau ketik internal code" listId={datalistIds?.internalCode} />
+      <Field label="Room ID" name="room_id" defaultValue={defaults.roomId} placeholder="Pilih atau ketik Room ID" listId={datalistIds?.roomId} />
+      <Field label="Breakfast ID" name="breakfast_id" defaultValue={defaults.breakfastId} placeholder="Pilih atau ketik Breakfast ID" listId={datalistIds?.breakfastId} />
     </div>
   )
 }
@@ -678,6 +769,11 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
       (typeof activeRequestHint?.child_count === "number" ? String(activeRequestHint.child_count) : ""),
     destinationLabel: params.destination_label || "",
   }
+  const rateDefaults: HotelRateDefaults = {
+    internalCode: asText(requestPayload.internalCode) || asText(activeQuotePayload.supplier_internal_code),
+    roomId: asText(requestPayload.roomID) || asText(activeQuotePayload.supplier_room_id),
+    breakfastId: asText(requestPayload.breakfast) || asText(activeQuotePayload.supplier_breakfast_id),
+  }
   const hasCityPrefill = Boolean(coreDefaults.countryId && coreDefaults.cityId)
   const cityLogs = (citySearchLogs || []) as CitySearchLogRow[]
   const activeCityMappings = (cityMappings || []) as HotelCityMappingRow[]
@@ -686,10 +782,20 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
     countryId: "hotel-diagnostics-country-id",
     cityId: "hotel-diagnostics-city-id",
   }
+  const rateDatalistIds: HotelRateDatalistIds = {
+    internalCode: "hotel-diagnostics-internal-code",
+    roomId: "hotel-diagnostics-room-id",
+    breakfastId: "hotel-diagnostics-breakfast-id",
+  }
   const coreOptions = buildHotelCoreOptions({
     mappings: activeCityMappings,
     defaults: coreDefaults,
     requestPayload,
+    activeRequest: activeRequestHint,
+  })
+  const rateOptions = buildHotelRateOptions({
+    defaults: rateDefaults,
+    result,
     activeRequest: activeRequestHint,
   })
 
@@ -707,6 +813,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
       preparedModules={["Schema readiness", "Login token", "City ID search", "Available rooms", "Price policy", "Booking payload", "Voucher readiness"]}
     >
       <HotelCoreDatalists ids={datalistIds} options={coreOptions} />
+      <HotelRateDatalists ids={rateDatalistIds} options={rateOptions} />
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_480px]">
         <div className="space-y-5">
           <TestCard
@@ -781,7 +888,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
           >
             <form action={testHotelPricePolicy} className="space-y-4">
               <HotelCoreFields defaults={coreDefaults} datalistIds={datalistIds} />
-              <HotelRateFields />
+              <HotelRateFields defaults={rateDefaults} datalistIds={rateDatalistIds} />
               <button type="submit" className="rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
                 Test price and policy
               </button>
@@ -796,7 +903,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
           >
             <form action={previewHotelBookingPayload} className="space-y-4">
               <HotelCoreFields defaults={coreDefaults} datalistIds={datalistIds} />
-              <HotelRateFields />
+              <HotelRateFields defaults={rateDefaults} datalistIds={rateDatalistIds} />
               <GuestFields />
               <button type="submit" className="rounded-[12px] bg-amber-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-amber-800">
                 Preview payload booking
