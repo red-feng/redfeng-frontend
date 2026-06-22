@@ -80,6 +80,29 @@ function normalizeDestinationKey(value: string) {
     .replace(/^-+|-+$/g, "")
 }
 
+async function recordHotelCitySearchLog(input: {
+  countryID: string
+  cityNameFilter: string
+  status?: string
+  respMessage?: string
+  cityCount?: number
+  responsePayload?: unknown
+}) {
+  try {
+    const adminSupabase = createAdminClient()
+    await adminSupabase.from("dharmawisata_hotel_city_search_logs").insert({
+      country_id: input.countryID,
+      city_name_filter: input.cityNameFilter,
+      status: input.status || null,
+      resp_message: input.respMessage || null,
+      city_count: Math.max(Math.floor(input.cityCount || 0), 0),
+      response_payload: input.responsePayload || {},
+    })
+  } catch {
+    // Diagnostics must still work before the optional search-log migration is applied.
+  }
+}
+
 function isMissingSchemaObjectError(error: { message?: string | null; code?: string | null } | null | undefined) {
   const message = String(error?.message || "").toLowerCase()
   const code = String(error?.code || "").toLowerCase()
@@ -350,6 +373,17 @@ export async function testHotelCitySearch(formData: FormData) {
     })
     const body = asRecord(response)
     const cities = Array.isArray(body.cities) ? body.cities : []
+    const responseStatus = asString(body.status)
+    const responseMessage = asString(body.respMessage) || (cities.length > 0 ? "Gunakan ID kota ini di Hotel City Mapping." : "Coba keyword kota yang lebih spesifik.")
+
+    await recordHotelCitySearchLog({
+      countryID,
+      cityNameFilter,
+      status: responseStatus,
+      respMessage: responseMessage,
+      cityCount: cities.length,
+      responsePayload: body,
+    })
 
     diagnosticsRedirect({
       panel: "city",
@@ -357,8 +391,8 @@ export async function testHotelCitySearch(formData: FormData) {
       result: buildResultPayload({
         title: cities.length > 0 ? "City ID Dharmawisata ditemukan" : "City ID belum ditemukan",
         elapsedMs: Date.now() - startedAt,
-        status: asString(body.status),
-        respMessage: asString(body.respMessage) || (cities.length > 0 ? "Gunakan ID kota ini di Hotel City Mapping." : "Coba keyword kota yang lebih spesifik."),
+        status: responseStatus,
+        respMessage: responseMessage,
         countryID,
         cityNameFilter,
         cityCount: cities.length,
@@ -366,13 +400,24 @@ export async function testHotelCitySearch(formData: FormData) {
       }),
     })
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    await recordHotelCitySearchLog({
+      countryID,
+      cityNameFilter,
+      status: "ERROR",
+      respMessage: errorMessage,
+      cityCount: 0,
+      responsePayload: {
+        error: errorMessage,
+      },
+    })
     diagnosticsRedirect({
       panel: "city",
       status: "error",
       result: buildResultPayload({
         title: "Pencarian City ID Dharmawisata gagal",
         elapsedMs: Date.now() - startedAt,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: errorMessage,
         countryID,
         cityNameFilter,
       }),

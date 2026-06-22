@@ -1,6 +1,7 @@
 import Link from "next/link"
 import type { ReactNode } from "react"
 import AdminProductWorkspace from "@/app/components/AdminProductWorkspace"
+import { createAdminClient } from "@/lib/supabase/admin"
 import {
   checkHotelSchemaReadiness,
   previewHotelBookingPayload,
@@ -18,6 +19,16 @@ type SearchParams = Promise<{
 }>
 
 type ResultRecord = Record<string, unknown>
+
+type CitySearchLogRow = {
+  id: string
+  country_id: string
+  city_name_filter: string
+  status: string | null
+  resp_message: string | null
+  city_count: number
+  created_at: string
+}
 
 function getDefaultDate(offsetDays: number) {
   const date = new Date()
@@ -43,6 +54,18 @@ function asText(value: unknown) {
 
 function asRecord(value: unknown): ResultRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as ResultRecord) : {}
+}
+
+function formatDateTime(value: string) {
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return "-"
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(parsed)
 }
 
 function getCityCandidates(result: ResultRecord | null) {
@@ -274,12 +297,81 @@ function CityMappingCandidates({ result }: { result: ResultRecord | null }) {
   )
 }
 
+function CitySearchHistory({ logs }: { logs: CitySearchLogRow[] }) {
+  return (
+    <section className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-slate-950">Riwayat pencarian City5</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            Menyimpan pencarian kota terakhir agar admin bisa mengulang atau membandingkan kandidat cityID.
+          </p>
+        </div>
+        <Link href="/admin/hotel/city-mapping" className="rounded-[10px] border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 transition hover:bg-orange-100">
+          City mapping
+        </Link>
+      </div>
+
+      {logs.length === 0 ? (
+        <div className="mt-4 rounded-[14px] border border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+          Belum ada riwayat pencarian City5, atau migration log belum dijalankan.
+        </div>
+      ) : (
+        <div className="mt-4 space-y-3">
+          {logs.map((log) => (
+            <div key={log.id} className="rounded-[14px] border border-slate-200 bg-slate-50 p-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-950">{log.city_name_filter}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Country {log.country_id} | {log.city_count} kandidat | {formatDateTime(log.created_at)}
+                  </p>
+                  {log.resp_message ? <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{log.resp_message}</p> : null}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    href={`/admin/hotel/diagnostics?panel=city&status=warning&result=${encodeURIComponent(JSON.stringify({
+                      title: "Riwayat pencarian City5",
+                      status: log.status || "",
+                      respMessage: log.resp_message || "Gunakan keyword ini untuk pencarian ulang.",
+                      cityNameFilter: log.city_name_filter,
+                      countryID: log.country_id,
+                      cityCount: log.city_count,
+                    }))}`}
+                    className="rounded-[10px] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                  >
+                    Lihat ringkas
+                  </Link>
+                  <form action={testHotelCitySearch}>
+                    <input type="hidden" name="country_id" value={log.country_id} />
+                    <input type="hidden" name="city_name_filter" value={log.city_name_filter} />
+                    <button type="submit" className="rounded-[10px] bg-orange-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-orange-700">
+                      Cari ulang
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
 export default async function AdminHotelDiagnosticsPage({ searchParams }: { searchParams?: SearchParams }) {
   const params = (await searchParams) || {}
   const activePanel = params.panel || "schema"
   const result = parseResult(params.result)
   const resultTitle = asText(result?.title) || "Belum ada hasil test"
   const resultRows = summarizeResult(result)
+  const adminSupabase = createAdminClient()
+  const { data: citySearchLogs } = await adminSupabase
+    .from("dharmawisata_hotel_city_search_logs")
+    .select("id, country_id, city_name_filter, status, resp_message, city_count, created_at")
+    .order("created_at", { ascending: false })
+    .limit(8)
+  const cityLogs = (citySearchLogs || []) as CitySearchLogRow[]
 
   return (
     <AdminProductWorkspace
@@ -423,6 +515,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
           </section>
 
           <CityMappingCandidates result={result} />
+          <CitySearchHistory logs={cityLogs} />
 
           <section className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
             <h2 className="text-base font-semibold text-slate-950">Checklist Hotel</h2>
