@@ -7,6 +7,7 @@ import {
   isDharmawisataConfigured,
 } from "@/lib/dharmawisata/client"
 import type { HotelAvailabilitySearch } from "@/lib/hotels/hotelAvailability"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 type RecordValue = Record<string, unknown>
 
@@ -75,6 +76,12 @@ type HotelCityHint = {
   countryId?: string
 }
 
+type HotelCityMappingRow = {
+  destination_key: string
+  country_id: string
+  city_id: string
+}
+
 function asRecord(value: unknown): RecordValue {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as RecordValue) : {}
 }
@@ -96,6 +103,14 @@ function normalizeSlug(value: string) {
     .slice(0, 80)
 }
 
+function normalizeDestinationKey(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}
+
 function firstArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : []
 }
@@ -112,12 +127,36 @@ function parseCityMap() {
 
 function getConfiguredHotelCity(destination: string) {
   const normalizedDestination = destination.trim().toLowerCase()
+  const destinationKey = normalizeDestinationKey(destination)
   const cityMap = parseCityMap()
-  const hint = cityMap[destination] || cityMap[normalizedDestination]
+  const hint = cityMap[destination] || cityMap[normalizedDestination] || cityMap[destinationKey]
   if (!hint) return { countryId: "", cityId: "" }
   return {
     countryId: asString(hint.countryID || hint.countryId),
     cityId: asString(hint.cityID || hint.cityId),
+  }
+}
+
+async function getDatabaseHotelCity(destination: string) {
+  const destinationKey = normalizeDestinationKey(destination)
+  if (!destinationKey) return { countryId: "", cityId: "" }
+
+  try {
+    const adminSupabase = createAdminClient()
+    const { data } = await adminSupabase
+      .from("dharmawisata_hotel_city_mappings")
+      .select("destination_key, country_id, city_id")
+      .eq("is_active", true)
+      .in("destination_key", [destinationKey, destination.trim().toLowerCase()])
+      .limit(1)
+      .maybeSingle<HotelCityMappingRow>()
+
+    return {
+      countryId: asString(data?.country_id),
+      cityId: asString(data?.city_id),
+    }
+  } catch {
+    return { countryId: "", cityId: "" }
   }
 }
 
@@ -273,7 +312,8 @@ export async function loadDharmawisataHotelCatalog(search: HotelAvailabilitySear
       .map((row) => normalizeDirectoryHotel(row, search))
       .filter((item): item is DharmawisataHotelCatalogItem => Boolean(item))
 
-    const configuredCity = getConfiguredHotelCity(destination)
+    const databaseCity = await getDatabaseHotelCity(destination)
+    const configuredCity = databaseCity.cityId && databaseCity.countryId ? databaseCity : getConfiguredHotelCity(destination)
     const cityId = configuredCity.cityId || directoryItems.find((item) => item.cityId)?.cityId || ""
     const countryId = configuredCity.countryId || directoryItems.find((item) => item.countryId)?.countryId || ""
 

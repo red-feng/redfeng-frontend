@@ -4,7 +4,9 @@ import AdminProductWorkspace from "@/app/components/AdminProductWorkspace"
 import {
   checkHotelSchemaReadiness,
   previewHotelBookingPayload,
+  saveHotelCityMappingFromDiagnostics,
   testHotelAvailableRooms,
+  testHotelCitySearch,
   testHotelLogin,
   testHotelPricePolicy,
 } from "./actions"
@@ -39,6 +41,27 @@ function asText(value: unknown) {
   return ""
 }
 
+function asRecord(value: unknown): ResultRecord {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as ResultRecord) : {}
+}
+
+function getCityCandidates(result: ResultRecord | null) {
+  const cities = Array.isArray(result?.cities) ? result.cities : []
+  return cities
+    .map((city) => {
+      const row = asRecord(city)
+      const name = asText(row.Name) || asText(row.name)
+      const id = asText(row.ID) || asText(row.id)
+      const countryId = asText(row.CountryID) || asText(row.countryID) || asText(row.countryId) || asText(result?.countryID)
+      return {
+        name,
+        id,
+        countryId,
+      }
+    })
+    .filter((city) => city.name && city.id && city.countryId)
+}
+
 function getStatusClasses(status?: string) {
   if (status === "success") return "border-emerald-200 bg-emerald-50 text-emerald-800"
   if (status === "warning") return "border-amber-200 bg-amber-50 text-amber-800"
@@ -53,6 +76,7 @@ function summarizeResult(result: ResultRecord | null) {
     ["Message", asText(result.respMessage) || asText(result.error) || "-"],
     ["Elapsed", result.elapsedMs ? `${result.elapsedMs} ms` : "-"],
     ["Rooms", typeof result.roomCount === "number" ? `${result.roomCount}` : "-"],
+    ["Cities", typeof result.cityCount === "number" ? `${result.cityCount}` : "-"],
     ["Enable booking", typeof result.isEnableBooking === "boolean" ? String(result.isEnableBooking) : "-"],
     ["Missing columns", typeof result.missingColumnCount === "number" ? `${result.missingColumnCount}` : "-"],
   ]
@@ -206,6 +230,50 @@ function GuestFields() {
   )
 }
 
+function CityMappingCandidates({ result }: { result: ResultRecord | null }) {
+  const candidates = getCityCandidates(result)
+  if (candidates.length === 0) return null
+
+  const requestedKeyword = asText(result?.cityNameFilter)
+
+  return (
+    <section className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-slate-950">Kandidat City Mapping</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            Pilih salah satu hasil City5 untuk disimpan sebagai mapping katalog hotel.
+          </p>
+        </div>
+        <Link href="/admin/hotel/city-mapping" className="rounded-[10px] border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 transition hover:bg-orange-100">
+          Lihat mapping
+        </Link>
+      </div>
+      <div className="mt-4 space-y-3">
+        {candidates.slice(0, 8).map((city) => (
+          <form key={`${city.countryId}-${city.id}-${city.name}`} action={saveHotelCityMappingFromDiagnostics} className="rounded-[14px] border border-slate-200 bg-slate-50 p-3">
+            <input type="hidden" name="destination_label" value={requestedKeyword || city.name} />
+            <input type="hidden" name="destination_key" value={requestedKeyword || city.name} />
+            <input type="hidden" name="country_id" value={city.countryId} />
+            <input type="hidden" name="city_id" value={city.id} />
+            <input type="hidden" name="country_name" value={city.countryId} />
+            <input type="hidden" name="city_name" value={city.name} />
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-950">{city.name}</p>
+                <p className="mt-1 text-xs text-slate-500">Country ID {city.countryId} | City ID {city.id}</p>
+              </div>
+              <button type="submit" className="rounded-[12px] bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700">
+                Simpan mapping
+              </button>
+            </div>
+          </form>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export default async function AdminHotelDiagnosticsPage({ searchParams }: { searchParams?: SearchParams }) {
   const params = (await searchParams) || {}
   const activePanel = params.panel || "schema"
@@ -217,14 +285,14 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
     <AdminProductWorkspace
       productType="hotel"
       productLabel="Hotel Diagnostics"
-      description="Panel test untuk alur hotel Dharmawisata: schema, login, AvailableRooms, PriceAndPolicy, dan preview payload booking sebelum payment customer."
+      description="Panel test untuk alur hotel Dharmawisata: schema, login, city ID, AvailableRooms, PriceAndPolicy, dan preview payload booking sebelum payment customer."
       statusLabel="Hotel test console"
       statusNote="Gunakan halaman ini setelah migration Supabase, update environment variable Vercel, atau saat mengecek readiness supplier hotel."
       primaryActionHref="/admin/hotel"
       primaryActionLabel="Kembali ke dashboard Hotel"
       secondaryActionHref="/hotel/catalog"
       secondaryActionLabel="Buka katalog Hotel"
-      preparedModules={["Schema readiness", "Login token", "Available rooms", "Price policy", "Booking payload", "Voucher readiness"]}
+      preparedModules={["Schema readiness", "Login token", "City ID search", "Available rooms", "Price policy", "Booking payload", "Voucher readiness"]}
     >
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_480px]">
         <div className="space-y-5">
@@ -249,6 +317,27 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
               <button type="submit" className="rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
                 Test login Dharmawisata
               </button>
+            </form>
+          </TestCard>
+
+          <TestCard
+            eyebrow="City"
+            title="Cari City ID Dharmawisata"
+            description="Cari kandidat cityID dari endpoint Hotel/City5. Hasilnya dipakai untuk mengisi Hotel City Mapping agar katalog live lebih stabil."
+          >
+            <form action={testHotelCitySearch} className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-[180px_minmax(0,1fr)]">
+                <Field label="Country ID" name="country_id" defaultValue="ID" placeholder="Contoh: ID" />
+                <Field label="Nama kota" name="city_name_filter" defaultValue="Jakarta" placeholder="Jakarta, Bali, Surabaya" />
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <button type="submit" className="rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
+                  Cari City ID
+                </button>
+                <Link href="/admin/hotel/city-mapping" className="rounded-[12px] border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100">
+                  Buka city mapping
+                </Link>
+              </div>
             </form>
           </TestCard>
 
@@ -332,6 +421,8 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
               {JSON.stringify(result || { note: "Belum ada hasil. Jalankan schema, login, available rooms, price policy, atau preview payload." }, null, 2)}
             </pre>
           </section>
+
+          <CityMappingCandidates result={result} />
 
           <section className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
             <h2 className="text-base font-semibold text-slate-950">Checklist Hotel</h2>

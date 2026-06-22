@@ -91,7 +91,7 @@ export default async function AdminHotelWorkspacePage({
       primaryActionLabel="Buka katalog Hotel"
       secondaryActionHref="/admin/hotel/diagnostics"
       secondaryActionLabel="Buka diagnostics hotel"
-      preparedModules={["Availability request", "Supplier check", "Quote payment link", "Auto booking after paid"]}
+      preparedModules={["Availability request", "Supplier check", "Quote payment link", "City mapping", "Auto booking after paid"]}
     >
       <section className="grid gap-4 md:grid-cols-3">
         <div className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
@@ -117,6 +117,19 @@ export default async function AdminHotelWorkspacePage({
       {errorMessage ? (
         <div className="rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{decodeURIComponent(errorMessage)}</div>
       ) : null}
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <a href="/admin/hotel/city-mapping" className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)] transition hover:border-orange-200 hover:bg-orange-50/40">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-600">Dharmawisata city mapping</p>
+          <h2 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-slate-950">Kelola countryID dan cityID hotel</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">Mapping ini membuat katalog hotel live lebih stabil saat memanggil Hotel/Search5.</p>
+        </a>
+        <a href="/admin/hotel/diagnostics" className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)] transition hover:border-orange-200 hover:bg-orange-50/40">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-600">Diagnostics</p>
+          <h2 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-slate-950">Cek endpoint hotel Dharmawisata</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">Gunakan ini untuk melihat kesiapan login, payload, dan jalur booking hotel.</p>
+        </a>
+      </section>
 
       <section className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">

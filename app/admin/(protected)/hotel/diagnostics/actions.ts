@@ -72,6 +72,14 @@ function buildResultPayload(value: unknown) {
   return JSON.stringify(value)
 }
 
+function normalizeDestinationKey(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}
+
 function isMissingSchemaObjectError(error: { message?: string | null; code?: string | null } | null | undefined) {
   const message = String(error?.message || "").toLowerCase()
   const code = String(error?.code || "").toLowerCase()
@@ -104,6 +112,7 @@ async function ensureHotelAdmin() {
 function summarizeEnv() {
   const pathNames = [
     "DHARMAWISATA_H2H_LOGIN_PATH",
+    "DHARMAWISATA_H2H_HOTEL_CITY_PATH",
     "DHARMAWISATA_H2H_HOTEL_AVAILABLE_ROOMS_PATH",
     "DHARMAWISATA_H2H_HOTEL_PRICE_POLICY_PATH",
     "DHARMAWISATA_H2H_HOTEL_BOOKING_PATH",
@@ -304,6 +313,139 @@ export async function testHotelLogin() {
       }),
     })
   }
+}
+
+export async function testHotelCitySearch(formData: FormData) {
+  await ensureHotelAdmin()
+  const startedAt = Date.now()
+  const countryID = asString(formData.get("country_id")) || "ID"
+  const cityNameFilter = asString(formData.get("city_name_filter"))
+
+  if (!cityNameFilter) {
+    diagnosticsRedirect({
+      panel: "city",
+      status: "error",
+      result: buildResultPayload({
+        title: "Pencarian City ID belum lengkap",
+        error: "Nama kota wajib diisi.",
+      }),
+    })
+  }
+
+  try {
+    const auth = await dharmawisataLogin({ language: 1 })
+    const accessToken = asString(auth.accessToken)
+    if (!accessToken) throw new Error("Login berhasil dipanggil tetapi accessToken kosong.")
+
+    const credentials = getDharmawisataCredentials()
+    const response = await dharmawisataJsonFetch({
+      path: getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_CITY_PATH") || "/Hotel/City5",
+      method: "POST",
+      body: {
+        countryID,
+        cityNameFilter,
+        userID: credentials.userId,
+        accessToken,
+      },
+    })
+    const body = asRecord(response)
+    const cities = Array.isArray(body.cities) ? body.cities : []
+
+    diagnosticsRedirect({
+      panel: "city",
+      status: cities.length > 0 ? "success" : "warning",
+      result: buildResultPayload({
+        title: cities.length > 0 ? "City ID Dharmawisata ditemukan" : "City ID belum ditemukan",
+        elapsedMs: Date.now() - startedAt,
+        status: asString(body.status),
+        respMessage: asString(body.respMessage) || (cities.length > 0 ? "Gunakan ID kota ini di Hotel City Mapping." : "Coba keyword kota yang lebih spesifik."),
+        countryID,
+        cityNameFilter,
+        cityCount: cities.length,
+        cities,
+      }),
+    })
+  } catch (error) {
+    diagnosticsRedirect({
+      panel: "city",
+      status: "error",
+      result: buildResultPayload({
+        title: "Pencarian City ID Dharmawisata gagal",
+        elapsedMs: Date.now() - startedAt,
+        error: error instanceof Error ? error.message : "Unknown error",
+        countryID,
+        cityNameFilter,
+      }),
+    })
+  }
+}
+
+export async function saveHotelCityMappingFromDiagnostics(formData: FormData) {
+  await ensureHotelAdmin()
+  const destinationLabel = asString(formData.get("destination_label"))
+  const cityId = asString(formData.get("city_id"))
+  const countryId = asString(formData.get("country_id"))
+  const cityName = asString(formData.get("city_name")) || destinationLabel
+  const countryName = asString(formData.get("country_name")) || countryId
+  const destinationKey = normalizeDestinationKey(asString(formData.get("destination_key")) || destinationLabel || cityName)
+
+  if (!destinationLabel || !destinationKey || !cityId || !countryId) {
+    diagnosticsRedirect({
+      panel: "city",
+      status: "error",
+      result: buildResultPayload({
+        title: "Mapping City ID belum bisa disimpan",
+        error: "Destination label, countryID, dan cityID wajib tersedia.",
+      }),
+    })
+  }
+
+  const adminSupabase = createAdminClient()
+  const { error } = await adminSupabase
+    .from("dharmawisata_hotel_city_mappings")
+    .upsert(
+      {
+        destination_key: destinationKey,
+        destination_label: destinationLabel,
+        country_id: countryId,
+        city_id: cityId,
+        country_name: countryName || null,
+        city_name: cityName || null,
+        is_active: true,
+        notes: "Disimpan dari Hotel Diagnostics / Hotel/City5.",
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "destination_key" },
+    )
+
+  if (error) {
+    diagnosticsRedirect({
+      panel: "city",
+      status: "error",
+      result: buildResultPayload({
+        title: "Mapping City ID gagal disimpan",
+        error: error.message || "Database menolak penyimpanan mapping.",
+        destinationLabel,
+        countryID: countryId,
+        cityID: cityId,
+      }),
+    })
+  }
+
+  diagnosticsRedirect({
+    panel: "city",
+    status: "success",
+    result: buildResultPayload({
+      title: "City ID tersimpan ke mapping",
+      status: "SAVED",
+      respMessage: `${destinationLabel} disimpan sebagai ${countryId}/${cityId}. Katalog hotel akan memakai mapping ini.`,
+      destinationLabel,
+      destinationKey,
+      countryID: countryId,
+      cityID: cityId,
+      cityName,
+    }),
+  })
 }
 
 export async function testHotelAvailableRooms(formData: FormData) {
