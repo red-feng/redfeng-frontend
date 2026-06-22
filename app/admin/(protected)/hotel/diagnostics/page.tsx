@@ -185,12 +185,6 @@ function buildHotelCoreOptions(input: {
   addUniqueOption(hotelOptions, seenHotels, input.defaults.hotelId || "", "Hotel ID dari form aktif")
   addUniqueOption(hotelOptions, seenHotels, asText(input.requestPayload.hotelID), "Hotel ID dari hasil test")
   addUniqueOption(hotelOptions, seenHotels, asText(quotePayload.supplier_hotel_id), "Hotel ID supplier dari request")
-  addUniqueOption(
-    hotelOptions,
-    seenHotels,
-    input.activeRequest?.hotel_id || "",
-    input.activeRequest?.hotel_name ? `${input.activeRequest.hotel_name} (${input.activeRequest.hotel_id})` : "Hotel ID customer request",
-  )
 
   addUniqueOption(countryOptions, seenCountries, input.defaults.countryId || "", "Country dari form aktif")
   addUniqueOption(countryOptions, seenCountries, asText(input.requestPayload.countryID), "Country dari hasil test")
@@ -456,12 +450,11 @@ function HotelCoreFields({
         <Field label="Check-in" name="checkin_date" type="date" defaultValue={defaults.checkinDate || getDefaultDate(7)} />
         <Field label="Check-out" name="checkout_date" type="date" defaultValue={defaults.checkoutDate || getDefaultDate(8)} />
         <SelectField
-          label="Identitas tamu"
+          label="Pax passport"
           name="pax_passport"
           defaultValue={defaults.paxPassport || "ID"}
           options={[
             ["ID", "ID"],
-            ["PASSPORT", "Paspor"],
           ]}
         />
       </div>
@@ -752,7 +745,6 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
       params.hotel_id ||
       asText(requestPayload.hotelID) ||
       asText(activeQuotePayload.supplier_hotel_id) ||
-      activeRequestHint?.hotel_id ||
       "",
     countryId: params.country_id || asText(requestPayload.countryID) || asText(activeQuotePayload.supplier_country_id) || "",
     cityId: params.city_id || asText(requestPayload.cityID) || asText(activeQuotePayload.supplier_city_id) || "",

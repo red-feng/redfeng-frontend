@@ -72,7 +72,7 @@ function buildAvailableRoomsDiagnosticsHref(request: HotelAvailabilityRequestRow
   const params = new URLSearchParams({
     panel: "available",
     request_id: request.id,
-    hotel_id: asText(quotePayload.supplier_hotel_id) || request.hotel_id,
+    hotel_id: asText(quotePayload.supplier_hotel_id),
     country_id: asText(quotePayload.supplier_country_id),
     city_id: asText(quotePayload.supplier_city_id),
     checkin_date: request.checkin_date,

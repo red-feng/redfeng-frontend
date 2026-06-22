@@ -86,8 +86,8 @@ export async function POST(req: Request) {
         }
     const supplierPayload = {
       source: source === "dharmawisata" ? "dharmawisata_h2h_live_catalog" : "hotel_catalog_manual_check",
-      supplier_hotel_id: supplierHotelId || hotelId,
-      supplier_internal_code: supplierInternalCode || supplierHotelId || null,
+      supplier_hotel_id: source === "dharmawisata" ? supplierHotelId || hotelId : supplierHotelId || null,
+      supplier_internal_code: supplierInternalCode || (source === "dharmawisata" ? supplierHotelId || hotelId : supplierHotelId) || null,
       supplier_country_id: supplierCountryId || null,
       supplier_city_id: supplierCityId || null,
     }
