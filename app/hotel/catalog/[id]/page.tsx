@@ -26,7 +26,42 @@ export default async function HotelCatalogDetailPage({ params, searchParams }: H
   const locale = await getCurrentLocale()
   const { id } = await params
   const resolvedSearchParams = (await searchParams) || {}
-  const hotel = getHotelCatalogItem(id)
+  const firstParam = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] || "" : value || "")
+  const isDharmawisataLiveHotel = firstParam(resolvedSearchParams.source) === "dharmawisata"
+  const liveHotelTitle = firstParam(resolvedSearchParams.title)
+  const liveHotelLocation = firstParam(resolvedSearchParams.location)
+  const liveHotelRating = firstParam(resolvedSearchParams.rating)
+  const liveHotelMarket = firstParam(resolvedSearchParams.market)
+  const liveHotelMessage = firstParam(resolvedSearchParams.message)
+  const supplierHotelId = firstParam(resolvedSearchParams.supplier_hotel_id)
+  const supplierInternalCode = firstParam(resolvedSearchParams.supplier_internal_code)
+  const supplierCountryId = firstParam(resolvedSearchParams.country_id)
+  const supplierCityId = firstParam(resolvedSearchParams.city_id)
+  const hotel =
+    getHotelCatalogItem(id) ||
+    (isDharmawisataLiveHotel && (liveHotelTitle || supplierHotelId)
+      ? {
+          id,
+          title: liveHotelTitle || `Hotel Dharmawisata ${supplierHotelId}`,
+          location: liveHotelLocation || "Dharmawisata hotel",
+          region: supplierCountryId || "Dharmawisata",
+          group: "Dharmawisata H2H",
+          image: "/home-assets/card-hotel-1.png",
+          availabilityNote:
+            liveHotelMessage ||
+            "Data hotel berasal dari katalog Dharmawisata. Tim Red Feng akan mengecek availability, room rate, dan kebijakan sebelum payment dibuka.",
+          statusNote:
+            "Request ini membawa metadata supplier sehingga admin bisa melanjutkan pengecekan hotel ke Dharmawisata tanpa mengetik ulang kode hotel.",
+          highlights: [liveHotelRating ? `${liveHotelRating} star` : "Supplier live", liveHotelMarket || "Dharmawisata H2H"].filter(Boolean),
+          facts: [
+            { label: "Star", value: liveHotelRating ? `${liveHotelRating} star` : "Hotel" },
+            { label: "Stay cue", value: "Supplier live" },
+            { label: "Supplier hotel ID", value: supplierHotelId },
+            { label: "City ID", value: supplierCityId },
+            { label: "Country ID", value: supplierCountryId },
+          ].filter((fact) => fact.value),
+        }
+      : null)
   if (!hotel) notFound()
 
   const search = normalizeHotelSearchParams(resolvedSearchParams)
@@ -103,6 +138,13 @@ export default async function HotelCatalogDetailPage({ params, searchParams }: H
 
           <HotelAvailabilityRequestForm
             hotelId={hotel.id}
+            hotelName={hotel.title}
+            hotelLocation={hotel.location}
+            source={isDharmawisataLiveHotel ? "dharmawisata" : "curated"}
+            supplierHotelId={supplierHotelId}
+            supplierInternalCode={supplierInternalCode}
+            supplierCountryId={supplierCountryId}
+            supplierCityId={supplierCityId}
             checkin={search.checkin}
             checkout={search.checkout}
             adults={search.adults}

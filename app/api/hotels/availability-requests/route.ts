@@ -29,9 +29,16 @@ export async function POST(req: Request) {
   try {
     const body = (await req.json()) as Record<string, unknown>
     const hotelId = normalizeText(body.hotel_id)
+    const source = normalizeText(body.source)
+    const hotelNameFromBody = normalizeText(body.hotel_name)
+    const hotelLocationFromBody = normalizeText(body.hotel_location)
+    const supplierHotelId = normalizeText(body.supplier_hotel_id)
+    const supplierInternalCode = normalizeText(body.supplier_internal_code)
+    const supplierCountryId = normalizeText(body.supplier_country_id)
+    const supplierCityId = normalizeText(body.supplier_city_id)
     const hotel = getHotelCatalogItem(hotelId)
 
-    if (!hotel) {
+    if (!hotel && source !== "dharmawisata") {
       return NextResponse.json({ error: "Hotel tidak ditemukan di katalog." }, { status: 404 })
     }
 
@@ -61,14 +68,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Nama dan nomor WhatsApp wajib diisi." }, { status: 400 })
     }
 
-    const estimate = buildHotelEstimatedStayTotal(hotel, {
-      destination: hotel.location,
-      checkin,
-      checkout,
-      adults: adultCount,
-      children: childCount,
-      rooms: roomCount,
-    })
+    const liveHotelName = hotelNameFromBody || `Hotel Dharmawisata ${supplierHotelId || hotelId}`
+    const liveHotelLocation = hotelLocationFromBody || supplierCityId || "Dharmawisata hotel"
+    const estimate = hotel
+      ? buildHotelEstimatedStayTotal(hotel, {
+          destination: hotel.location,
+          checkin,
+          checkout,
+          adults: adultCount,
+          children: childCount,
+          rooms: roomCount,
+        })
+      : {
+          nights: nightCount,
+          pricePerNight: 0,
+          totalAmount: 0,
+        }
+    const supplierPayload = {
+      source: source === "dharmawisata" ? "dharmawisata_h2h_live_catalog" : "hotel_catalog_manual_check",
+      supplier_hotel_id: supplierHotelId || hotelId,
+      supplier_internal_code: supplierInternalCode || supplierHotelId || null,
+      supplier_country_id: supplierCountryId || null,
+      supplier_city_id: supplierCityId || null,
+    }
     const requestCode = generateHotelRequestCode()
     const supabase = createAdminClient()
     const { data, error } = await supabase
@@ -76,12 +98,12 @@ export async function POST(req: Request) {
       .insert({
         request_code: requestCode,
         status: "availability_requested",
-        hotel_id: hotel.id,
-        hotel_name: hotel.title,
-        hotel_location: hotel.location,
-        hotel_region: hotel.region,
-        property_type: hotel.group,
-        star_rating: getHotelFactValue(hotel, "Star"),
+        hotel_id: hotel?.id || supplierHotelId || hotelId,
+        hotel_name: hotel?.title || liveHotelName,
+        hotel_location: hotel?.location || liveHotelLocation,
+        hotel_region: hotel?.region || supplierCountryId || "Dharmawisata",
+        property_type: hotel?.group || "Dharmawisata H2H",
+        star_rating: hotel ? getHotelFactValue(hotel, "Star") : null,
         checkin_date: checkin,
         checkout_date: checkout,
         night_count: estimate.nights,
@@ -98,8 +120,17 @@ export async function POST(req: Request) {
         estimated_price_per_night: estimate.pricePerNight,
         estimated_total_amount: estimate.totalAmount,
         currency: "IDR",
+        source: supplierPayload.source,
         request_payload: {
-          hotel,
+          hotel: hotel || {
+            id: hotelId,
+            title: liveHotelName,
+            location: liveHotelLocation,
+            supplierHotelId,
+            supplierInternalCode,
+            supplierCountryId,
+            supplierCityId,
+          },
           search: {
             checkin,
             checkout,
@@ -112,6 +143,10 @@ export async function POST(req: Request) {
             mealPreference,
             refundPreference,
           },
+          supplier: supplierPayload,
+        },
+        quote_payload: {
+          ...supplierPayload,
         },
       })
       .select("id, request_code, status")

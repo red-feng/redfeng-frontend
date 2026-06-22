@@ -4,6 +4,13 @@ import { useState } from "react"
 
 type HotelAvailabilityRequestFormProps = {
   hotelId: string
+  hotelName: string
+  hotelLocation: string
+  source: "curated" | "dharmawisata"
+  supplierHotelId?: string
+  supplierInternalCode?: string
+  supplierCountryId?: string
+  supplierCityId?: string
   checkin: string
   checkout: string
   adults: number
@@ -19,6 +26,13 @@ type SubmitState =
 
 export default function HotelAvailabilityRequestForm({
   hotelId,
+  hotelName,
+  hotelLocation,
+  source,
+  supplierHotelId,
+  supplierInternalCode,
+  supplierCountryId,
+  supplierCityId,
   checkin,
   checkout,
   adults,
@@ -34,6 +48,13 @@ export default function HotelAvailabilityRequestForm({
 
     const payload = {
       hotel_id: hotelId,
+      hotel_name: hotelName,
+      hotel_location: hotelLocation,
+      source,
+      supplier_hotel_id: supplierHotelId || "",
+      supplier_internal_code: supplierInternalCode || "",
+      supplier_country_id: supplierCountryId || "",
+      supplier_city_id: supplierCityId || "",
       checkin,
       checkout,
       adults,
