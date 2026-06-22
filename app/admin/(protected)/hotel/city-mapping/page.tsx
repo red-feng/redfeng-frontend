@@ -33,6 +33,17 @@ function formatDateTime(value: string) {
   }).format(parsed)
 }
 
+function buildAvailableRoomsDiagnosticsHref(mapping: HotelCityMappingRow) {
+  const params = new URLSearchParams({
+    panel: "available",
+    country_id: mapping.country_id,
+    city_id: mapping.city_id,
+    destination_label: mapping.destination_label,
+  })
+
+  return `/admin/hotel/diagnostics?${params.toString()}`
+}
+
 function MappingForm({ mapping }: { mapping?: HotelCityMappingRow }) {
   return (
     <form action={saveHotelCityMappingAction} className="rounded-[18px] border border-[#eee3d9] bg-white p-4 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
@@ -188,13 +199,18 @@ export default async function HotelCityMappingPage({
                   </p>
                   {mapping.notes ? <p className="mt-3 text-sm leading-6 text-slate-600">{mapping.notes}</p> : null}
                   <p className="mt-3 text-xs text-slate-400">Update: {formatDateTime(mapping.updated_at)}</p>
-                  <form action={toggleHotelCityMappingAction} className="mt-4">
-                    <input type="hidden" name="id" value={mapping.id} />
-                    <input type="hidden" name="next_active" value={mapping.is_active ? "false" : "true"} />
-                    <button type="submit" className="rounded-[12px] border border-orange-200 bg-white px-3 py-2 text-xs font-semibold text-orange-700 transition hover:bg-orange-50">
-                      {mapping.is_active ? "Nonaktifkan" : "Aktifkan"}
-                    </button>
-                  </form>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Link href={buildAvailableRoomsDiagnosticsHref(mapping)} className="rounded-[12px] bg-orange-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-orange-700">
+                      Pakai di AvailableRooms
+                    </Link>
+                    <form action={toggleHotelCityMappingAction}>
+                      <input type="hidden" name="id" value={mapping.id} />
+                      <input type="hidden" name="next_active" value={mapping.is_active ? "false" : "true"} />
+                      <button type="submit" className="rounded-[12px] border border-orange-200 bg-white px-3 py-2 text-xs font-semibold text-orange-700 transition hover:bg-orange-50">
+                        {mapping.is_active ? "Nonaktifkan" : "Aktifkan"}
+                      </button>
+                    </form>
+                  </div>
                 </div>
                 <MappingForm mapping={mapping} />
               </article>

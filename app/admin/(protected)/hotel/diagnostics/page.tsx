@@ -16,6 +16,15 @@ type SearchParams = Promise<{
   panel?: string
   status?: string
   result?: string
+  hotel_id?: string
+  country_id?: string
+  city_id?: string
+  checkin_date?: string
+  checkout_date?: string
+  pax_passport?: string
+  room_count?: string
+  child_count?: string
+  destination_label?: string
 }>
 
 type ResultRecord = Record<string, unknown>
@@ -28,6 +37,18 @@ type CitySearchLogRow = {
   resp_message: string | null
   city_count: number
   created_at: string
+}
+
+type HotelCoreDefaults = {
+  hotelId?: string
+  countryId?: string
+  cityId?: string
+  checkinDate?: string
+  checkoutDate?: string
+  paxPassport?: string
+  roomCount?: string
+  childCount?: string
+  destinationLabel?: string
 }
 
 function getDefaultDate(offsetDays: number) {
@@ -195,22 +216,22 @@ function TestCard({
   )
 }
 
-function HotelCoreFields() {
+function HotelCoreFields({ defaults = {} }: { defaults?: HotelCoreDefaults }) {
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="Hotel ID" name="hotel_id" placeholder="Dari Hotel/Search atau AvailableRooms" />
-        <Field label="Country ID" name="country_id" placeholder="Contoh: ID" />
-        <Field label="City ID" name="city_id" placeholder="Dari endpoint city" />
+        <Field label="Hotel ID" name="hotel_id" defaultValue={defaults.hotelId} placeholder="Dari Hotel/Search atau AvailableRooms" />
+        <Field label="Country ID" name="country_id" defaultValue={defaults.countryId} placeholder="Contoh: ID" />
+        <Field label="City ID" name="city_id" defaultValue={defaults.cityId} placeholder="Dari endpoint city" />
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="Check-in" name="checkin_date" type="date" defaultValue={getDefaultDate(7)} />
-        <Field label="Check-out" name="checkout_date" type="date" defaultValue={getDefaultDate(8)} />
-        <Field label="Passport" name="pax_passport" defaultValue="ID" />
+        <Field label="Check-in" name="checkin_date" type="date" defaultValue={defaults.checkinDate || getDefaultDate(7)} />
+        <Field label="Check-out" name="checkout_date" type="date" defaultValue={defaults.checkoutDate || getDefaultDate(8)} />
+        <Field label="Passport" name="pax_passport" defaultValue={defaults.paxPassport || "ID"} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Jumlah kamar" name="room_count" type="number" defaultValue={1} />
-        <Field label="Jumlah anak" name="child_count" type="number" defaultValue={0} />
+        <Field label="Jumlah kamar" name="room_count" type="number" defaultValue={defaults.roomCount || 1} />
+        <Field label="Jumlah anak" name="child_count" type="number" defaultValue={defaults.childCount || 0} />
       </div>
     </>
   )
@@ -365,6 +386,18 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
   const result = parseResult(params.result)
   const resultTitle = asText(result?.title) || "Belum ada hasil test"
   const resultRows = summarizeResult(result)
+  const coreDefaults: HotelCoreDefaults = {
+    hotelId: params.hotel_id || "",
+    countryId: params.country_id || "",
+    cityId: params.city_id || "",
+    checkinDate: params.checkin_date || "",
+    checkoutDate: params.checkout_date || "",
+    paxPassport: params.pax_passport || "ID",
+    roomCount: params.room_count || "",
+    childCount: params.child_count || "",
+    destinationLabel: params.destination_label || "",
+  }
+  const hasCityPrefill = Boolean(coreDefaults.countryId && coreDefaults.cityId)
   const adminSupabase = createAdminClient()
   const { data: citySearchLogs } = await adminSupabase
     .from("dharmawisata_hotel_city_search_logs")
@@ -439,7 +472,13 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
             description="Cek kamar tersedia berdasarkan Hotel ID, tanggal stay, jumlah kamar, dan komposisi anak. Test ini read-only."
           >
             <form action={testHotelAvailableRooms} className="space-y-4">
-              <HotelCoreFields />
+              {hasCityPrefill ? (
+                <div className="rounded-[14px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800">
+                  Mapping kota aktif terisi: {coreDefaults.destinationLabel ? `${coreDefaults.destinationLabel} - ` : ""}
+                  {coreDefaults.countryId}/{coreDefaults.cityId}. Lengkapi Hotel ID dari hasil Search5 atau direktori sebelum test.
+                </div>
+              ) : null}
+              <HotelCoreFields defaults={coreDefaults} />
               <button type="submit" className="rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
                 Test available rooms
               </button>
@@ -452,7 +491,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
             description="Validasi harga final, komisi, cancellation policy, dan flag isEnableBooking sebelum quote dikirim ke customer."
           >
             <form action={testHotelPricePolicy} className="space-y-4">
-              <HotelCoreFields />
+              <HotelCoreFields defaults={coreDefaults} />
               <HotelRateFields />
               <button type="submit" className="rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
                 Test price and policy
@@ -467,7 +506,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
             tone="amber"
           >
             <form action={previewHotelBookingPayload} className="space-y-4">
-              <HotelCoreFields />
+              <HotelCoreFields defaults={coreDefaults} />
               <HotelRateFields />
               <GuestFields />
               <button type="submit" className="rounded-[12px] bg-amber-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-amber-800">

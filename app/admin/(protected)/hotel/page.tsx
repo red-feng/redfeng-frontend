@@ -6,6 +6,7 @@ type HotelAvailabilityRequestRow = {
   id: string
   request_code: string
   status: string
+  hotel_id: string
   hotel_name: string
   hotel_location: string
   property_type: string
@@ -61,6 +62,27 @@ function formatDateTime(value: string | null) {
   }).format(parsed)
 }
 
+function asText(value: unknown) {
+  return typeof value === "string" ? value : typeof value === "number" ? String(value) : ""
+}
+
+function buildAvailableRoomsDiagnosticsHref(request: HotelAvailabilityRequestRow) {
+  const quotePayload = request.quote_payload || {}
+  const params = new URLSearchParams({
+    panel: "available",
+    hotel_id: asText(quotePayload.supplier_hotel_id) || request.hotel_id,
+    country_id: asText(quotePayload.supplier_country_id),
+    city_id: asText(quotePayload.supplier_city_id),
+    checkin_date: request.checkin_date,
+    checkout_date: request.checkout_date,
+    room_count: String(request.room_count || 1),
+    child_count: String(request.child_count || 0),
+    destination_label: request.hotel_location || request.hotel_name,
+  })
+
+  return `/admin/hotel/diagnostics?${params.toString()}`
+}
+
 export default async function AdminHotelWorkspacePage({
   searchParams,
 }: {
@@ -72,7 +94,7 @@ export default async function AdminHotelWorkspacePage({
   const adminSupabase = createAdminClient()
   const { data: requests, error } = await adminSupabase
     .from("hotel_availability_requests")
-    .select("id, request_code, status, hotel_name, hotel_location, property_type, checkin_date, checkout_date, night_count, adult_count, child_count, room_count, customer_name, customer_phone, customer_email, estimated_total_amount, quoted_total_amount, booking_id, quote_expires_at, quote_payload, currency, created_at")
+    .select("id, request_code, status, hotel_id, hotel_name, hotel_location, property_type, checkin_date, checkout_date, night_count, adult_count, child_count, room_count, customer_name, customer_phone, customer_email, estimated_total_amount, quoted_total_amount, booking_id, quote_expires_at, quote_payload, currency, created_at")
     .order("created_at", { ascending: false })
     .limit(12)
 
@@ -183,6 +205,14 @@ export default async function AdminHotelWorkspacePage({
                         <p className="mt-1 text-xs">Batas bayar: {formatDateTime(request.quote_expires_at)}</p>
                       </div>
                     ) : null}
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <a href={buildAvailableRoomsDiagnosticsHref(request)} className="rounded-[12px] bg-slate-950 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800">
+                        Cek availability Dharmawisata
+                      </a>
+                      <a href="/admin/hotel/diagnostics" className="rounded-[12px] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
+                        Buka diagnostics
+                      </a>
+                    </div>
                   </div>
 
                   <form action={updateHotelAvailabilityRequestAction} className="rounded-[16px] border border-[#eadfd5] bg-white p-3">
