@@ -51,7 +51,8 @@ function summarizeResult(result: ResultRecord | null) {
     ["Status", asText(result.status) || asText(result.authStatus) || "-"],
     ["Message", asText(result.respMessage) || asText(result.authMessage) || asText(result.error) || "-"],
     ["Elapsed", result.elapsedMs ? `${result.elapsedMs} ms` : "-"],
-    ["Journeys", result.journeyDepartCount ? `${result.journeyDepartCount}` : "-"],
+    ["Journeys", typeof result.journeyDepartCount === "number" ? `${result.journeyDepartCount}` : "-"],
+    ["Search attempts", typeof result.searchAttemptCount === "number" ? `${result.searchAttemptCount}` : "-"],
     ["Missing columns", typeof result.missingColumnCount === "number" ? `${result.missingColumnCount}` : "-"],
   ]
 }
@@ -458,7 +459,8 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
                 <textarea
                   name="passenger_manifest"
                   rows={3}
-                  defaultValue="MR | Red Feng Test | ops@redfeng.co"
+                  defaultValue="MR | Red Feng Test | ops@redfeng.co | 1990-01-01 | Male | Adult"
+                  placeholder="MR | Red Feng Test | ops@redfeng.co | 1990-01-01 | Male | Adult"
                   className="mt-2 w-full rounded-[12px] border border-amber-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                 />
               </label>
@@ -514,7 +516,8 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
             <h2 className="text-base font-semibold text-slate-950">Checklist Interpretasi</h2>
             <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
               <li>Login sukses berarti base URL, user ID, password, dan path login sudah terbaca.</li>
-              <li>Search sukses berarti token dapat dipakai untuk endpoint LowFareSchedule.</li>
+              <li>Search sukses berarti token dapat dipakai untuk endpoint LowFareSchedule dan minimal satu journey live terbaca.</li>
+              <li>Gunakan `holdPreviewHint` dari response search untuk mengisi payload hold bila perlu dry-run lebih dekat ke hasil supplier.</li>
               <li>Jika UAT butuh ignore SSL, pastikan hanya environment UAT yang memakai nilai TLS non-standar.</li>
               <li>Production sebaiknya tetap SSL normal sesuai jawaban tim Dharmawisata.</li>
             </ul>

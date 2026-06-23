@@ -69,6 +69,8 @@ const FLIGHT_SCHEMA_REQUIRED_COLUMNS = [
   ["flight_booking_details", "supplier_raw_reference"],
 ] as const
 
+const FLIGHT_DIAGNOSTICS_TIMEOUT_MS = 25000
+
 function asString(value: unknown) {
   return typeof value === "string" ? value.trim() : typeof value === "number" ? String(value) : ""
 }
@@ -269,17 +271,41 @@ function summarizeJourney(value: unknown) {
   const segment = Array.isArray(journey.segment) ? asRecord(journey.segment[0]) : {}
   const flightDetail = Array.isArray(segment.flightDetail) ? asRecord(segment.flightDetail[0]) : {}
   const availableDetail = Array.isArray(segment.availableDetail) ? asRecord(segment.availableDetail[0]) : {}
+  const airlineID = asString(journey.airlineID)
+  const airlineCode = asString(flightDetail.airlineCode || airlineID)
+  const flightNumber = asString(flightDetail.flightNumber)
+  const origin = asString(journey.jiOrigin || flightDetail.fdOrigin)
+  const destination = asString(journey.jiDestination || flightDetail.fdDestination)
+  const departTime = asString(journey.jiDepartTime || flightDetail.fdDepartTime)
+  const arrivalTime = asString(journey.jiArrivalTime || flightDetail.fdArrivalTime)
+  const flightClass = asString(availableDetail.flightClass || availableDetail.cabin)
+  const journeyReference = asString(journey.journeyReference)
 
   return {
-    airlineID: asString(journey.airlineID),
-    flightNumber: asString(flightDetail.flightNumber),
-    origin: asString(journey.jiOrigin || flightDetail.fdOrigin),
-    destination: asString(journey.jiDestination || flightDetail.fdDestination),
-    departTime: asString(journey.jiDepartTime || flightDetail.fdDepartTime),
-    arrivalTime: asString(journey.jiArrivalTime || flightDetail.fdArrivalTime),
-    class: asString(availableDetail.flightClass || availableDetail.cabin),
+    airlineID,
+    airlineCode,
+    flightNumber,
+    origin,
+    destination,
+    departTime,
+    arrivalTime,
+    class: flightClass,
     price: asNumber(journey.sumPrice || availableDetail.price),
-    journeyReference: shortRef(journey.journeyReference),
+    journeyReference,
+    journeyReferenceShort: shortRef(journeyReference),
+    holdPreviewHint: {
+      airlineID,
+      airlineCode,
+      flightNumber,
+      origin,
+      destination,
+      departureAt: departTime,
+      arrivalAt: arrivalTime,
+      flightClass: flightClass || "Economy",
+      searchKey: journeyReference,
+      detailSchedule: flightNumber || journeyReference,
+      airlineAccessCode: asString(journey.airlineAccessCode) || journeyReference,
+    },
   }
 }
 
@@ -320,6 +346,13 @@ function splitIndonesianPhone(value: string) {
   }
 }
 
+function normalizePassengerType(value: unknown): DharmawisataPassenger["type"] {
+  const normalized = asString(value).toLowerCase()
+  if (["child", "anak"].includes(normalized)) return "Child"
+  if (["infant", "bayi"].includes(normalized)) return "Infant"
+  return "Adult"
+}
+
 function parsePreviewPassengers(formData: FormData, fallbackName: string, fallbackEmail: string): DharmawisataPassenger[] {
   const manifest = asString(formData.get("passenger_manifest"))
   const lines = manifest
@@ -334,6 +367,9 @@ function parsePreviewPassengers(formData: FormData, fallbackName: string, fallba
     const hasExplicitTitle = columns.length > 1 && titleCandidate === String(columns[0] || "").trim().toUpperCase()
     const fullName = hasExplicitTitle ? columns[1] || fallbackName : columns[0] || fallbackName
     const email = hasExplicitTitle ? columns[2] || fallbackEmail : columns[1] || fallbackEmail
+    const birthDate = hasExplicitTitle ? columns[3] : columns[2]
+    const gender = hasExplicitTitle ? columns[4] : columns[3]
+    const type = hasExplicitTitle ? columns[5] : columns[4]
     const name = splitPersonName(fullName)
 
     return {
@@ -341,9 +377,92 @@ function parsePreviewPassengers(formData: FormData, fallbackName: string, fallba
       firstName: name.firstName,
       lastName: name.lastName,
       email,
-      type: "Adult",
+      birthDate,
+      gender,
+      type: normalizePassengerType(type),
     }
   })
+}
+
+async function collectLowFareDiagnostics(input: {
+  searchPath: string
+  tripType: string
+  origin: string
+  destination: string
+  departDate: string
+  returnDate: string
+  paxAdult: number
+  paxChild: number
+  paxInfant: number
+  userID: string
+  accessToken: string
+}) {
+  const journeys: unknown[] = []
+  const seenReferences = new Set<string>()
+  const seenStates = new Set<string>()
+  const attempts: JsonRecord[] = []
+  let airlineAccessCode = ""
+  let lastBody: JsonRecord = {}
+
+  for (let iteration = 0; iteration < 8; iteration += 1) {
+    const response = await dharmawisataFormFetch({
+      path: input.searchPath,
+      method: "POST",
+      timeoutMs: FLIGHT_DIAGNOSTICS_TIMEOUT_MS,
+      body: {
+        tripType: input.tripType,
+        origin: input.origin,
+        destination: input.destination,
+        departDate: `${input.departDate}T00:00:00`,
+        returnDate: input.tripType === "RoundTrip" && input.returnDate ? `${input.returnDate}T00:00:00` : "0001-01-01T00:00:00",
+        paxAdult: input.paxAdult,
+        paxChild: input.paxChild,
+        paxInfant: input.paxInfant,
+        promoCode: "",
+        airlineAccessCode,
+        cacheType: 2,
+        isShowEachAirline: true,
+        userID: input.userID,
+        accessToken: input.accessToken,
+      },
+    })
+    const body = asRecord(response)
+    lastBody = body
+    const currentJourneys = Array.isArray(body.journeyDepart) ? body.journeyDepart : []
+    const status = asString(body.status)
+    const respMessage = asString(body.respMessage)
+    const airlineIndex = asNumber(body.airlineIndex)
+    const totalAirline = asNumber(body.totalAirline)
+    const nextAirlineAccessCode = asString(body.airlineAccessCode)
+    const stateKey = `${status}:${respMessage}:${airlineIndex}:${totalAirline}:${nextAirlineAccessCode}`
+
+    attempts.push({
+      iteration: iteration + 1,
+      status,
+      respMessage,
+      airlineIndex,
+      totalAirline,
+      journeyDepartCount: currentJourneys.length,
+      airlineAccessCode: nextAirlineAccessCode ? "present-redacted" : "",
+    })
+
+    for (const journey of currentJourneys) {
+      const record = asRecord(journey)
+      const reference = asString(record.journeyReference) || JSON.stringify(journey)
+      if (seenReferences.has(reference)) continue
+      seenReferences.add(reference)
+      journeys.push(journey)
+    }
+
+    if (seenStates.has(stateKey)) break
+    seenStates.add(stateKey)
+    if (status.toUpperCase() === "SUCCESS" && totalAirline > 0 && airlineIndex >= totalAirline) break
+    if (totalAirline === 0 || !nextAirlineAccessCode) break
+
+    airlineAccessCode = nextAirlineAccessCode
+  }
+
+  return { attempts, journeys, lastBody }
 }
 
 export async function testDharmawisataSearch(formData: FormData) {
@@ -400,32 +519,25 @@ export async function testDharmawisataSearch(formData: FormData) {
 
     const credentials = getDharmawisataCredentials()
     const searchPath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_SEARCH_PATH") || "/Airline/LowFareSchedule"
-    const response = await dharmawisataFormFetch({
-      path: searchPath,
-      method: "POST",
-      body: {
-        tripType,
-        origin,
-        destination,
-        departDate: `${departDate}T00:00:00`,
-        returnDate: tripType === "RoundTrip" && returnDate ? `${returnDate}T00:00:00` : "0001-01-01T00:00:00",
-        paxAdult,
-        paxChild,
-        paxInfant,
-        promoCode: "",
-        airlineAccessCode: "",
-        cacheType: 2,
-        isShowEachAirline: true,
-        userID: credentials.userId,
-        accessToken,
-      },
+    const searchResult = await collectLowFareDiagnostics({
+      searchPath,
+      tripType,
+      origin,
+      destination,
+      departDate,
+      returnDate,
+      paxAdult,
+      paxChild,
+      paxInfant,
+      userID: credentials.userId,
+      accessToken,
     })
-    const body = asRecord(response)
-    const journeys = Array.isArray(body.journeyDepart) ? body.journeyDepart : []
+    const body = searchResult.lastBody
+    const journeys = searchResult.journeys
 
     diagnosticsRedirect({
       panel: "search",
-      status: asString(body.status).toUpperCase() === "SUCCESS" ? "success" : "warning",
+      status: journeys.length > 0 ? "success" : "warning",
       result: buildResultPayload({
         title: "Search Dharmawisata selesai",
         elapsedMs: Date.now() - startedAt,
@@ -444,6 +556,8 @@ export async function testDharmawisataSearch(formData: FormData) {
         totalAirline: asNumber(body.totalAirline),
         airlineIndex: asNumber(body.airlineIndex),
         airlineAccessCode: asString(body.airlineAccessCode) ? "present-redacted" : "",
+        searchAttemptCount: searchResult.attempts.length,
+        searchAttempts: searchResult.attempts,
         journeyDepartCount: journeys.length,
         firstJourneys: journeys.slice(0, 5).map(summarizeJourney),
       }),
