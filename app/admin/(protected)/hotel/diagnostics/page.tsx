@@ -29,6 +29,9 @@ type SearchParams = Promise<{
   child_count?: string
   destination_label?: string
   hotel_name_filter?: string
+  internal_code?: string
+  room_id?: string
+  breakfast_id?: string
 }>
 
 type ResultRecord = Record<string, unknown>
@@ -835,6 +838,22 @@ function SupplierRateCandidates({ result, requestId }: { result: ResultRecord | 
       <div className="mt-4 space-y-3">
         {candidates.map((candidate, index) => {
           const canSave = Boolean(requestId && supplierHotelId && supplierCountryId && supplierCityId && candidate.internalCode && candidate.roomId && candidate.breakfastId)
+          const pricePolicyParams = new URLSearchParams({
+            panel: "price-policy",
+            hotel_id: cleanHotelIdentifier(supplierHotelId),
+            country_id: supplierCountryId,
+            city_id: supplierCityId,
+            checkin_date: normalizeInputDate(requestPayload.checkInDate) || getDefaultDate(7),
+            checkout_date: normalizeInputDate(requestPayload.checkOutDate) || getDefaultDate(8),
+            pax_passport: asText(requestPayload.paxPassport) || "ID",
+            room_count: getRoomCountFromPayload(requestPayload.roomRequest) || "1",
+            child_count: getChildCountFromPayload(requestPayload.roomRequest) || "0",
+            internal_code: candidate.internalCode,
+            room_id: candidate.roomId,
+            breakfast_id: candidate.breakfastId,
+          })
+          if (requestId) pricePolicyParams.set("request_id", requestId)
+
           return (
             <form key={`${candidate.internalCode}-${candidate.roomId}-${candidate.breakfastId}-${index}`} action={saveHotelSupplierRateFromDiagnostics} className="rounded-[14px] border border-slate-200 bg-slate-50 p-3">
               <input type="hidden" name="request_id" value={requestId} />
@@ -848,10 +867,10 @@ function SupplierRateCandidates({ result, requestId }: { result: ResultRecord | 
               <input type="hidden" name="room_name" value={candidate.roomName} />
               <input type="hidden" name="rate_name" value={candidate.rateName} />
               <input type="hidden" name="cancellation_policy" value={candidate.cancellationPolicy} />
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
+              <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
                   <p className="text-sm font-semibold text-slate-950">{candidate.roomName || candidate.rateName || `Rate ${index + 1}`}</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                  <p className="mt-1 break-all text-xs leading-5 text-slate-500">
                     Internal {candidate.internalCode || "-"} | Room {candidate.roomId || "-"} | Breakfast {candidate.breakfastId || "-"}
                   </p>
                   {candidate.totalPrice ? (
@@ -860,13 +879,18 @@ function SupplierRateCandidates({ result, requestId }: { result: ResultRecord | 
                     </p>
                   ) : null}
                 </div>
-                <button
-                  type="submit"
-                  disabled={!canSave}
-                  className="rounded-[12px] bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                >
-                  {requestId ? "Simpan ke request" : "Butuh request"}
-                </button>
+                <div className="flex shrink-0 flex-col gap-2">
+                  <Link href={`/admin/hotel/diagnostics?${pricePolicyParams.toString()}`} className="rounded-[12px] bg-slate-950 px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-slate-800">
+                    Pakai di PricePolicy
+                  </Link>
+                  <button
+                    type="submit"
+                    disabled={!canSave}
+                    className="rounded-[12px] bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  >
+                    {requestId ? "Simpan ke request" : "Butuh request"}
+                  </button>
+                </div>
               </div>
             </form>
           )
@@ -1000,9 +1024,9 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
   }
   const firstRateCandidate = getHotelRateCandidates(result).find((candidate) => candidate.internalCode && candidate.roomId && candidate.breakfastId)
   const rateDefaults: HotelRateDefaults = {
-    internalCode: asText(requestPayload.internalCode) || asText(activeQuotePayload.supplier_internal_code) || firstRateCandidate?.internalCode,
-    roomId: asText(requestPayload.roomID) || asText(activeQuotePayload.supplier_room_id) || firstRateCandidate?.roomId,
-    breakfastId: asText(requestPayload.breakfast) || asText(activeQuotePayload.supplier_breakfast_id) || firstRateCandidate?.breakfastId,
+    internalCode: params.internal_code || asText(requestPayload.internalCode) || asText(activeQuotePayload.supplier_internal_code) || firstRateCandidate?.internalCode,
+    roomId: params.room_id || asText(requestPayload.roomID) || asText(activeQuotePayload.supplier_room_id) || firstRateCandidate?.roomId,
+    breakfastId: params.breakfast_id || asText(requestPayload.breakfast) || asText(activeQuotePayload.supplier_breakfast_id) || firstRateCandidate?.breakfastId,
   }
   const hasCityPrefill = Boolean(coreDefaults.countryId && coreDefaults.cityId)
   const datalistIds: HotelCoreDatalistIds = {
