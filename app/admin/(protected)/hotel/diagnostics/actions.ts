@@ -237,6 +237,7 @@ function buildHotelPayload(formData: FormData, accessToken: string) {
     guestLastName: asString(formData.get("guest_last_name")) || "Feng",
     guestPhone: asString(formData.get("guest_phone")) || "081234567890",
     guestEmail: asString(formData.get("guest_email")) || "ops@redfeng.co",
+    hotelNameFilter: asString(formData.get("hotel_name_filter")),
     agentOsRef: "diagnostics-preview",
     contactName: `${asString(formData.get("guest_first_name")) || "Red"} ${asString(formData.get("guest_last_name")) || "Feng"}`,
     contactPhone: asString(formData.get("guest_phone")) || "081234567890",
@@ -673,7 +674,7 @@ export async function testHotelSearch(formData: FormData) {
         path: sourceEndpoint,
         method: "POST",
         body: {
-          hotelNameFilter: asString(formData.get("hotel_name_filter")),
+          hotelNameFilter: payload.hotelNameFilter || payload.cityID,
           countryID: payload.countryID,
           cityID: payload.cityID,
           userID: payload.userID,

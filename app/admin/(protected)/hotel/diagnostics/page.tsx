@@ -28,6 +28,7 @@ type SearchParams = Promise<{
   room_count?: string
   child_count?: string
   destination_label?: string
+  hotel_name_filter?: string
 }>
 
 type ResultRecord = Record<string, unknown>
@@ -76,6 +77,7 @@ type HotelCoreDefaults = {
   roomCount?: string
   childCount?: string
   destinationLabel?: string
+  hotelNameFilter?: string
 }
 
 type HotelRateDefaults = {
@@ -446,7 +448,7 @@ function HiddenCoreInputs({ defaults }: { defaults: HotelCoreDefaults }) {
       <input type="hidden" name="pax_passport" value={defaults.paxPassport || "ID"} />
       <input type="hidden" name="room_count" value={defaults.roomCount || "1"} />
       <input type="hidden" name="child_count" value={defaults.childCount || "0"} />
-      <input type="hidden" name="hotel_name_filter" value={defaults.destinationLabel || ""} />
+      <input type="hidden" name="hotel_name_filter" value={defaults.hotelNameFilter || defaults.destinationLabel || ""} />
     </>
   )
 }
@@ -607,7 +609,7 @@ function HotelSearchFields({
 }) {
   return (
     <>
-      <input type="hidden" name="hotel_name_filter" value={defaults.destinationLabel || ""} />
+      <Field label="Nama hotel/kota" name="hotel_name_filter" defaultValue={defaults.hotelNameFilter || defaults.destinationLabel || ""} placeholder="Jakarta atau nama hotel" />
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Country ID" name="country_id" defaultValue={defaults.countryId} placeholder="Pilih atau ketik Country ID" listId={datalistIds?.countryId} />
         <Field label="City ID" name="city_id" defaultValue={defaults.cityId} placeholder="Pilih atau ketik City ID" listId={datalistIds?.cityId} />
@@ -961,7 +963,13 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
   ])
   const activeRequestHint = (activeRequest || null) as HotelAvailabilityRequestHint | null
   const activeQuotePayload = asRecord(activeRequestHint?.quote_payload)
+  const cityLogs = (citySearchLogs || []) as CitySearchLogRow[]
+  const activeCityMappings = (cityMappings || []) as HotelCityMappingRow[]
   const cityCandidate = getCityCandidates(result)[0]
+  const resolvedCountryId = params.country_id || asText(requestPayload.countryID) || asText(activeQuotePayload.supplier_country_id) || cityCandidate?.countryId || ""
+  const resolvedCityId = params.city_id || asText(requestPayload.cityID) || asText(activeQuotePayload.supplier_city_id) || cityCandidate?.id || ""
+  const matchedCityMapping = activeCityMappings.find((mapping) => mapping.country_id === resolvedCountryId && mapping.city_id === resolvedCityId)
+  const resolvedDestinationLabel = params.destination_label || cityCandidate?.name || matchedCityMapping?.destination_label || activeRequestHint?.hotel_location || ""
   const coreDefaults: HotelCoreDefaults = {
     requestId,
     hotelId:
@@ -969,8 +977,8 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
       asText(requestPayload.hotelID) ||
       asText(activeQuotePayload.supplier_hotel_id) ||
       "",
-    countryId: params.country_id || asText(requestPayload.countryID) || asText(activeQuotePayload.supplier_country_id) || cityCandidate?.countryId || "",
-    cityId: params.city_id || asText(requestPayload.cityID) || asText(activeQuotePayload.supplier_city_id) || cityCandidate?.id || "",
+    countryId: resolvedCountryId,
+    cityId: resolvedCityId,
     checkinDate: params.checkin_date || normalizeInputDate(requestPayload.checkInDate) || activeRequestHint?.checkin_date || "",
     checkoutDate: params.checkout_date || normalizeInputDate(requestPayload.checkOutDate) || activeRequestHint?.checkout_date || "",
     paxPassport: params.pax_passport || asText(requestPayload.paxPassport) || "ID",
@@ -982,7 +990,8 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
       params.child_count ||
       getChildCountFromPayload(requestPayload.roomRequest) ||
       (typeof activeRequestHint?.child_count === "number" ? String(activeRequestHint.child_count) : ""),
-    destinationLabel: params.destination_label || cityCandidate?.name || "",
+    destinationLabel: resolvedDestinationLabel,
+    hotelNameFilter: params.hotel_name_filter || asText(requestPayload.hotelNameFilter) || resolvedDestinationLabel || activeRequestHint?.hotel_name || "",
   }
   const rateDefaults: HotelRateDefaults = {
     internalCode: asText(requestPayload.internalCode) || asText(activeQuotePayload.supplier_internal_code),
@@ -990,8 +999,6 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
     breakfastId: asText(requestPayload.breakfast) || asText(activeQuotePayload.supplier_breakfast_id),
   }
   const hasCityPrefill = Boolean(coreDefaults.countryId && coreDefaults.cityId)
-  const cityLogs = (citySearchLogs || []) as CitySearchLogRow[]
-  const activeCityMappings = (cityMappings || []) as HotelCityMappingRow[]
   const datalistIds: HotelCoreDatalistIds = {
     hotelId: "hotel-diagnostics-hotel-id",
     countryId: "hotel-diagnostics-country-id",
