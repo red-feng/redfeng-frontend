@@ -167,7 +167,7 @@ export default async function AdminHotelWorkspacePage({
       ) : null}
       {stagingSimulationEnabled ? (
         <div className="rounded-[16px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
-          Mode staging hotel aktif: tombol simulasi paid akan menandai booking sebagai paid lalu memproses Hotel/Booking ke Dharmawisata UAT.
+          Mode staging hotel aktif: tombol simulasi paid akan menandai booking sebagai paid lalu memproses BookingAllSupplier ke Dharmawisata UAT.
         </div>
       ) : null}
 

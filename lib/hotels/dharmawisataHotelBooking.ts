@@ -169,7 +169,7 @@ function isSuccessResponse(raw: JsonRecord) {
 export async function createDharmawisataHotelBookingAfterPayment(
   input: DharmawisataHotelBookingInput,
 ): Promise<DharmawisataHotelBookingResult> {
-  const bookingPath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_BOOKING_PATH") || "/Hotel/Booking"
+  const bookingPath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_BOOKING_PATH") || "/Hotel/BookingAllSupplier"
 
   if (!isDharmawisataConfigured()) {
     return {
@@ -258,8 +258,8 @@ export async function createDharmawisataHotelBookingAfterPayment(
       issuedTimeLimit: pickString(finalRecord, ["issuedTimeLimit"]),
       raw: {
         bookingMode: "api",
-        hotelBookingFinalAction: "Hotel/Booking",
-        note: "Dharmawisata hotel langsung payment saat Hotel/Booking; Hotel/Issued tidak dipanggil sebagai langkah wajib.",
+        hotelBookingFinalAction: "Hotel/BookingAllSupplier",
+        note: "Dharmawisata hotel langsung payment saat BookingAllSupplier; Hotel/Issued tidak dipanggil sebagai langkah wajib.",
         request: summarizeRequest(payload),
         bookingResponse: bookingRaw,
         detailResponse: detailRaw,

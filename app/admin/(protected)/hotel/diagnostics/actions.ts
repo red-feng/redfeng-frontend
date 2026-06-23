@@ -758,7 +758,7 @@ export async function testHotelAvailableRooms(formData: FormData) {
     }
 
     const response = await dharmawisataJsonFetch({
-      path: getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_AVAILABLE_ROOMS_PATH") || "/Hotel/AvailableRooms",
+      path: getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_AVAILABLE_ROOMS_PATH") || "/Hotel/AvailableRooms5",
       method: "POST",
       body: {
         paxPassport: payload.paxPassport,
@@ -983,15 +983,15 @@ export async function previewHotelBookingPayload(formData: FormData) {
     panel: "booking-preview",
     status: missingFields.length > 0 ? "warning" : "success",
     result: buildResultPayload({
-      title: "Preview payload Hotel/Booking",
+      title: "Preview payload BookingAllSupplier",
       status: missingFields.length > 0 ? "NOT_READY" : "READY",
       respMessage:
         missingFields.length > 0
           ? `Payload booking belum lengkap: ${missingFields.join(", ")}.`
-          : "Payload booking hotel siap secara struktur. Submit asli hanya dilakukan setelah payment Midtrans sukses.",
+          : "Payload BookingAllSupplier siap secara struktur. Submit asli hanya dilakukan setelah payment Midtrans sukses.",
         missingFields,
         payload,
-        hotelBookingNote: "Hotel Dharmawisata langsung payment/confirm saat Hotel/Booking. Endpoint ini hanya boleh dipanggil setelah customer paid.",
+        hotelBookingNote: "Hotel Dharmawisata langsung payment/confirm saat BookingAllSupplier. Endpoint ini hanya boleh dipanggil setelah customer paid.",
       }),
     })
   }

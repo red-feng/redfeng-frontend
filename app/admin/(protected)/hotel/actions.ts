@@ -441,8 +441,8 @@ export async function simulateHotelPaidInStagingAction(formData: FormData) {
   revalidatePath("/admin/hotel")
 
   if (!result.ok && !result.skipped) {
-    redirect(`/admin/hotel?error=${encodeURIComponent(`Simulasi paid berjalan, tetapi Hotel/Booking gagal: ${result.message}`)}`)
+    redirect(`/admin/hotel?error=${encodeURIComponent(`Simulasi paid berjalan, tetapi BookingAllSupplier gagal: ${result.message}`)}`)
   }
 
-  redirect(`/admin/hotel?success=${encodeURIComponent("Simulasi paid staging selesai dan Hotel/Booking diproses.")}`)
+  redirect(`/admin/hotel?success=${encodeURIComponent("Simulasi paid staging selesai dan BookingAllSupplier diproses.")}`)
 }
