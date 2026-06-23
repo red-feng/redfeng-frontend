@@ -309,12 +309,12 @@ function collectHotelRateCandidates(
   if (Object.keys(record).length === 0) return candidates
 
   const next: Partial<HotelRateCandidate> = {
-    internalCode: firstString(record, ["internalCode", "InternalCode", "internal_code"]) || inherited.internalCode || "",
-    roomId: firstString(record, ["roomID", "roomId", "RoomID", "room_id"]) || inherited.roomId || "",
-    breakfastId: firstString(record, ["breakfast", "breakfastID", "breakfastId", "Breakfast", "BreakfastID", "breakfast_id"]) || inherited.breakfastId || "",
-    roomName: firstString(record, ["roomName", "RoomName", "roomTypeName", "RoomTypeName", "name", "Name"]) || inherited.roomName || "",
-    rateName: firstString(record, ["rateName", "RateName", "ratePlanName", "RatePlanName", "boardName", "BoardName"]) || inherited.rateName || "",
-    totalPrice: firstNumber(record, ["totalPrice", "TotalPrice", "price", "Price", "sellPrice", "SellPrice", "amount", "Amount"]) ?? inherited.totalPrice ?? null,
+    internalCode: firstString(record, ["internalCode", "InternalCode", "internal_code", "rateKey", "RateKey", "rateCode", "RateCode", "roomRateCode", "RoomRateCode"]) || inherited.internalCode || "",
+    roomId: firstString(record, ["roomID", "roomId", "RoomID", "room_id", "roomTypeID", "roomTypeId", "RoomTypeID", "RoomTypeId", "id", "ID"]) || inherited.roomId || "",
+    breakfastId: firstString(record, ["breakfast", "breakfastID", "breakfastId", "Breakfast", "BreakfastID", "breakfast_id", "mealID", "mealId", "MealID", "MealId", "boardID", "boardId", "BoardID", "BoardId"]) || inherited.breakfastId || "",
+    roomName: firstString(record, ["roomName", "RoomName", "roomTypeName", "RoomTypeName", "name", "Name", "description", "Description"]) || inherited.roomName || "",
+    rateName: firstString(record, ["rateName", "RateName", "ratePlanName", "RatePlanName", "boardName", "BoardName", "breakfastName", "BreakfastName", "mealName", "MealName"]) || inherited.rateName || "",
+    totalPrice: firstNumber(record, ["totalPrice", "TotalPrice", "price", "Price", "sellPrice", "SellPrice", "amount", "Amount", "netPrice", "NetPrice", "totalRoomRate", "TotalRoomRate"]) ?? inherited.totalPrice ?? null,
     currency: firstString(record, ["currency", "Currency"]) || inherited.currency || "IDR",
     cancellationPolicy: firstString(record, ["cancellationPolicy", "CancellationPolicy", "policy", "Policy"]) || inherited.cancellationPolicy || "",
   }

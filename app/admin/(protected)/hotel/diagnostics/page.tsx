@@ -998,10 +998,11 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
     destinationLabel: resolvedDestinationLabel,
     hotelNameFilter: params.hotel_name_filter || asText(requestPayload.hotelNameFilter) || resolvedDestinationLabel || activeRequestHint?.hotel_name || "",
   }
+  const firstRateCandidate = getHotelRateCandidates(result).find((candidate) => candidate.internalCode && candidate.roomId && candidate.breakfastId)
   const rateDefaults: HotelRateDefaults = {
-    internalCode: asText(requestPayload.internalCode) || asText(activeQuotePayload.supplier_internal_code),
-    roomId: asText(requestPayload.roomID) || asText(activeQuotePayload.supplier_room_id),
-    breakfastId: asText(requestPayload.breakfast) || asText(activeQuotePayload.supplier_breakfast_id),
+    internalCode: asText(requestPayload.internalCode) || asText(activeQuotePayload.supplier_internal_code) || firstRateCandidate?.internalCode,
+    roomId: asText(requestPayload.roomID) || asText(activeQuotePayload.supplier_room_id) || firstRateCandidate?.roomId,
+    breakfastId: asText(requestPayload.breakfast) || asText(activeQuotePayload.supplier_breakfast_id) || firstRateCandidate?.breakfastId,
   }
   const hasCityPrefill = Boolean(coreDefaults.countryId && coreDefaults.cityId)
   const datalistIds: HotelCoreDatalistIds = {
