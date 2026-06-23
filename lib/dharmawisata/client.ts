@@ -210,6 +210,7 @@ export async function dharmawisataJsonFetch({
   headers,
   body,
   cache = "no-store",
+  timeoutMs,
   next,
 }: Omit<DharmawisataRequestOptions, "body"> & {
   body?: unknown
@@ -224,6 +225,7 @@ export async function dharmawisataJsonFetch({
     },
     body: body === undefined ? null : JSON.stringify(body),
     cache,
+    timeoutMs,
     next,
   })
 
@@ -240,6 +242,7 @@ export async function dharmawisataFormFetch({
   headers,
   body,
   cache = "no-store",
+  timeoutMs,
   next,
 }: Omit<DharmawisataRequestOptions, "body"> & {
   body?: Record<string, string | number | boolean | null | undefined>
@@ -261,6 +264,7 @@ export async function dharmawisataFormFetch({
     },
     body: params,
     cache,
+    timeoutMs,
     next,
   })
 

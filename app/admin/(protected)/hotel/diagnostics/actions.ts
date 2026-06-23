@@ -66,6 +66,8 @@ const HOTEL_SCHEMA_REQUIRED_COLUMNS = [
   ["supplier_orders", "response_payload"],
 ] as const
 
+const HOTEL_DIAGNOSTICS_TIMEOUT_MS = 25000
+
 function asString(value: unknown) {
   return typeof value === "string" ? value.trim() : typeof value === "number" ? String(value) : ""
 }
@@ -120,6 +122,29 @@ function rethrowNextRedirect(error: unknown) {
 
 function buildResultPayload(value: unknown) {
   return JSON.stringify(value)
+}
+
+function buildCoreQueryParams(payload: ReturnType<typeof buildHotelPayload> | null) {
+  const params: Record<string, string> = {}
+  if (!payload) return params
+
+  const values: Record<string, string> = {
+    hotel_id: payload.hotelID,
+    country_id: payload.countryID,
+    city_id: payload.cityID,
+    checkin_date: asString(payload.checkInDate).slice(0, 10),
+    checkout_date: asString(payload.checkOutDate).slice(0, 10),
+    pax_passport: payload.paxPassport,
+    room_count: String(Array.isArray(payload.roomRequest) ? payload.roomRequest.length : 1),
+    child_count: asString(asRecord(Array.isArray(payload.roomRequest) ? payload.roomRequest[0] : null).childNum) || "0",
+    hotel_name_filter: payload.hotelNameFilter,
+  }
+
+  for (const [key, value] of Object.entries(values)) {
+    if (value) params[key] = value
+  }
+
+  return params
 }
 
 function normalizeDestinationKey(value: string) {
@@ -497,6 +522,7 @@ export async function testHotelCitySearch(formData: FormData) {
     const response = await dharmawisataJsonFetch({
       path: getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_CITY_PATH") || "/Hotel/City5",
       method: "POST",
+      timeoutMs: HOTEL_DIAGNOSTICS_TIMEOUT_MS,
       body: {
         countryID,
         cityNameFilter,
@@ -659,6 +685,7 @@ export async function testHotelSearch(formData: FormData) {
       response = await dharmawisataJsonFetch({
         path: sourceEndpoint,
         method: "POST",
+        timeoutMs: HOTEL_DIAGNOSTICS_TIMEOUT_MS,
         body: {
           paxPassport: payload.paxPassport,
           countryID: payload.countryID,
@@ -678,6 +705,7 @@ export async function testHotelSearch(formData: FormData) {
       response = await dharmawisataJsonFetch({
         path: sourceEndpoint,
         method: "POST",
+        timeoutMs: HOTEL_DIAGNOSTICS_TIMEOUT_MS,
         body: {
           hotelNameFilter: payload.hotelNameFilter || payload.cityID,
           countryID: payload.countryID,
@@ -761,6 +789,7 @@ export async function testHotelAvailableRooms(formData: FormData) {
     const response = await dharmawisataJsonFetch({
       path: getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_AVAILABLE_ROOMS_PATH") || "/Hotel/AvailableRooms5",
       method: "POST",
+      timeoutMs: HOTEL_DIAGNOSTICS_TIMEOUT_MS,
       body: {
         paxPassport: payload.paxPassport,
         countryID: payload.countryID,
@@ -809,6 +838,7 @@ export async function testHotelAvailableRoomsThenPricePolicy(formData: FormData)
   await ensureHotelAdmin()
   const startedAt = Date.now()
   const requestId = asString(formData.get("request_id"))
+  let payloadForError: ReturnType<typeof buildHotelPayload> | null = null
 
   try {
     const auth = await dharmawisataLogin({ language: 1 })
@@ -816,15 +846,18 @@ export async function testHotelAvailableRoomsThenPricePolicy(formData: FormData)
     if (!accessToken) throw new Error("Login berhasil dipanggil tetapi accessToken kosong.")
 
     const payload = buildHotelPayload(formData, accessToken)
+    payloadForError = payload
     const missingFields = payloadMissingFields(payload, false).filter((field) => !["internalCode", "breakfast", "roomID"].includes(field))
     if (missingFields.length > 0) {
       diagnosticsRedirect({
         panel: "price-policy",
         status: "error",
         ...(requestId ? { request_id: requestId } : {}),
+        ...buildCoreQueryParams(payload),
         result: buildResultPayload({
           title: "Payload auto PricePolicy belum lengkap",
           requestId,
+          request: { ...payload, accessToken: "present-redacted" },
           missingFields,
         }),
       })
@@ -833,6 +866,7 @@ export async function testHotelAvailableRoomsThenPricePolicy(formData: FormData)
     const availableResponse = await dharmawisataJsonFetch({
       path: getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_AVAILABLE_ROOMS_PATH") || "/Hotel/AvailableRooms5",
       method: "POST",
+      timeoutMs: HOTEL_DIAGNOSTICS_TIMEOUT_MS,
       body: {
         paxPassport: payload.paxPassport,
         countryID: payload.countryID,
@@ -854,6 +888,7 @@ export async function testHotelAvailableRoomsThenPricePolicy(formData: FormData)
         panel: "price-policy",
         status: "warning",
         ...(requestId ? { request_id: requestId } : {}),
+        ...buildCoreQueryParams(payload),
         result: buildResultPayload({
           title: selectedRate ? "Auto PricePolicy berhenti di AvailableRooms" : "Auto PricePolicy belum menemukan rate lengkap",
           elapsedMs: Date.now() - startedAt,
@@ -882,6 +917,7 @@ export async function testHotelAvailableRoomsThenPricePolicy(formData: FormData)
     const priceResponse = await dharmawisataJsonFetch({
       path: getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_PRICE_POLICY_PATH") || "/Hotel/PriceAndPolicyInfo",
       method: "POST",
+      timeoutMs: HOTEL_DIAGNOSTICS_TIMEOUT_MS,
       body: {
         paxPassport: pricePayload.paxPassport,
         countryID: pricePayload.countryID,
@@ -905,6 +941,7 @@ export async function testHotelAvailableRoomsThenPricePolicy(formData: FormData)
       panel: "price-policy",
       status: priceStatus === "SUCCESS" && enableBooking ? "success" : "warning",
       ...(requestId ? { request_id: requestId } : {}),
+      ...buildCoreQueryParams(pricePayload),
       result: buildResultPayload({
         title: "Auto AvailableRooms + PricePolicy selesai",
         elapsedMs: Date.now() - startedAt,
@@ -923,10 +960,12 @@ export async function testHotelAvailableRoomsThenPricePolicy(formData: FormData)
       panel: "price-policy",
       status: "error",
       ...(requestId ? { request_id: requestId } : {}),
+      ...buildCoreQueryParams(payloadForError),
       result: buildResultPayload({
         title: "Auto AvailableRooms + PricePolicy gagal",
         elapsedMs: Date.now() - startedAt,
         requestId,
+        request: payloadForError ? { ...payloadForError, accessToken: "present-redacted" } : undefined,
         error: error instanceof Error ? error.message : "Unknown error",
       }),
     })
@@ -1062,6 +1101,7 @@ export async function testHotelPricePolicy(formData: FormData) {
     const response = await dharmawisataJsonFetch({
       path: getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_PRICE_POLICY_PATH") || "/Hotel/PriceAndPolicyInfo",
       method: "POST",
+      timeoutMs: HOTEL_DIAGNOSTICS_TIMEOUT_MS,
       body: {
         paxPassport: payload.paxPassport,
         countryID: payload.countryID,
