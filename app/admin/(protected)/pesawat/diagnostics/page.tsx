@@ -1,6 +1,12 @@
 import Link from "next/link"
 import AdminProductWorkspace from "@/app/components/AdminProductWorkspace"
-import { checkFlightSchemaReadiness, previewDharmawisataHoldPayload, testDharmawisataLogin, testDharmawisataSearch } from "./actions"
+import {
+  autoDharmawisataSearchAndPreviewHold,
+  checkFlightSchemaReadiness,
+  previewDharmawisataHoldPayload,
+  testDharmawisataLogin,
+  testDharmawisataSearch,
+} from "./actions"
 
 type SearchParams = Promise<{
   panel?: string
@@ -44,6 +50,10 @@ function asText(value: unknown) {
   return ""
 }
 
+function asRecord(value: unknown): ResultRecord {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as ResultRecord) : {}
+}
+
 function summarizeResult(result: ResultRecord | null) {
   if (!result) return []
 
@@ -64,6 +74,17 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
   const resultTitle = asText(result?.title) || "Belum ada hasil test"
   const resultRows = summarizeResult(result)
   const defaultDepartDate = getDefaultDepartDate()
+  const requestDefaults = asRecord(result?.request)
+  const routeDefaults = {
+    origin: asText(requestDefaults.origin) || "CGK",
+    destination: asText(requestDefaults.destination) || "SUB",
+    departDate: asText(requestDefaults.departDate) || defaultDepartDate,
+    returnDate: asText(requestDefaults.returnDate),
+    tripType: asText(requestDefaults.tripType).toLowerCase() === "roundtrip" ? "round_trip" : "one_way",
+    paxAdult: asText(requestDefaults.paxAdult) || "1",
+    paxChild: asText(requestDefaults.paxChild) || "0",
+    paxInfant: asText(requestDefaults.paxInfant) || "0",
+  }
 
   return (
     <AdminProductWorkspace
@@ -80,7 +101,7 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
     >
       <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-5">
-          <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+          <div id="flight-diagnostics-schema" className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Schema</p>
@@ -104,7 +125,7 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
             </form>
           </div>
 
-          <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+          <div id="flight-diagnostics-login" className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Step 1</p>
@@ -128,7 +149,112 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
             </form>
           </div>
 
-          <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+          <div id="flight-diagnostics-auto" className="rounded-[20px] border border-amber-200 bg-amber-50 p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-700">Simple Mode</p>
+                <h2 className="mt-2 text-base font-semibold text-amber-950">Tes pesawat otomatis</h2>
+                <p className="mt-2 text-sm leading-6 text-amber-800">
+                  Tombol ini menjalankan login, fare search, lalu membuat preview payload hold tanpa membuat PNR supplier.
+                </p>
+              </div>
+              <span className="rounded-[12px] border border-amber-300 bg-white px-3 py-1 text-xs font-semibold text-amber-800">
+                Dry-run
+              </span>
+            </div>
+
+            <form action={autoDharmawisataSearchAndPreviewHold} className="mt-5 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-4">
+                <label className="text-sm font-semibold text-amber-950">
+                  Origin
+                  <input
+                    name="origin"
+                    defaultValue={routeDefaults.origin}
+                    className="mt-2 h-11 w-full rounded-[12px] border border-amber-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  />
+                </label>
+                <label className="text-sm font-semibold text-amber-950">
+                  Destination
+                  <input
+                    name="destination"
+                    defaultValue={routeDefaults.destination}
+                    className="mt-2 h-11 w-full rounded-[12px] border border-amber-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  />
+                </label>
+                <label className="text-sm font-semibold text-amber-950">
+                  Tanggal
+                  <input
+                    type="date"
+                    name="depart_date"
+                    defaultValue={routeDefaults.departDate}
+                    className="mt-2 h-11 w-full rounded-[12px] border border-amber-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  />
+                </label>
+                <label className="text-sm font-semibold text-amber-950">
+                  Trip
+                  <select
+                    name="trip_type"
+                    defaultValue={routeDefaults.tripType}
+                    className="mt-2 h-11 w-full rounded-[12px] border border-amber-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  >
+                    <option value="one_way">One way</option>
+                    <option value="round_trip">Round trip</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-4">
+                <label className="text-sm font-semibold text-amber-950">
+                  Tanggal pulang
+                  <input
+                    type="date"
+                    name="return_date"
+                    defaultValue={routeDefaults.returnDate}
+                    className="mt-2 h-11 w-full rounded-[12px] border border-amber-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  />
+                </label>
+                <label className="text-sm font-semibold text-amber-950">
+                  Dewasa
+                  <input
+                    type="number"
+                    name="pax_adult"
+                    min={1}
+                    defaultValue={routeDefaults.paxAdult}
+                    className="mt-2 h-11 w-full rounded-[12px] border border-amber-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  />
+                </label>
+                <label className="text-sm font-semibold text-amber-950">
+                  Anak
+                  <input
+                    type="number"
+                    name="pax_child"
+                    min={0}
+                    defaultValue={routeDefaults.paxChild}
+                    className="mt-2 h-11 w-full rounded-[12px] border border-amber-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  />
+                </label>
+                <label className="text-sm font-semibold text-amber-950">
+                  Infant
+                  <input
+                    type="number"
+                    name="pax_infant"
+                    min={0}
+                    defaultValue={routeDefaults.paxInfant}
+                    className="mt-2 h-11 w-full rounded-[12px] border border-amber-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  />
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                className="inline-flex w-full items-center justify-center rounded-[14px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700"
+              >
+                Auto Search + Preview Hold
+              </button>
+            </form>
+          </div>
+
+          <div id="flight-diagnostics-search" className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Step 2</p>
@@ -148,7 +274,7 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
                   Origin
                   <input
                     name="origin"
-                    defaultValue="CGK"
+                    defaultValue={routeDefaults.origin}
                     className="mt-2 h-11 w-full rounded-[12px] border border-[#e8d8ca] bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                   />
                 </label>
@@ -156,7 +282,7 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
                   Destination
                   <input
                     name="destination"
-                    defaultValue="SUB"
+                    defaultValue={routeDefaults.destination}
                     className="mt-2 h-11 w-full rounded-[12px] border border-[#e8d8ca] bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                   />
                 </label>
@@ -168,7 +294,7 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
                   <input
                     type="date"
                     name="depart_date"
-                    defaultValue={defaultDepartDate}
+                    defaultValue={routeDefaults.departDate}
                     className="mt-2 h-11 w-full rounded-[12px] border border-[#e8d8ca] bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                   />
                 </label>
@@ -176,7 +302,7 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
                   Trip
                   <select
                     name="trip_type"
-                    defaultValue="one_way"
+                    defaultValue={routeDefaults.tripType}
                     className="mt-2 h-11 w-full rounded-[12px] border border-[#e8d8ca] bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                   >
                     <option value="one_way">One way</option>
@@ -190,6 +316,7 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
                 <input
                   type="date"
                   name="return_date"
+                  defaultValue={routeDefaults.returnDate}
                   className="mt-2 h-11 w-full rounded-[12px] border border-[#e8d8ca] bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                 />
               </label>
@@ -201,7 +328,7 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
                     type="number"
                     name="pax_adult"
                     min={1}
-                    defaultValue={1}
+                    defaultValue={routeDefaults.paxAdult}
                     className="mt-2 h-11 w-full rounded-[12px] border border-[#e8d8ca] bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                   />
                 </label>
@@ -211,7 +338,7 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
                     type="number"
                     name="pax_child"
                     min={0}
-                    defaultValue={0}
+                    defaultValue={routeDefaults.paxChild}
                     className="mt-2 h-11 w-full rounded-[12px] border border-[#e8d8ca] bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                   />
                 </label>
@@ -221,7 +348,7 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
                     type="number"
                     name="pax_infant"
                     min={0}
-                    defaultValue={0}
+                    defaultValue={routeDefaults.paxInfant}
                     className="mt-2 h-11 w-full rounded-[12px] border border-[#e8d8ca] bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                   />
                 </label>
@@ -236,7 +363,7 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
             </form>
           </div>
 
-          <div className="rounded-[20px] border border-amber-200 bg-amber-50 p-5">
+          <div id="flight-diagnostics-hold-preview" className="rounded-[20px] border border-amber-200 bg-amber-50 p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-700">Step 3</p>

@@ -93,7 +93,8 @@ function shortRef(value: unknown) {
 
 function diagnosticsRedirect(params: Record<string, string>) {
   const searchParams = new URLSearchParams(params)
-  redirect(`/admin/pesawat/diagnostics?${searchParams.toString()}`)
+  const panel = asString(params.panel) || "login"
+  redirect(`/admin/pesawat/diagnostics?${searchParams.toString()}#flight-diagnostics-${panel}`)
 }
 
 function rethrowNextRedirect(error: unknown) {
@@ -346,11 +347,42 @@ function splitIndonesianPhone(value: string) {
   }
 }
 
+function buildDefaultPassengers(paxAdult: number, paxChild: number, paxInfant: number, fallbackEmail: string) {
+  const passengers: DharmawisataPassenger[] = []
+  const passengerCount = Math.max(1, paxAdult + paxChild + paxInfant)
+
+  for (let index = 0; index < passengerCount; index += 1) {
+    const type: DharmawisataPassenger["type"] =
+      index < paxAdult ? "Adult" : index < paxAdult + paxChild ? "Child" : "Infant"
+    passengers.push({
+      title: type === "Adult" ? "MR" : "MSTR",
+      firstName: index === 0 ? "Red" : `Passenger${index + 1}`,
+      lastName: index === 0 ? "Feng" : "Test",
+      email: fallbackEmail,
+      birthDate: type === "Adult" ? "1990-01-01" : type === "Child" ? "2018-01-01" : "2025-01-01",
+      gender: "Male",
+      type,
+    })
+  }
+
+  return passengers
+}
+
 function normalizePassengerType(value: unknown): DharmawisataPassenger["type"] {
   const normalized = asString(value).toLowerCase()
   if (["child", "anak"].includes(normalized)) return "Child"
   if (["infant", "bayi"].includes(normalized)) return "Infant"
   return "Adult"
+}
+
+function normalizeFlightDateTime(value: unknown, fallbackDate: string, fallbackTime: string) {
+  const raw = asString(value)
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(raw)) return raw
+  if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}/.test(raw)) return raw.replace(" ", "T")
+  const timeMatch = raw.match(/(\d{1,2}):(\d{2})/)
+  const hour = String(Number(timeMatch?.[1] || fallbackTime.split(":")[0] || "0")).padStart(2, "0")
+  const minute = String(Number(timeMatch?.[2] || fallbackTime.split(":")[1] || "0")).padStart(2, "0")
+  return `${fallbackDate}T${hour}:${minute}:00`
 }
 
 function parsePreviewPassengers(formData: FormData, fallbackName: string, fallbackEmail: string): DharmawisataPassenger[] {
@@ -569,6 +601,193 @@ export async function testDharmawisataSearch(formData: FormData) {
       status: "error",
       result: buildResultPayload({
         title: "Search Dharmawisata gagal",
+        elapsedMs: Date.now() - startedAt,
+        error: error instanceof Error ? error.message : "Unknown error",
+        request: {
+          tripType,
+          origin,
+          destination,
+          departDate,
+          returnDate: tripType === "RoundTrip" ? returnDate : "",
+          paxAdult,
+          paxChild,
+          paxInfant,
+        },
+      }),
+    })
+  }
+}
+
+export async function autoDharmawisataSearchAndPreviewHold(formData: FormData) {
+  await ensureFlightAdmin()
+
+  if (!isDharmawisataConfigured()) {
+    diagnosticsRedirect({
+      panel: "auto",
+      status: "error",
+      result: buildResultPayload({
+        title: "Konfigurasi Dharmawisata belum lengkap",
+        env: summarizeEnv(),
+      }),
+    })
+  }
+
+  const origin = asString(formData.get("origin") || "CGK").toUpperCase()
+  const destination = asString(formData.get("destination") || "SUB").toUpperCase()
+  const departDate = asString(formData.get("depart_date"))
+  const returnDate = asString(formData.get("return_date"))
+  const tripType = asString(formData.get("trip_type")) === "round_trip" ? "RoundTrip" : "OneWay"
+  const paxAdult = Math.max(Number(formData.get("pax_adult") || 1), 1)
+  const paxChild = Math.max(Number(formData.get("pax_child") || 0), 0)
+  const paxInfant = Math.max(Number(formData.get("pax_infant") || 0), 0)
+  const startedAt = Date.now()
+
+  if (!origin || !destination || !departDate) {
+    diagnosticsRedirect({
+      panel: "auto",
+      status: "error",
+      result: buildResultPayload({
+        title: "Auto preview pesawat belum lengkap",
+        error: "Origin, destination, dan tanggal berangkat wajib diisi.",
+      }),
+    })
+  }
+
+  try {
+    const auth = await dharmawisataLogin({ language: 1 })
+    const accessToken = asString(auth.accessToken)
+    if (!accessToken) {
+      diagnosticsRedirect({
+        panel: "auto",
+        status: "error",
+        result: buildResultPayload({
+          title: "Auto preview dibatalkan",
+          error: "Login berhasil dipanggil tetapi accessToken kosong.",
+          authStatus: auth.status || "",
+          authMessage: auth.respMessage || "",
+        }),
+      })
+    }
+
+    const credentials = getDharmawisataCredentials()
+    const searchPath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_SEARCH_PATH") || "/Airline/LowFareSchedule"
+    const searchResult = await collectLowFareDiagnostics({
+      searchPath,
+      tripType,
+      origin,
+      destination,
+      departDate,
+      returnDate,
+      paxAdult,
+      paxChild,
+      paxInfant,
+      userID: credentials.userId,
+      accessToken,
+    })
+    const body = searchResult.lastBody
+    const journeys = searchResult.journeys.map(summarizeJourney)
+    const selectedJourney = journeys.find((journey) => {
+      const hint = asRecord(journey.holdPreviewHint)
+      return asString(hint.airlineID) && asString(hint.origin) && asString(hint.destination) && asString(hint.flightNumber)
+    }) || journeys[0]
+
+    if (!selectedJourney) {
+      diagnosticsRedirect({
+        panel: "auto",
+        status: "warning",
+        result: buildResultPayload({
+          title: "Auto Search + Preview Hold belum menemukan fare",
+          elapsedMs: Date.now() - startedAt,
+          flow: "Login -> LowFareSchedule",
+          status: asString(body.status),
+          respMessage: asString(body.respMessage) || "Dharmawisata belum mengembalikan journey untuk rute ini.",
+          request: {
+            tripType,
+            origin,
+            destination,
+            departDate,
+            returnDate: tripType === "RoundTrip" ? returnDate : "",
+            paxAdult,
+            paxChild,
+            paxInfant,
+          },
+          searchAttemptCount: searchResult.attempts.length,
+          searchAttempts: searchResult.attempts,
+          journeyDepartCount: 0,
+        }),
+      })
+    }
+
+    const hint = asRecord(selectedJourney.holdPreviewHint)
+    const contactEmail = "ops@redfeng.co"
+    const preview = buildDharmawisataFlightBookingPayloadPreview({
+      bookingId: "diagnostics-auto-preview",
+      airlineId: asString(hint.airlineID),
+      airlineCode: asString(hint.airlineCode),
+      flightNumber: asString(hint.flightNumber),
+      originAirportCode: asString(hint.origin) || origin,
+      destinationAirportCode: asString(hint.destination) || destination,
+      tripType: tripType === "RoundTrip" ? "round_trip" : "one_way",
+      departureAt: normalizeFlightDateTime(hint.departureAt || selectedJourney.departTime, departDate, "08:00"),
+      arrivalAt: normalizeFlightDateTime(hint.arrivalAt || selectedJourney.arrivalTime, departDate, "10:00"),
+      returnAt: tripType === "RoundTrip" && returnDate ? `${returnDate}T00:00:00` : "",
+      flightClass: asString(hint.flightClass) || asString(selectedJourney.class) || "Economy",
+      detailSchedule: asString(hint.detailSchedule) || asString(selectedJourney.journeyReference),
+      searchKey: asString(hint.searchKey) || asString(selectedJourney.journeyReference),
+      airlineAccessCode: asString(hint.airlineAccessCode),
+      contactTitle: "MR",
+      contactFirstName: "Red",
+      contactLastName: "Feng",
+      contactCountryCodePhone: "62",
+      contactAreaCodePhone: "812",
+      contactRemainingPhoneNo: "34567890",
+      contactEmail,
+      paxAdult,
+      paxChild,
+      paxInfant,
+      passengers: buildDefaultPassengers(paxAdult, paxChild, paxInfant, contactEmail),
+    })
+
+    diagnosticsRedirect({
+      panel: "auto",
+      status: preview.readyToSubmit ? "success" : "warning",
+      result: buildResultPayload({
+        title: "Auto Search + Preview Hold selesai",
+        elapsedMs: Date.now() - startedAt,
+        flow: "Login -> LowFareSchedule -> Preview /Airline/Booking",
+        status: preview.readyToSubmit ? "READY" : "NOT_READY",
+        respMessage: preview.message,
+        configured: preview.configured,
+        bookingPathConfigured: preview.bookingPathConfigured,
+        missingFields: preview.missingFields,
+        request: {
+          tripType,
+          origin,
+          destination,
+          departDate,
+          returnDate: tripType === "RoundTrip" ? returnDate : "",
+          paxAdult,
+          paxChild,
+          paxInfant,
+        },
+        searchStatus: asString(body.status),
+        searchMessage: asString(body.respMessage),
+        searchAttemptCount: searchResult.attempts.length,
+        searchAttempts: searchResult.attempts,
+        journeyDepartCount: journeys.length,
+        selectedJourney,
+        summary: preview.summary,
+        payload: preview.payload,
+        note: "Diagnostics hanya preview payload hold. Request /Airline/Booking asli tetap lewat alur booking/admin, bukan dari tombol ini.",
+      }),
+    })
+  } catch (error) {
+    rethrowNextRedirect(error)
+    diagnosticsRedirect({
+      panel: "auto",
+      status: "error",
+      result: buildResultPayload({
+        title: "Auto Search + Preview Hold gagal",
         elapsedMs: Date.now() - startedAt,
         error: error instanceof Error ? error.message : "Unknown error",
         request: {
