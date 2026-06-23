@@ -70,6 +70,10 @@ function asString(value: unknown) {
   return typeof value === "string" ? value.trim() : typeof value === "number" ? String(value) : ""
 }
 
+function cleanHotelIdentifier(value: unknown) {
+  return asString(value).split("~|~")[0]?.trim() || asString(value)
+}
+
 function asNumber(value: unknown, fallback = 0) {
   const parsed = typeof value === "number" ? value : Number(asString(value).replace(/[^\d.-]/g, ""))
   return Number.isFinite(parsed) ? parsed : fallback
@@ -228,7 +232,7 @@ function buildHotelPayload(formData: FormData, accessToken: string) {
     checkOutDate: asDateTime(formData.get("checkout_date")),
     roomRequest: buildRoomRequest(roomCount, childCount),
     internalCode: asString(formData.get("internal_code")),
-    hotelID: asString(formData.get("hotel_id")),
+    hotelID: cleanHotelIdentifier(formData.get("hotel_id")),
     breakfast: asString(formData.get("breakfast_id")),
     roomID: asString(formData.get("room_id")),
     requestDescription: asString(formData.get("request_description")) || "Red Feng hotel diagnostics",
@@ -349,7 +353,7 @@ function collectHotelSearchCandidates(value: unknown) {
   return hotels
     .map((hotel) => {
       const record = asRecord(hotel)
-      const supplierHotelId = firstString(record, ["ID", "id", "hotelID", "hotelId", "HotelID"])
+      const supplierHotelId = cleanHotelIdentifier(firstString(record, ["ID", "id", "hotelID", "hotelId", "HotelID"]))
       const supplierInternalCode = firstString(record, ["internalCode", "InternalCode", "internal_code"]) || supplierHotelId
       return {
         supplierHotelId,

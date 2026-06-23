@@ -137,6 +137,11 @@ function asText(value: unknown) {
   return ""
 }
 
+function cleanHotelIdentifier(value: unknown) {
+  const raw = asText(value)
+  return raw.split("~|~")[0]?.trim() || raw
+}
+
 function asRecord(value: unknown): ResultRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as ResultRecord) : {}
 }
@@ -291,7 +296,7 @@ function getHotelSearchCandidates(result: ResultRecord | null) {
     .map((candidate) => {
       const row = asRecord(candidate)
       return {
-        supplierHotelId: asText(row.supplierHotelId),
+        supplierHotelId: cleanHotelIdentifier(row.supplierHotelId),
         supplierInternalCode: asText(row.supplierInternalCode),
         hotelName: asText(row.hotelName),
         address: asText(row.address),
@@ -973,9 +978,9 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
   const coreDefaults: HotelCoreDefaults = {
     requestId,
     hotelId:
-      params.hotel_id ||
-      asText(requestPayload.hotelID) ||
-      asText(activeQuotePayload.supplier_hotel_id) ||
+      cleanHotelIdentifier(params.hotel_id) ||
+      cleanHotelIdentifier(requestPayload.hotelID) ||
+      cleanHotelIdentifier(activeQuotePayload.supplier_hotel_id) ||
       "",
     countryId: resolvedCountryId,
     cityId: resolvedCityId,
