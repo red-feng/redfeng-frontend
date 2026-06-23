@@ -546,6 +546,34 @@ function AutoTestPanel({
   )
 }
 
+function ResultRecoveryActions({
+  result,
+  coreDefaults,
+}: {
+  result: ResultRecord | null
+  coreDefaults: HotelCoreDefaults
+}) {
+  const message = `${asText(result?.respMessage)} ${asText(result?.error)}`.toLowerCase()
+  const isSearchExpired = message.includes("expired")
+
+  if (!isSearchExpired) return null
+
+  return (
+    <div className="mt-4 rounded-[14px] border border-amber-200 bg-amber-50 p-4 text-amber-900">
+      <p className="text-sm font-semibold">Rate/search sudah expired</p>
+      <p className="mt-1 text-xs leading-5 text-amber-800">
+        Jalankan ulang AvailableRooms5, lalu pilih lagi kandidat rate yang baru sebelum menekan PricePolicy.
+      </p>
+      <form action={testHotelAvailableRooms} className="mt-3">
+        <HiddenCoreInputs defaults={coreDefaults} />
+        <button type="submit" className="rounded-[12px] bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700">
+          Ulang AvailableRooms5
+        </button>
+      </form>
+    </div>
+  )
+}
+
 function HotelCoreDatalists({ ids, options }: { ids: HotelCoreDatalistIds; options: HotelCoreOptionGroups }) {
   return (
     <>
@@ -1204,6 +1232,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
                 <div className="rounded-[12px] border border-current/20 bg-white/65 p-4 text-sm">Jalankan salah satu test untuk melihat ringkasan.</div>
               )}
             </div>
+            <ResultRecoveryActions result={result} coreDefaults={coreDefaults} />
           </section>
 
           <section className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
