@@ -194,10 +194,16 @@ function buildHotelCoreOptions(input: {
   addUniqueOption(countryOptions, seenCountries, input.defaults.countryId || "", "Country dari form aktif")
   addUniqueOption(countryOptions, seenCountries, asText(input.requestPayload.countryID), "Country dari hasil test")
   addUniqueOption(countryOptions, seenCountries, asText(quotePayload.supplier_country_id), "Country supplier dari request")
+  getCityCandidates(input.result).forEach((candidate) => {
+    addUniqueOption(countryOptions, seenCountries, candidate.countryId, `${candidate.countryId} dari City5`)
+  })
 
   addUniqueOption(cityOptions, seenCities, input.defaults.cityId || "", "City dari form aktif")
   addUniqueOption(cityOptions, seenCities, asText(input.requestPayload.cityID), "City dari hasil test")
   addUniqueOption(cityOptions, seenCities, asText(quotePayload.supplier_city_id), "City supplier dari request")
+  getCityCandidates(input.result).forEach((candidate) => {
+    addUniqueOption(cityOptions, seenCities, candidate.id, `${candidate.name} (${candidate.countryId}/${candidate.id})`)
+  })
 
   input.mappings.forEach((mapping) => {
     addUniqueOption(
@@ -440,6 +446,7 @@ function HiddenCoreInputs({ defaults }: { defaults: HotelCoreDefaults }) {
       <input type="hidden" name="pax_passport" value={defaults.paxPassport || "ID"} />
       <input type="hidden" name="room_count" value={defaults.roomCount || "1"} />
       <input type="hidden" name="child_count" value={defaults.childCount || "0"} />
+      <input type="hidden" name="hotel_name_filter" value={defaults.destinationLabel || ""} />
     </>
   )
 }
@@ -600,6 +607,7 @@ function HotelSearchFields({
 }) {
   return (
     <>
+      <input type="hidden" name="hotel_name_filter" value={defaults.destinationLabel || ""} />
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Country ID" name="country_id" defaultValue={defaults.countryId} placeholder="Pilih atau ketik Country ID" listId={datalistIds?.countryId} />
         <Field label="City ID" name="city_id" defaultValue={defaults.cityId} placeholder="Pilih atau ketik City ID" listId={datalistIds?.cityId} />
@@ -953,6 +961,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
   ])
   const activeRequestHint = (activeRequest || null) as HotelAvailabilityRequestHint | null
   const activeQuotePayload = asRecord(activeRequestHint?.quote_payload)
+  const cityCandidate = getCityCandidates(result)[0]
   const coreDefaults: HotelCoreDefaults = {
     requestId,
     hotelId:
@@ -960,8 +969,8 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
       asText(requestPayload.hotelID) ||
       asText(activeQuotePayload.supplier_hotel_id) ||
       "",
-    countryId: params.country_id || asText(requestPayload.countryID) || asText(activeQuotePayload.supplier_country_id) || "",
-    cityId: params.city_id || asText(requestPayload.cityID) || asText(activeQuotePayload.supplier_city_id) || "",
+    countryId: params.country_id || asText(requestPayload.countryID) || asText(activeQuotePayload.supplier_country_id) || cityCandidate?.countryId || "",
+    cityId: params.city_id || asText(requestPayload.cityID) || asText(activeQuotePayload.supplier_city_id) || cityCandidate?.id || "",
     checkinDate: params.checkin_date || normalizeInputDate(requestPayload.checkInDate) || activeRequestHint?.checkin_date || "",
     checkoutDate: params.checkout_date || normalizeInputDate(requestPayload.checkOutDate) || activeRequestHint?.checkout_date || "",
     paxPassport: params.pax_passport || asText(requestPayload.paxPassport) || "ID",
@@ -973,7 +982,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
       params.child_count ||
       getChildCountFromPayload(requestPayload.roomRequest) ||
       (typeof activeRequestHint?.child_count === "number" ? String(activeRequestHint.child_count) : ""),
-    destinationLabel: params.destination_label || "",
+    destinationLabel: params.destination_label || cityCandidate?.name || "",
   }
   const rateDefaults: HotelRateDefaults = {
     internalCode: asText(requestPayload.internalCode) || asText(activeQuotePayload.supplier_internal_code),

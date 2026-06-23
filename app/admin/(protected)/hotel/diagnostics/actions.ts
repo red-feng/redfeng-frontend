@@ -160,6 +160,10 @@ function isMissingSchemaObjectError(error: { message?: string | null; code?: str
   )
 }
 
+function isDharmawisataStatusError(error: unknown, status: number) {
+  return error instanceof Error && error.message.includes(`status ${status}`)
+}
+
 async function ensureHotelAdmin() {
   const supabase = await createClient("admin")
   const adminSupabase = createAdminClient()
@@ -642,26 +646,53 @@ export async function testHotelSearch(formData: FormData) {
       })
     }
 
-    const response = await dharmawisataJsonFetch({
-      path: getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_SEARCH_PATH") || "/Hotel/Search5",
-      method: "POST",
-      body: {
-        paxPassport: payload.paxPassport,
-        countryID: payload.countryID,
-        cityID: payload.cityID,
-        checkInDate: payload.checkInDate,
-        checkOutDate: payload.checkOutDate,
-        roomRequest: payload.roomRequest,
-        userID: payload.userID,
-        accessToken: payload.accessToken,
-      },
-    })
+    let sourceEndpoint = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_SEARCH_PATH") || "/Hotel/Search5"
+    let usedFallback = false
+    let response: unknown
+    try {
+      response = await dharmawisataJsonFetch({
+        path: sourceEndpoint,
+        method: "POST",
+        body: {
+          paxPassport: payload.paxPassport,
+          countryID: payload.countryID,
+          cityID: payload.cityID,
+          checkInDate: payload.checkInDate,
+          checkOutDate: payload.checkOutDate,
+          roomRequest: payload.roomRequest,
+          userID: payload.userID,
+          accessToken: payload.accessToken,
+        },
+      })
+    } catch (error) {
+      if (!isDharmawisataStatusError(error, 404)) throw error
+
+      usedFallback = true
+      sourceEndpoint = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_LIST_PATH") || "/Hotel/HotelList5"
+      response = await dharmawisataJsonFetch({
+        path: sourceEndpoint,
+        method: "POST",
+        body: {
+          hotelNameFilter: asString(formData.get("hotel_name_filter")),
+          countryID: payload.countryID,
+          cityID: payload.cityID,
+          userID: payload.userID,
+          accessToken: payload.accessToken,
+        },
+      })
+    }
     const body = asRecord(response)
     const hotelCandidates = collectHotelSearchCandidates(response)
     const responseStatus = asString(body.status)
     const responseMessage =
       asString(body.respMessage) ||
-      (hotelCandidates.length > 0 ? "Pilih salah satu Hotel ID supplier untuk lanjut ke AvailableRooms." : "Tidak ada hotel dari Search5 untuk kombinasi kota/tanggal ini.")
+      (hotelCandidates.length > 0
+        ? usedFallback
+          ? "Hotel/Search5 404, kandidat diambil dari HotelList5. Pilih Hotel ID supplier untuk lanjut ke AvailableRooms."
+          : "Pilih salah satu Hotel ID supplier untuk lanjut ke AvailableRooms."
+        : usedFallback
+          ? "Hotel/Search5 404 dan HotelList5 belum mengembalikan kandidat hotel."
+          : "Tidak ada hotel dari Search5 untuk kombinasi kota/tanggal ini.")
 
     diagnosticsRedirect({
       panel: "search",
@@ -673,6 +704,8 @@ export async function testHotelSearch(formData: FormData) {
         requestId,
         status: responseStatus,
         respMessage: responseMessage,
+        sourceEndpoint,
+        fallbackUsed: usedFallback,
         request: { ...payload, accessToken: "present-redacted" },
         hotelCount: hotelCandidates.length,
         hotelCandidates,
