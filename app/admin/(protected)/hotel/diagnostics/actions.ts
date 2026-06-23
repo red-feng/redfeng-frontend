@@ -881,16 +881,18 @@ export async function testHotelAvailableRoomsThenPricePolicy(formData: FormData)
     })
     const availableSummary = summarizeHotelResponse(availableResponse)
     const rateCandidates = collectHotelRateCandidates(availableResponse).slice(0, 8)
-    const selectedRate = rateCandidates.find((candidate) => candidate.internalCode && candidate.roomId && candidate.breakfastId)
+    const completeRateCandidates = rateCandidates
+      .filter((candidate) => candidate.internalCode && candidate.roomId && candidate.breakfastId)
+      .slice(0, 4)
 
-    if (String(availableSummary.status).toUpperCase() !== "SUCCESS" || !selectedRate) {
+    if (String(availableSummary.status).toUpperCase() !== "SUCCESS" || completeRateCandidates.length === 0) {
       diagnosticsRedirect({
         panel: "price-policy",
         status: "warning",
         ...(requestId ? { request_id: requestId } : {}),
         ...buildCoreQueryParams(payload),
         result: buildResultPayload({
-          title: selectedRate ? "Auto PricePolicy berhenti di AvailableRooms" : "Auto PricePolicy belum menemukan rate lengkap",
+          title: completeRateCandidates.length > 0 ? "Auto PricePolicy berhenti di AvailableRooms" : "Auto PricePolicy belum menemukan rate lengkap",
           elapsedMs: Date.now() - startedAt,
           requestId,
           flow: "Login -> AvailableRooms5 -> PriceAndPolicyInfo",
@@ -908,50 +910,97 @@ export async function testHotelAvailableRoomsThenPricePolicy(formData: FormData)
       return
     }
 
-    const pricePayload = {
+    const priceAttempts: JsonRecord[] = []
+    let selectedRate = completeRateCandidates[0]
+    let selectedPricePayload = {
       ...payload,
       internalCode: selectedRate.internalCode,
       roomID: selectedRate.roomId,
       breakfast: selectedRate.breakfastId,
     }
-    const priceResponse = await dharmawisataJsonFetch({
-      path: getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_PRICE_POLICY_PATH") || "/Hotel/PriceAndPolicyInfo",
-      method: "POST",
-      timeoutMs: HOTEL_DIAGNOSTICS_TIMEOUT_MS,
-      body: {
-        paxPassport: pricePayload.paxPassport,
-        countryID: pricePayload.countryID,
-        cityID: pricePayload.cityID,
-        checkInDate: pricePayload.checkInDate,
-        checkOutDate: pricePayload.checkOutDate,
-        roomRequest: pricePayload.roomRequest,
-        internalCode: pricePayload.internalCode,
-        hotelID: pricePayload.hotelID,
-        breakfast: pricePayload.breakfast,
-        roomID: pricePayload.roomID,
-        userID: pricePayload.userID,
-        accessToken: pricePayload.accessToken,
-      },
-    })
-    const priceSummary = summarizeHotelResponse(priceResponse)
-    const priceStatus = String(priceSummary.status).toUpperCase()
-    const enableBooking = priceSummary.isEnableBooking === true
+    let selectedPriceSummary = {
+      status: "",
+      respMessage: "",
+      availabilityStatus: null as unknown,
+      roomCount: 0,
+      totalPrice: null as unknown,
+      isEnableBooking: false as unknown,
+      reservationNo: "",
+      voucherNo: "",
+      bookingStatus: "",
+    }
+
+    for (const candidate of completeRateCandidates) {
+      const candidatePayload = {
+        ...payload,
+        internalCode: candidate.internalCode,
+        roomID: candidate.roomId,
+        breakfast: candidate.breakfastId,
+      }
+
+      try {
+        const priceResponse = await dharmawisataJsonFetch({
+          path: getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_PRICE_POLICY_PATH") || "/Hotel/PriceAndPolicyInfo",
+          method: "POST",
+          timeoutMs: HOTEL_DIAGNOSTICS_TIMEOUT_MS,
+          body: {
+            paxPassport: candidatePayload.paxPassport,
+            countryID: candidatePayload.countryID,
+            cityID: candidatePayload.cityID,
+            checkInDate: candidatePayload.checkInDate,
+            checkOutDate: candidatePayload.checkOutDate,
+            roomRequest: candidatePayload.roomRequest,
+            internalCode: candidatePayload.internalCode,
+            hotelID: candidatePayload.hotelID,
+            breakfast: candidatePayload.breakfast,
+            roomID: candidatePayload.roomID,
+            userID: candidatePayload.userID,
+            accessToken: candidatePayload.accessToken,
+          },
+        })
+        const candidateSummary = summarizeHotelResponse(priceResponse)
+        priceAttempts.push({
+          rate: candidate,
+          status: candidateSummary.status,
+          respMessage: candidateSummary.respMessage,
+          isEnableBooking: candidateSummary.isEnableBooking,
+          roomCount: candidateSummary.roomCount,
+          totalPrice: candidateSummary.totalPrice,
+        })
+
+        selectedRate = candidate
+        selectedPricePayload = candidatePayload
+        selectedPriceSummary = candidateSummary
+
+        if (candidateSummary.isEnableBooking === true) break
+      } catch (error) {
+        priceAttempts.push({
+          rate: candidate,
+          error: error instanceof Error ? error.message : "Unknown PriceAndPolicy error",
+        })
+      }
+    }
+
+    const priceStatus = String(selectedPriceSummary.status).toUpperCase()
+    const enableBooking = selectedPriceSummary.isEnableBooking === true
 
     diagnosticsRedirect({
       panel: "price-policy",
       status: priceStatus === "SUCCESS" && enableBooking ? "success" : "warning",
       ...(requestId ? { request_id: requestId } : {}),
-      ...buildCoreQueryParams(pricePayload),
+      ...buildCoreQueryParams(selectedPricePayload),
       result: buildResultPayload({
-        title: "Auto AvailableRooms + PricePolicy selesai",
+        title: enableBooking ? "Auto AvailableRooms + PricePolicy menemukan rate bookable" : "Auto AvailableRooms + PricePolicy selesai",
         elapsedMs: Date.now() - startedAt,
         requestId,
         flow: "Login -> AvailableRooms5 -> PriceAndPolicyInfo",
         availableSummary,
         selectedRate,
+        priceAttemptCount: priceAttempts.length,
+        priceAttempts,
         rateCandidates,
-        request: { ...pricePayload, accessToken: "present-redacted" },
-        ...priceSummary,
+        request: { ...selectedPricePayload, accessToken: "present-redacted" },
+        ...selectedPriceSummary,
       }),
     })
   } catch (error) {
