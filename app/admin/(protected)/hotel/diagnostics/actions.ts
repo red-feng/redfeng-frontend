@@ -805,6 +805,134 @@ export async function testHotelAvailableRooms(formData: FormData) {
   }
 }
 
+export async function testHotelAvailableRoomsThenPricePolicy(formData: FormData) {
+  await ensureHotelAdmin()
+  const startedAt = Date.now()
+  const requestId = asString(formData.get("request_id"))
+
+  try {
+    const auth = await dharmawisataLogin({ language: 1 })
+    const accessToken = asString(auth.accessToken)
+    if (!accessToken) throw new Error("Login berhasil dipanggil tetapi accessToken kosong.")
+
+    const payload = buildHotelPayload(formData, accessToken)
+    const missingFields = payloadMissingFields(payload, false).filter((field) => !["internalCode", "breakfast", "roomID"].includes(field))
+    if (missingFields.length > 0) {
+      diagnosticsRedirect({
+        panel: "price-policy",
+        status: "error",
+        ...(requestId ? { request_id: requestId } : {}),
+        result: buildResultPayload({
+          title: "Payload auto PricePolicy belum lengkap",
+          requestId,
+          missingFields,
+        }),
+      })
+    }
+
+    const availableResponse = await dharmawisataJsonFetch({
+      path: getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_AVAILABLE_ROOMS_PATH") || "/Hotel/AvailableRooms5",
+      method: "POST",
+      body: {
+        paxPassport: payload.paxPassport,
+        countryID: payload.countryID,
+        cityID: payload.cityID,
+        hotelID: payload.hotelID,
+        checkInDate: payload.checkInDate,
+        checkOutDate: payload.checkOutDate,
+        roomRequest: payload.roomRequest,
+        userID: payload.userID,
+        accessToken: payload.accessToken,
+      },
+    })
+    const availableSummary = summarizeHotelResponse(availableResponse)
+    const rateCandidates = collectHotelRateCandidates(availableResponse).slice(0, 8)
+    const selectedRate = rateCandidates.find((candidate) => candidate.internalCode && candidate.roomId && candidate.breakfastId)
+
+    if (String(availableSummary.status).toUpperCase() !== "SUCCESS" || !selectedRate) {
+      diagnosticsRedirect({
+        panel: "price-policy",
+        status: "warning",
+        ...(requestId ? { request_id: requestId } : {}),
+        result: buildResultPayload({
+          title: selectedRate ? "Auto PricePolicy berhenti di AvailableRooms" : "Auto PricePolicy belum menemukan rate lengkap",
+          elapsedMs: Date.now() - startedAt,
+          requestId,
+          flow: "Login -> AvailableRooms5 -> PriceAndPolicyInfo",
+          availableSummary,
+          rateCandidates,
+          request: { ...payload, accessToken: "present-redacted" },
+          status: availableSummary.status,
+          respMessage:
+            availableSummary.respMessage ||
+            "AvailableRooms5 belum menghasilkan internalCode, roomID, dan breakfast lengkap untuk PricePolicy.",
+          roomCount: availableSummary.roomCount,
+          isEnableBooking: false,
+        }),
+      })
+      return
+    }
+
+    const pricePayload = {
+      ...payload,
+      internalCode: selectedRate.internalCode,
+      roomID: selectedRate.roomId,
+      breakfast: selectedRate.breakfastId,
+    }
+    const priceResponse = await dharmawisataJsonFetch({
+      path: getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_PRICE_POLICY_PATH") || "/Hotel/PriceAndPolicyInfo",
+      method: "POST",
+      body: {
+        paxPassport: pricePayload.paxPassport,
+        countryID: pricePayload.countryID,
+        cityID: pricePayload.cityID,
+        checkInDate: pricePayload.checkInDate,
+        checkOutDate: pricePayload.checkOutDate,
+        roomRequest: pricePayload.roomRequest,
+        internalCode: pricePayload.internalCode,
+        hotelID: pricePayload.hotelID,
+        breakfast: pricePayload.breakfast,
+        roomID: pricePayload.roomID,
+        userID: pricePayload.userID,
+        accessToken: pricePayload.accessToken,
+      },
+    })
+    const priceSummary = summarizeHotelResponse(priceResponse)
+    const priceStatus = String(priceSummary.status).toUpperCase()
+    const enableBooking = priceSummary.isEnableBooking === true
+
+    diagnosticsRedirect({
+      panel: "price-policy",
+      status: priceStatus === "SUCCESS" && enableBooking ? "success" : "warning",
+      ...(requestId ? { request_id: requestId } : {}),
+      result: buildResultPayload({
+        title: "Auto AvailableRooms + PricePolicy selesai",
+        elapsedMs: Date.now() - startedAt,
+        requestId,
+        flow: "Login -> AvailableRooms5 -> PriceAndPolicyInfo",
+        availableSummary,
+        selectedRate,
+        rateCandidates,
+        request: { ...pricePayload, accessToken: "present-redacted" },
+        ...priceSummary,
+      }),
+    })
+  } catch (error) {
+    rethrowNextRedirect(error)
+    diagnosticsRedirect({
+      panel: "price-policy",
+      status: "error",
+      ...(requestId ? { request_id: requestId } : {}),
+      result: buildResultPayload({
+        title: "Auto AvailableRooms + PricePolicy gagal",
+        elapsedMs: Date.now() - startedAt,
+        requestId,
+        error: error instanceof Error ? error.message : "Unknown error",
+      }),
+    })
+  }
+}
+
 export async function saveHotelSupplierRateFromDiagnostics(formData: FormData) {
   await ensureHotelAdmin()
   const requestId = asString(formData.get("request_id"))

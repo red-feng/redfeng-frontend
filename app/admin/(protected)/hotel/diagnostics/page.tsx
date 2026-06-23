@@ -8,6 +8,7 @@ import {
   saveHotelCityMappingFromDiagnostics,
   saveHotelSupplierRateFromDiagnostics,
   testHotelAvailableRooms,
+  testHotelAvailableRoomsThenPricePolicy,
   testHotelCitySearch,
   testHotelLogin,
   testHotelPricePolicy,
@@ -507,7 +508,7 @@ function AutoTestPanel({
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-4">
+      <div className="mt-4 grid gap-3 md:grid-cols-5">
         <form action={testHotelSearch}>
           <HiddenCoreInputs defaults={coreDefaults} />
           <button type="submit" disabled={!hasCity} className="h-full w-full rounded-[12px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300">
@@ -518,6 +519,12 @@ function AutoTestPanel({
           <HiddenCoreInputs defaults={coreDefaults} />
           <button type="submit" disabled={!hasCity || !hasHotel} className="h-full w-full rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300">
             Cek AvailableRooms
+          </button>
+        </form>
+        <form action={testHotelAvailableRoomsThenPricePolicy}>
+          <HiddenCoreInputs defaults={coreDefaults} />
+          <button type="submit" disabled={!hasCity || !hasHotel} className="h-full w-full rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+            Auto PricePolicy
           </button>
         </form>
         <form action={testHotelPricePolicy}>
@@ -564,10 +571,10 @@ function ResultRecoveryActions({
       <p className="mt-1 text-xs leading-5 text-amber-800">
         Jalankan ulang AvailableRooms5, lalu pilih lagi kandidat rate yang baru sebelum menekan PricePolicy.
       </p>
-      <form action={testHotelAvailableRooms} className="mt-3">
+      <form action={testHotelAvailableRoomsThenPricePolicy} className="mt-3">
         <HiddenCoreInputs defaults={coreDefaults} />
         <button type="submit" className="rounded-[12px] bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700">
-          Ulang AvailableRooms5
+          Ulang otomatis
         </button>
       </form>
     </div>
