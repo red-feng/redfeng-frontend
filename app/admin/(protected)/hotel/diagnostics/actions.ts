@@ -108,7 +108,8 @@ function firstNumber(record: JsonRecord, keys: string[]) {
 
 function diagnosticsRedirect(params: Record<string, string>) {
   const searchParams = new URLSearchParams(params)
-  redirect(`/admin/hotel/diagnostics?${searchParams.toString()}`)
+  const panel = asString(params.panel) || "schema"
+  redirect(`/admin/hotel/diagnostics?${searchParams.toString()}#hotel-diagnostics-${panel}`)
 }
 
 function rethrowNextRedirect(error: unknown) {

@@ -1102,7 +1102,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
             title="Audit Schema Hotel"
             description="Memastikan kolom request, booking detail, supplier order, dan voucher hotel sudah tersedia di database aktif."
           >
-            <form action={checkHotelSchemaReadiness}>
+            <form id="hotel-diagnostics-schema" action={checkHotelSchemaReadiness} className="scroll-mt-6">
               <button type="submit" className="rounded-[12px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
                 Cek schema hotel
               </button>
@@ -1114,7 +1114,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
             title="Test Login Token"
             description="Memastikan base URL, user ID, password, security code, dan TLS UAT/production bisa menghasilkan access token."
           >
-            <form action={testHotelLogin}>
+            <form id="hotel-diagnostics-login" action={testHotelLogin} className="scroll-mt-6">
               <button type="submit" className="rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
                 Test login Dharmawisata
               </button>
@@ -1128,7 +1128,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
             title="Cari City ID Dharmawisata"
             description="Cari kandidat cityID dari endpoint Hotel/City5. Hasilnya dipakai untuk mengisi Hotel City Mapping agar katalog live lebih stabil."
           >
-            <form action={testHotelCitySearch} className="space-y-4">
+            <form id="hotel-diagnostics-city" action={testHotelCitySearch} className="scroll-mt-6 space-y-4">
               <div className="grid gap-4 sm:grid-cols-[180px_minmax(0,1fr)]">
                 <Field label="Country ID" name="country_id" defaultValue={coreDefaults.countryId || "ID"} placeholder="Pilih atau ketik Country ID" listId={datalistIds.countryId} />
                 <Field label="Nama kota" name="city_name_filter" defaultValue="Jakarta" placeholder="Jakarta, Bali, Surabaya" />
@@ -1149,7 +1149,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
             title="Test Hotel/Search5"
             description="Cari Hotel ID supplier berdasarkan countryID, cityID, tanggal stay, dan komposisi kamar. Hasilnya dipakai untuk AvailableRooms."
           >
-            <form action={testHotelSearch} className="space-y-4">
+            <form id="hotel-diagnostics-search" action={testHotelSearch} className="scroll-mt-6 space-y-4">
               <input type="hidden" name="request_id" value={coreDefaults.requestId || ""} />
               <HotelSearchFields defaults={coreDefaults} datalistIds={datalistIds} />
               <button type="submit" className="rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
@@ -1163,7 +1163,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
             title="Test AvailableRooms"
             description="Cek kamar tersedia berdasarkan Hotel ID, tanggal stay, jumlah kamar, dan komposisi anak. Test ini read-only."
           >
-            <form action={testHotelAvailableRooms} className="space-y-4">
+            <form id="hotel-diagnostics-available" action={testHotelAvailableRooms} className="scroll-mt-6 space-y-4">
               <input type="hidden" name="request_id" value={coreDefaults.requestId || ""} />
               {hasCityPrefill ? (
                 <div className="rounded-[14px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800">
@@ -1183,7 +1183,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
             title="Test PriceAndPolicy"
             description="Validasi harga final, komisi, cancellation policy, dan flag isEnableBooking sebelum quote dikirim ke customer."
           >
-            <form action={testHotelPricePolicy} className="space-y-4">
+            <form id="hotel-diagnostics-price-policy" action={testHotelPricePolicy} className="scroll-mt-6 space-y-4">
               <HotelCoreFields defaults={coreDefaults} datalistIds={datalistIds} />
               <HotelRateFields defaults={rateDefaults} datalistIds={rateDatalistIds} />
               <button type="submit" className="rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
@@ -1198,7 +1198,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
             description="Merakit payload BookingAllSupplier tanpa mengirim request booking. Untuk hotel, endpoint ini adalah konfirmasi berbayar ke supplier dan hanya dijalankan setelah payment Midtrans sukses."
             tone="amber"
           >
-            <form action={previewHotelBookingPayload} className="space-y-4">
+            <form id="hotel-diagnostics-booking-preview" action={previewHotelBookingPayload} className="scroll-mt-6 space-y-4">
               <HotelCoreFields defaults={coreDefaults} datalistIds={datalistIds} />
               <HotelRateFields defaults={rateDefaults} datalistIds={rateDatalistIds} />
               <GuestFields />
