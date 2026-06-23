@@ -108,6 +108,23 @@ function firstNumber(record: JsonRecord, keys: string[]) {
   return null
 }
 
+function collectCityCandidates(value: unknown, fallbackCountryID: string) {
+  const body = asRecord(value)
+  const cities = Array.isArray(body.cities) ? body.cities : []
+
+  return cities
+    .slice(0, 12)
+    .map((city) => {
+      const row = asRecord(city)
+      return {
+        Name: firstString(row, ["Name", "name"]),
+        ID: firstString(row, ["ID", "id"]),
+        CountryID: firstString(row, ["CountryID", "countryID", "countryId"]) || fallbackCountryID,
+      }
+    })
+    .filter((city) => city.Name && city.ID && city.CountryID)
+}
+
 function diagnosticsRedirect(params: Record<string, string>) {
   const searchParams = new URLSearchParams(params)
   const panel = asString(params.panel) || "schema"
@@ -531,7 +548,8 @@ export async function testHotelCitySearch(formData: FormData) {
       },
     })
     const body = asRecord(response)
-    const cities = Array.isArray(body.cities) ? body.cities : []
+    const rawCities = Array.isArray(body.cities) ? body.cities : []
+    const cities = collectCityCandidates(response, countryID)
     const responseStatus = asString(body.status)
     const responseMessage = asString(body.respMessage) || (cities.length > 0 ? "Gunakan ID kota ini di Hotel City Mapping." : "Coba keyword kota yang lebih spesifik.")
 
@@ -540,7 +558,7 @@ export async function testHotelCitySearch(formData: FormData) {
       cityNameFilter,
       status: responseStatus,
       respMessage: responseMessage,
-      cityCount: cities.length,
+      cityCount: rawCities.length,
       responsePayload: body,
     })
 
@@ -554,7 +572,7 @@ export async function testHotelCitySearch(formData: FormData) {
         respMessage: responseMessage,
         countryID,
         cityNameFilter,
-        cityCount: cities.length,
+        cityCount: rawCities.length,
         cities,
       }),
     })

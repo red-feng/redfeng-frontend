@@ -944,10 +944,28 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
   const cityLogs = (citySearchLogs || []) as CitySearchLogRow[]
   const activeCityMappings = (cityMappings || []) as HotelCityMappingRow[]
   const cityCandidate = getCityCandidates(result)[0]
-  const resolvedCountryId = params.country_id || asText(requestPayload.countryID) || asText(activeQuotePayload.supplier_country_id) || cityCandidate?.countryId || ""
-  const resolvedCityId = params.city_id || asText(requestPayload.cityID) || asText(activeQuotePayload.supplier_city_id) || cityCandidate?.id || ""
+  const resolvedCountryId =
+    params.country_id ||
+    asText(requestPayload.countryID) ||
+    asText(result?.countryID) ||
+    asText(activeQuotePayload.supplier_country_id) ||
+    cityCandidate?.countryId ||
+    ""
+  const resolvedCityId =
+    params.city_id ||
+    asText(requestPayload.cityID) ||
+    asText(result?.cityID) ||
+    asText(activeQuotePayload.supplier_city_id) ||
+    cityCandidate?.id ||
+    ""
   const matchedCityMapping = activeCityMappings.find((mapping) => mapping.country_id === resolvedCountryId && mapping.city_id === resolvedCityId)
-  const resolvedDestinationLabel = params.destination_label || matchedCityMapping?.destination_label || cityCandidate?.name || activeRequestHint?.hotel_location || ""
+  const resolvedDestinationLabel =
+    params.destination_label ||
+    matchedCityMapping?.destination_label ||
+    asText(result?.destinationLabel) ||
+    cityCandidate?.name ||
+    activeRequestHint?.hotel_location ||
+    ""
   const resolvedHotelNameFilter =
     params.hotel_name_filter ||
     getHotelNameSearchKeyword(requestPayload.hotelNameFilter) ||
