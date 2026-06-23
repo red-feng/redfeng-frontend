@@ -7,11 +7,9 @@ import {
   previewHotelBookingPayload,
   saveHotelCityMappingFromDiagnostics,
   saveHotelSupplierRateFromDiagnostics,
-  testHotelAvailableRooms,
   testHotelAvailableRoomsThenPricePolicy,
   testHotelCitySearch,
   testHotelLogin,
-  testHotelPricePolicy,
   testHotelSearch,
 } from "./actions"
 
@@ -508,30 +506,17 @@ function AutoTestPanel({
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-5">
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
         <form action={testHotelSearch}>
           <HiddenCoreInputs defaults={coreDefaults} />
           <button type="submit" disabled={!hasCity} className="h-full w-full rounded-[12px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300">
             Cari Hotel ID
           </button>
         </form>
-        <form action={testHotelAvailableRooms}>
-          <HiddenCoreInputs defaults={coreDefaults} />
-          <button type="submit" disabled={!hasCity || !hasHotel} className="h-full w-full rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300">
-            Cek AvailableRooms
-          </button>
-        </form>
         <form action={testHotelAvailableRoomsThenPricePolicy}>
           <HiddenCoreInputs defaults={coreDefaults} />
           <button type="submit" disabled={!hasCity || !hasHotel} className="h-full w-full rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300">
             Auto PricePolicy
-          </button>
-        </form>
-        <form action={testHotelPricePolicy}>
-          <HiddenCoreInputs defaults={coreDefaults} />
-          <HiddenRateInputs defaults={rateDefaults} />
-          <button type="submit" disabled={!hasCity || !hasHotel || !hasRate} className="h-full w-full rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300">
-            Cek PricePolicy
           </button>
         </form>
         <form action={previewHotelBookingPayload}>
@@ -609,40 +594,6 @@ function HotelCoreDatalists({ ids, options }: { ids: HotelCoreDatalistIds; optio
   )
 }
 
-function HotelCoreFields({
-  defaults = {},
-  datalistIds,
-}: {
-  defaults?: HotelCoreDefaults
-  datalistIds?: HotelCoreDatalistIds
-}) {
-  return (
-    <>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="Hotel ID" name="hotel_id" defaultValue={defaults.hotelId} placeholder="Pilih atau ketik Hotel ID" listId={datalistIds?.hotelId} />
-        <Field label="Country ID" name="country_id" defaultValue={defaults.countryId} placeholder="Pilih atau ketik Country ID" listId={datalistIds?.countryId} />
-        <Field label="City ID" name="city_id" defaultValue={defaults.cityId} placeholder="Pilih atau ketik City ID" listId={datalistIds?.cityId} />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="Check-in" name="checkin_date" type="date" defaultValue={defaults.checkinDate || getDefaultDate(7)} />
-        <Field label="Check-out" name="checkout_date" type="date" defaultValue={defaults.checkoutDate || getDefaultDate(8)} />
-        <SelectField
-          label="Pax passport"
-          name="pax_passport"
-          defaultValue={defaults.paxPassport || "ID"}
-          options={[
-            ["ID", "ID"],
-          ]}
-        />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Jumlah kamar" name="room_count" type="number" defaultValue={defaults.roomCount || 1} />
-        <Field label="Jumlah anak" name="child_count" type="number" defaultValue={defaults.childCount || 0} />
-      </div>
-    </>
-  )
-}
-
 function HotelSearchFields({
   defaults = {},
   datalistIds,
@@ -694,49 +645,6 @@ function HotelRateDatalists({ ids, options }: { ids: HotelRateDatalistIds; optio
           </option>
         ))}
       </datalist>
-    </>
-  )
-}
-
-function HotelRateFields({
-  defaults = {},
-  datalistIds,
-}: {
-  defaults?: HotelRateDefaults
-  datalistIds?: HotelRateDatalistIds
-}) {
-  return (
-    <div className="grid gap-4 sm:grid-cols-3">
-      <Field label="Internal code" name="internal_code" defaultValue={defaults.internalCode} placeholder="Pilih atau ketik internal code" listId={datalistIds?.internalCode} />
-      <Field label="Room ID" name="room_id" defaultValue={defaults.roomId} placeholder="Pilih atau ketik Room ID" listId={datalistIds?.roomId} />
-      <Field label="Breakfast ID" name="breakfast_id" defaultValue={defaults.breakfastId} placeholder="Pilih atau ketik Breakfast ID" listId={datalistIds?.breakfastId} />
-    </div>
-  )
-}
-
-function GuestFields() {
-  return (
-    <>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <SelectField
-          label="Guest title"
-          name="guest_title"
-          defaultValue="MR"
-          options={[
-            ["MR", "MR"],
-            ["MRS", "MRS"],
-            ["MS", "MS"],
-            ["MISS", "MISS"],
-          ]}
-        />
-        <Field label="Guest first name" name="guest_first_name" defaultValue="Red" />
-        <Field label="Guest last name" name="guest_last_name" defaultValue="Feng" />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Guest phone" name="guest_phone" defaultValue="081234567890" />
-        <Field label="Guest email" name="guest_email" type="email" defaultValue="ops@redfeng.co" />
-      </div>
-      <Field label="Request description" name="request_description" defaultValue="Red Feng hotel diagnostics" />
     </>
   )
 }
@@ -1063,7 +971,6 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
     roomId: params.room_id || asText(requestPayload.roomID) || asText(activeQuotePayload.supplier_room_id) || firstRateCandidate?.roomId,
     breakfastId: params.breakfast_id || asText(requestPayload.breakfast) || asText(activeQuotePayload.supplier_breakfast_id) || firstRateCandidate?.breakfastId,
   }
-  const hasCityPrefill = Boolean(coreDefaults.countryId && coreDefaults.cityId)
   const datalistIds: HotelCoreDatalistIds = {
     hotelId: "hotel-diagnostics-hotel-id",
     countryId: "hotel-diagnostics-country-id",
@@ -1165,55 +1072,6 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
             </form>
           </TestCard>
 
-          <TestCard
-            eyebrow="Step 3"
-            title="Test AvailableRooms"
-            description="Cek kamar tersedia berdasarkan Hotel ID, tanggal stay, jumlah kamar, dan komposisi anak. Test ini read-only."
-          >
-            <form id="hotel-diagnostics-available" action={testHotelAvailableRooms} className="scroll-mt-6 space-y-4">
-              <input type="hidden" name="request_id" value={coreDefaults.requestId || ""} />
-              {hasCityPrefill ? (
-                <div className="rounded-[14px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800">
-                  Mapping kota aktif terisi: {coreDefaults.destinationLabel ? `${coreDefaults.destinationLabel} - ` : ""}
-                  {coreDefaults.countryId}/{coreDefaults.cityId}. Lengkapi Hotel ID dari hasil Search5 atau direktori sebelum test.
-                </div>
-              ) : null}
-              <HotelCoreFields defaults={coreDefaults} datalistIds={datalistIds} />
-              <button type="submit" className="rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
-                Test available rooms
-              </button>
-            </form>
-          </TestCard>
-
-          <TestCard
-            eyebrow="Step 4"
-            title="Test PriceAndPolicy"
-            description="Validasi harga final, komisi, cancellation policy, dan flag isEnableBooking sebelum quote dikirim ke customer."
-          >
-            <form id="hotel-diagnostics-price-policy" action={testHotelPricePolicy} className="scroll-mt-6 space-y-4">
-              <HotelCoreFields defaults={coreDefaults} datalistIds={datalistIds} />
-              <HotelRateFields defaults={rateDefaults} datalistIds={rateDatalistIds} />
-              <button type="submit" className="rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
-                Test price and policy
-              </button>
-            </form>
-          </TestCard>
-
-          <TestCard
-            eyebrow="Dry-run"
-            title="Preview Payload BookingAllSupplier"
-            description="Merakit payload BookingAllSupplier tanpa mengirim request booking. Untuk hotel, endpoint ini adalah konfirmasi berbayar ke supplier dan hanya dijalankan setelah payment Midtrans sukses."
-            tone="amber"
-          >
-            <form id="hotel-diagnostics-booking-preview" action={previewHotelBookingPayload} className="scroll-mt-6 space-y-4">
-              <HotelCoreFields defaults={coreDefaults} datalistIds={datalistIds} />
-              <HotelRateFields defaults={rateDefaults} datalistIds={rateDatalistIds} />
-              <GuestFields />
-              <button type="submit" className="rounded-[12px] bg-amber-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-amber-800">
-                Preview payload booking
-              </button>
-            </form>
-          </TestCard>
         </div>
 
         <aside className="space-y-5 xl:sticky xl:top-6 xl:self-start">
