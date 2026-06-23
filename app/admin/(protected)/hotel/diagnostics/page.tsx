@@ -11,6 +11,7 @@ import {
   testHotelCitySearch,
   testHotelLogin,
   testHotelPricePolicy,
+  testHotelSearch,
 } from "./actions"
 
 type SearchParams = Promise<{
@@ -172,6 +173,7 @@ function buildHotelCoreOptions(input: {
   mappings: HotelCityMappingRow[]
   defaults: HotelCoreDefaults
   requestPayload: ResultRecord
+  result: ResultRecord | null
   activeRequest: HotelAvailabilityRequestHint | null
 }) {
   const hotelOptions: HotelOption[] = []
@@ -185,6 +187,9 @@ function buildHotelCoreOptions(input: {
   addUniqueOption(hotelOptions, seenHotels, input.defaults.hotelId || "", "Hotel ID dari form aktif")
   addUniqueOption(hotelOptions, seenHotels, asText(input.requestPayload.hotelID), "Hotel ID dari hasil test")
   addUniqueOption(hotelOptions, seenHotels, asText(quotePayload.supplier_hotel_id), "Hotel ID supplier dari request")
+  getHotelSearchCandidates(input.result).forEach((candidate) => {
+    addUniqueOption(hotelOptions, seenHotels, candidate.supplierHotelId, candidate.hotelName || "Hotel/Search5")
+  })
 
   addUniqueOption(countryOptions, seenCountries, input.defaults.countryId || "", "Country dari form aktif")
   addUniqueOption(countryOptions, seenCountries, asText(input.requestPayload.countryID), "Country dari hasil test")
@@ -270,6 +275,25 @@ function getCityCandidates(result: ResultRecord | null) {
       }
     })
     .filter((city) => city.name && city.id && city.countryId)
+}
+
+function getHotelSearchCandidates(result: ResultRecord | null) {
+  const candidates = Array.isArray(result?.hotelCandidates) ? result.hotelCandidates : []
+  return candidates
+    .map((candidate) => {
+      const row = asRecord(candidate)
+      return {
+        supplierHotelId: asText(row.supplierHotelId),
+        supplierInternalCode: asText(row.supplierInternalCode),
+        hotelName: asText(row.hotelName),
+        address: asText(row.address),
+        rating: asText(row.rating),
+        priceStart: typeof row.priceStart === "number" ? row.priceStart : Number(asText(row.priceStart)) || null,
+        availabilityStatus: asText(row.availabilityStatus),
+        message: asText(row.message),
+      }
+    })
+    .filter((candidate) => candidate.supplierHotelId || candidate.hotelName)
 }
 
 function getHotelRateCandidates(result: ResultRecord | null) {
@@ -404,6 +428,107 @@ function TestCard({
   )
 }
 
+function HiddenCoreInputs({ defaults }: { defaults: HotelCoreDefaults }) {
+  return (
+    <>
+      <input type="hidden" name="request_id" value={defaults.requestId || ""} />
+      <input type="hidden" name="hotel_id" value={defaults.hotelId || ""} />
+      <input type="hidden" name="country_id" value={defaults.countryId || ""} />
+      <input type="hidden" name="city_id" value={defaults.cityId || ""} />
+      <input type="hidden" name="checkin_date" value={defaults.checkinDate || getDefaultDate(7)} />
+      <input type="hidden" name="checkout_date" value={defaults.checkoutDate || getDefaultDate(8)} />
+      <input type="hidden" name="pax_passport" value={defaults.paxPassport || "ID"} />
+      <input type="hidden" name="room_count" value={defaults.roomCount || "1"} />
+      <input type="hidden" name="child_count" value={defaults.childCount || "0"} />
+    </>
+  )
+}
+
+function HiddenRateInputs({ defaults }: { defaults: HotelRateDefaults }) {
+  return (
+    <>
+      <input type="hidden" name="internal_code" value={defaults.internalCode || ""} />
+      <input type="hidden" name="room_id" value={defaults.roomId || ""} />
+      <input type="hidden" name="breakfast_id" value={defaults.breakfastId || ""} />
+    </>
+  )
+}
+
+function HiddenGuestInputs() {
+  return (
+    <>
+      <input type="hidden" name="guest_title" value="MR" />
+      <input type="hidden" name="guest_first_name" value="Red" />
+      <input type="hidden" name="guest_last_name" value="Feng" />
+      <input type="hidden" name="guest_phone" value="081234567890" />
+      <input type="hidden" name="guest_email" value="ops@redfeng.co" />
+      <input type="hidden" name="request_description" value="Red Feng hotel diagnostics" />
+    </>
+  )
+}
+
+function AutoTestPanel({
+  coreDefaults,
+  rateDefaults,
+}: {
+  coreDefaults: HotelCoreDefaults
+  rateDefaults: HotelRateDefaults
+}) {
+  const hasCity = Boolean(coreDefaults.countryId && coreDefaults.cityId)
+  const hasHotel = Boolean(coreDefaults.hotelId)
+  const hasRate = Boolean(rateDefaults.internalCode && rateDefaults.roomId && rateDefaults.breakfastId)
+
+  return (
+    <section className="rounded-[18px] border border-orange-100 bg-orange-50/70 p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-600">Simple mode</p>
+          <h2 className="mt-2 text-base font-semibold text-slate-950">Tes hotel otomatis</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+            Gunakan tombol ini untuk mengirim nilai terbaik yang sudah tersimpan dari mapping, Search5, AvailableRooms, atau request customer.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-4">
+        <form action={testHotelSearch}>
+          <HiddenCoreInputs defaults={coreDefaults} />
+          <button type="submit" disabled={!hasCity} className="h-full w-full rounded-[12px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300">
+            Cari Hotel ID
+          </button>
+        </form>
+        <form action={testHotelAvailableRooms}>
+          <HiddenCoreInputs defaults={coreDefaults} />
+          <button type="submit" disabled={!hasCity || !hasHotel} className="h-full w-full rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+            Cek AvailableRooms
+          </button>
+        </form>
+        <form action={testHotelPricePolicy}>
+          <HiddenCoreInputs defaults={coreDefaults} />
+          <HiddenRateInputs defaults={rateDefaults} />
+          <button type="submit" disabled={!hasCity || !hasHotel || !hasRate} className="h-full w-full rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+            Cek PricePolicy
+          </button>
+        </form>
+        <form action={previewHotelBookingPayload}>
+          <HiddenCoreInputs defaults={coreDefaults} />
+          <HiddenRateInputs defaults={rateDefaults} />
+          <HiddenGuestInputs />
+          <button type="submit" className="h-full w-full rounded-[12px] border border-amber-300 bg-amber-100 px-4 py-3 text-sm font-semibold text-amber-900 transition hover:bg-amber-200">
+            Preview Booking
+          </button>
+        </form>
+      </div>
+
+      <div className="mt-4 grid gap-2 text-xs leading-5 text-slate-600 md:grid-cols-3">
+        <p className={hasCity ? "text-emerald-700" : "text-amber-700"}>City: {hasCity ? `${coreDefaults.countryId}/${coreDefaults.cityId}` : "belum ada mapping"}</p>
+        <p className={hasHotel ? "text-emerald-700" : "text-amber-700"}>Hotel ID: {hasHotel ? coreDefaults.hotelId : "belum dari Search5"}</p>
+        <p className={hasRate ? "text-emerald-700" : "text-amber-700"}>Rate: {hasRate ? "internal/room/breakfast siap" : "belum dari AvailableRooms"}</p>
+      </div>
+    </section>
+  )
+}
+
 function HotelCoreDatalists({ ids, options }: { ids: HotelCoreDatalistIds; options: HotelCoreOptionGroups }) {
   return (
     <>
@@ -457,6 +582,32 @@ function HotelCoreFields({
             ["ID", "ID"],
           ]}
         />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Jumlah kamar" name="room_count" type="number" defaultValue={defaults.roomCount || 1} />
+        <Field label="Jumlah anak" name="child_count" type="number" defaultValue={defaults.childCount || 0} />
+      </div>
+    </>
+  )
+}
+
+function HotelSearchFields({
+  defaults = {},
+  datalistIds,
+}: {
+  defaults?: HotelCoreDefaults
+  datalistIds?: HotelCoreDatalistIds
+}) {
+  return (
+    <>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Country ID" name="country_id" defaultValue={defaults.countryId} placeholder="Pilih atau ketik Country ID" listId={datalistIds?.countryId} />
+        <Field label="City ID" name="city_id" defaultValue={defaults.cityId} placeholder="Pilih atau ketik City ID" listId={datalistIds?.cityId} />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Field label="Check-in" name="checkin_date" type="date" defaultValue={defaults.checkinDate || getDefaultDate(7)} />
+        <Field label="Check-out" name="checkout_date" type="date" defaultValue={defaults.checkoutDate || getDefaultDate(8)} />
+        <SelectField label="Pax passport" name="pax_passport" defaultValue={defaults.paxPassport || "ID"} options={[["ID", "ID"]]} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Jumlah kamar" name="room_count" type="number" defaultValue={defaults.roomCount || 1} />
@@ -576,6 +727,69 @@ function CityMappingCandidates({ result }: { result: ResultRecord | null }) {
             </div>
           </form>
         ))}
+      </div>
+    </section>
+  )
+}
+
+function HotelSearchCandidates({ result, defaults }: { result: ResultRecord | null; defaults: HotelCoreDefaults }) {
+  const candidates = getHotelSearchCandidates(result)
+  if (candidates.length === 0) return null
+
+  const requestPayload = asRecord(result?.request)
+  const countryId = defaults.countryId || asText(requestPayload.countryID)
+  const cityId = defaults.cityId || asText(requestPayload.cityID)
+  const checkinDate = defaults.checkinDate || normalizeInputDate(requestPayload.checkInDate) || getDefaultDate(7)
+  const checkoutDate = defaults.checkoutDate || normalizeInputDate(requestPayload.checkOutDate) || getDefaultDate(8)
+  const paxPassport = defaults.paxPassport || asText(requestPayload.paxPassport) || "ID"
+  const roomCount = defaults.roomCount || getRoomCountFromPayload(requestPayload.roomRequest) || "1"
+  const childCount = defaults.childCount || getChildCountFromPayload(requestPayload.roomRequest) || "0"
+
+  return (
+    <section className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-slate-950">Kandidat Hotel/Search5</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            Pilih Hotel ID supplier dari hasil Search5, lalu lanjutkan ke AvailableRooms.
+          </p>
+        </div>
+      </div>
+      <div className="mt-4 space-y-3">
+        {candidates.slice(0, 8).map((candidate, index) => {
+          const params = new URLSearchParams({
+            panel: "available",
+            hotel_id: candidate.supplierHotelId,
+            country_id: countryId,
+            city_id: cityId,
+            checkin_date: checkinDate,
+            checkout_date: checkoutDate,
+            pax_passport: paxPassport,
+            room_count: roomCount,
+            child_count: childCount,
+          })
+          if (defaults.requestId) params.set("request_id", defaults.requestId)
+
+          return (
+            <div key={`${candidate.supplierHotelId}-${index}`} className="rounded-[14px] border border-slate-200 bg-slate-50 p-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-950">{candidate.hotelName || `Hotel ${candidate.supplierHotelId}`}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Hotel ID {candidate.supplierHotelId || "-"} | Internal {candidate.supplierInternalCode || "-"}
+                  </p>
+                  {candidate.address ? <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{candidate.address}</p> : null}
+                  {candidate.priceStart ? (
+                    <p className="mt-1 text-xs font-semibold text-orange-700">Mulai IDR {candidate.priceStart.toLocaleString("id-ID")}</p>
+                  ) : null}
+                </div>
+                <Link href={`/admin/hotel/diagnostics?${params.toString()}`} className="rounded-[12px] bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700">
+                  Pakai di AvailableRooms
+                </Link>
+              </div>
+            </div>
+          )
+        })}
       </div>
     </section>
   )
@@ -783,6 +997,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
     mappings: activeCityMappings,
     defaults: coreDefaults,
     requestPayload,
+    result,
     activeRequest: activeRequestHint,
   })
   const rateOptions = buildHotelRateOptions({
@@ -802,7 +1017,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
       primaryActionLabel="Kembali ke dashboard Hotel"
       secondaryActionHref="/hotel/catalog"
       secondaryActionLabel="Buka katalog Hotel"
-      preparedModules={["Schema readiness", "Login token", "City ID search", "Available rooms", "Price policy", "Booking payload", "Voucher readiness"]}
+      preparedModules={["Schema readiness", "Login token", "City ID search", "Hotel Search5", "Available rooms", "Price policy", "Booking payload", "Voucher readiness"]}
     >
       <HotelCoreDatalists ids={datalistIds} options={coreOptions} />
       <HotelRateDatalists ids={rateDatalistIds} options={rateOptions} />
@@ -832,6 +1047,8 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
             </form>
           </TestCard>
 
+          <AutoTestPanel coreDefaults={coreDefaults} rateDefaults={rateDefaults} />
+
           <TestCard
             eyebrow="City"
             title="Cari City ID Dharmawisata"
@@ -855,6 +1072,20 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
 
           <TestCard
             eyebrow="Step 2"
+            title="Test Hotel/Search5"
+            description="Cari Hotel ID supplier berdasarkan countryID, cityID, tanggal stay, dan komposisi kamar. Hasilnya dipakai untuk AvailableRooms."
+          >
+            <form action={testHotelSearch} className="space-y-4">
+              <input type="hidden" name="request_id" value={coreDefaults.requestId || ""} />
+              <HotelSearchFields defaults={coreDefaults} datalistIds={datalistIds} />
+              <button type="submit" className="rounded-[12px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
+                Test Hotel/Search5
+              </button>
+            </form>
+          </TestCard>
+
+          <TestCard
+            eyebrow="Step 3"
             title="Test AvailableRooms"
             description="Cek kamar tersedia berdasarkan Hotel ID, tanggal stay, jumlah kamar, dan komposisi anak. Test ini read-only."
           >
@@ -874,7 +1105,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
           </TestCard>
 
           <TestCard
-            eyebrow="Step 3"
+            eyebrow="Step 4"
             title="Test PriceAndPolicy"
             description="Validasi harga final, komisi, cancellation policy, dan flag isEnableBooking sebelum quote dikirim ke customer."
           >
@@ -942,6 +1173,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
           </section>
 
           <CityMappingCandidates result={result} />
+          <HotelSearchCandidates result={result} defaults={coreDefaults} />
           <SupplierRateCandidates result={result} requestId={coreDefaults.requestId || ""} />
           <CitySearchHistory logs={cityLogs} />
 

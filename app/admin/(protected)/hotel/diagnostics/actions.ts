@@ -26,6 +26,17 @@ type HotelRateCandidate = {
   cancellationPolicy: string
 }
 
+type HotelSearchCandidate = {
+  supplierHotelId: string
+  supplierInternalCode: string
+  hotelName: string
+  address: string
+  rating: string
+  priceStart: number | null
+  availabilityStatus: string
+  message: string
+}
+
 const HOTEL_SCHEMA_REQUIRED_COLUMNS = [
   ["bookings", "booking_product_type"],
   ["bookings", "fulfillment_mode"],
@@ -320,6 +331,36 @@ function collectHotelRateCandidates(
   return candidates
 }
 
+function collectHotelSearchCandidates(value: unknown) {
+  const body = asRecord(value)
+  const hotels = Array.isArray(body.hotels)
+    ? body.hotels
+    : Array.isArray(body.Hotels)
+      ? body.Hotels
+      : Array.isArray(body.hotelList)
+        ? body.hotelList
+        : []
+
+  return hotels
+    .map((hotel) => {
+      const record = asRecord(hotel)
+      const supplierHotelId = firstString(record, ["ID", "id", "hotelID", "hotelId", "HotelID"])
+      const supplierInternalCode = firstString(record, ["internalCode", "InternalCode", "internal_code"]) || supplierHotelId
+      return {
+        supplierHotelId,
+        supplierInternalCode,
+        hotelName: firstString(record, ["name", "Name", "hotelName", "HotelName"]),
+        address: firstString(record, ["address", "Address", "location", "Location"]),
+        rating: firstString(record, ["rating", "Rating", "star", "Star"]),
+        priceStart: firstNumber(record, ["priceStart", "PriceStart", "totalPrice", "TotalPrice", "price", "Price"]),
+        availabilityStatus: firstString(record, ["availabilityStatus", "AvailabilityStatus", "status", "Status"]),
+        message: firstString(record, ["message", "Message", "respMessage"]),
+      }
+    })
+    .filter((candidate): candidate is HotelSearchCandidate => Boolean(candidate.supplierHotelId || candidate.hotelName))
+    .slice(0, 12)
+}
+
 export async function checkHotelSchemaReadiness() {
   await ensureHotelAdmin()
   const adminSupabase = createAdminClient()
@@ -574,6 +615,83 @@ export async function saveHotelCityMappingFromDiagnostics(formData: FormData) {
       cityName,
     }),
   })
+}
+
+export async function testHotelSearch(formData: FormData) {
+  await ensureHotelAdmin()
+  const startedAt = Date.now()
+  const requestId = asString(formData.get("request_id"))
+
+  try {
+    const auth = await dharmawisataLogin({ language: 1 })
+    const accessToken = asString(auth.accessToken)
+    if (!accessToken) throw new Error("Login berhasil dipanggil tetapi accessToken kosong.")
+
+    const payload = buildHotelPayload(formData, accessToken)
+    const missingFields = payloadMissingFields(payload, false).filter((field) => !["hotelID", "internalCode", "breakfast", "roomID"].includes(field))
+    if (missingFields.length > 0) {
+      diagnosticsRedirect({
+        panel: "search",
+        status: "error",
+        ...(requestId ? { request_id: requestId } : {}),
+        result: buildResultPayload({
+          title: "Payload Hotel/Search5 belum lengkap",
+          requestId,
+          missingFields,
+        }),
+      })
+    }
+
+    const response = await dharmawisataJsonFetch({
+      path: getDharmawisataConfiguredPath("DHARMAWISATA_H2H_HOTEL_SEARCH_PATH") || "/Hotel/Search5",
+      method: "POST",
+      body: {
+        paxPassport: payload.paxPassport,
+        countryID: payload.countryID,
+        cityID: payload.cityID,
+        checkInDate: payload.checkInDate,
+        checkOutDate: payload.checkOutDate,
+        roomRequest: payload.roomRequest,
+        userID: payload.userID,
+        accessToken: payload.accessToken,
+      },
+    })
+    const body = asRecord(response)
+    const hotelCandidates = collectHotelSearchCandidates(response)
+    const responseStatus = asString(body.status)
+    const responseMessage =
+      asString(body.respMessage) ||
+      (hotelCandidates.length > 0 ? "Pilih salah satu Hotel ID supplier untuk lanjut ke AvailableRooms." : "Tidak ada hotel dari Search5 untuk kombinasi kota/tanggal ini.")
+
+    diagnosticsRedirect({
+      panel: "search",
+      status: hotelCandidates.length > 0 ? "success" : "warning",
+      ...(requestId ? { request_id: requestId } : {}),
+      result: buildResultPayload({
+        title: hotelCandidates.length > 0 ? "Hotel/Search5 menemukan hotel" : "Hotel/Search5 belum menemukan hotel",
+        elapsedMs: Date.now() - startedAt,
+        requestId,
+        status: responseStatus,
+        respMessage: responseMessage,
+        request: { ...payload, accessToken: "present-redacted" },
+        hotelCount: hotelCandidates.length,
+        hotelCandidates,
+      }),
+    })
+  } catch (error) {
+    rethrowNextRedirect(error)
+    diagnosticsRedirect({
+      panel: "search",
+      status: "error",
+      ...(requestId ? { request_id: requestId } : {}),
+      result: buildResultPayload({
+        title: "Hotel/Search5 gagal",
+        elapsedMs: Date.now() - startedAt,
+        requestId,
+        error: error instanceof Error ? error.message : "Unknown error",
+      }),
+    })
+  }
 }
 
 export async function testHotelAvailableRooms(formData: FormData) {
