@@ -157,6 +157,12 @@ function normalizeInputDate(value: unknown) {
   return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10)
 }
 
+function getHotelNameSearchKeyword(value: unknown) {
+  const raw = asText(value).trim()
+  if (!raw) return ""
+  return raw.split(" - ")[0]?.trim() || raw
+}
+
 function getRoomRequestItems(value: unknown) {
   return Array.isArray(value) ? value.map(asRecord) : []
 }
@@ -941,7 +947,14 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
   const resolvedCountryId = params.country_id || asText(requestPayload.countryID) || asText(activeQuotePayload.supplier_country_id) || cityCandidate?.countryId || ""
   const resolvedCityId = params.city_id || asText(requestPayload.cityID) || asText(activeQuotePayload.supplier_city_id) || cityCandidate?.id || ""
   const matchedCityMapping = activeCityMappings.find((mapping) => mapping.country_id === resolvedCountryId && mapping.city_id === resolvedCityId)
-  const resolvedDestinationLabel = params.destination_label || cityCandidate?.name || matchedCityMapping?.destination_label || activeRequestHint?.hotel_location || ""
+  const resolvedDestinationLabel = params.destination_label || matchedCityMapping?.destination_label || cityCandidate?.name || activeRequestHint?.hotel_location || ""
+  const resolvedHotelNameFilter =
+    params.hotel_name_filter ||
+    getHotelNameSearchKeyword(requestPayload.hotelNameFilter) ||
+    matchedCityMapping?.destination_label ||
+    getHotelNameSearchKeyword(resolvedDestinationLabel) ||
+    activeRequestHint?.hotel_name ||
+    ""
   const coreDefaults: HotelCoreDefaults = {
     requestId,
     hotelId:
@@ -963,7 +976,7 @@ export default async function AdminHotelDiagnosticsPage({ searchParams }: { sear
       getChildCountFromPayload(requestPayload.roomRequest) ||
       (typeof activeRequestHint?.child_count === "number" ? String(activeRequestHint.child_count) : ""),
     destinationLabel: resolvedDestinationLabel,
-    hotelNameFilter: params.hotel_name_filter || asText(requestPayload.hotelNameFilter) || resolvedDestinationLabel || activeRequestHint?.hotel_name || "",
+    hotelNameFilter: resolvedHotelNameFilter,
   }
   const firstRateCandidate = getHotelRateCandidates(result).find((candidate) => candidate.internalCode && candidate.roomId && candidate.breakfastId)
   const rateDefaults: HotelRateDefaults = {
