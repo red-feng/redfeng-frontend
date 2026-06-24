@@ -7,6 +7,7 @@ import type { Locale } from "@/lib/i18n"
 type DestinationOption = {
   value: string
   sublabel: string
+  hint?: string
 }
 
 type SearchCopy = {
@@ -138,6 +139,22 @@ function SearchMiniIcon() {
   )
 }
 
+function ArrowLeftIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.9]">
+      <path d="M15 18 9 12l6-6" />
+    </svg>
+  )
+}
+
+function ArrowRightIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.9]">
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  )
+}
+
 function useDismissableLayer(isOpen: boolean, onClose: () => void) {
   const ref = useRef<HTMLDivElement | null>(null)
 
@@ -251,7 +268,7 @@ function FloatingPanel({
         </div>
         {children}
       </div>
-      <div className="absolute left-0 top-[calc(100%+12px)] z-[320] hidden min-w-[300px] overflow-hidden rounded-[24px] border border-[#e4ebf4] bg-white shadow-[0_28px_70px_-32px_rgba(15,23,42,0.32)] xl:block">
+      <div className="absolute left-0 top-[calc(100%+12px)] z-[320] hidden w-[420px] overflow-hidden rounded-[24px] border border-[#e4ebf4] bg-white shadow-[0_28px_70px_-32px_rgba(15,23,42,0.32)] xl:block">
         {children}
       </div>
     </>
@@ -310,6 +327,23 @@ function DestinationField({
             />
           </label>
         </div>
+        <div className="px-4 pt-4">
+          <div className="flex flex-wrap gap-2">
+            {copy.destinationOptions.slice(0, 4).map((option) => (
+              <button
+                key={`chip-${option.value}`}
+                type="button"
+                onClick={() => {
+                  onPick(option)
+                  setIsOpen(false)
+                }}
+                className="rounded-full border border-[#e4ebf4] bg-white px-3 py-1.5 text-[12px] font-semibold text-slate-700 transition hover:border-[#bfd7ff] hover:bg-[#f4f8ff]"
+              >
+                {option.value}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="max-h-[320px] overflow-y-auto px-3 py-2">
           {filtered.map((option) => (
             <button
@@ -326,8 +360,9 @@ function DestinationField({
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[14px] font-semibold text-slate-950">{option.value}</span>
-                <span className="mt-0.5 block truncate text-[12px] text-slate-500">{option.sublabel}</span>
+                <span className="mt-0.5 block truncate text-[12px] text-slate-500">{option.hint || option.sublabel}</span>
               </span>
+              <span className="mt-1 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-500">{option.sublabel}</span>
             </button>
           ))}
         </div>
@@ -336,7 +371,59 @@ function DestinationField({
   )
 }
 
+function parseLocalDate(value: string) {
+  const date = new Date(`${value}T00:00:00`)
+  return Number.isNaN(date.getTime()) ? new Date() : date
+}
+
+function formatDateKey(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+function addMonths(date: Date, amount: number) {
+  return new Date(date.getFullYear(), date.getMonth() + amount, 1)
+}
+
+function getCalendarDays(monthDate: Date) {
+  const firstDay = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
+  const leadingDays = firstDay.getDay()
+  const startDate = new Date(firstDay)
+  startDate.setDate(firstDay.getDate() - leadingDays)
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(startDate)
+    date.setDate(startDate.getDate() + index)
+    return date
+  })
+}
+
+function getLocaleTag(locale: Locale) {
+  return locale === "en" ? "en-US" : locale === "zh" ? "zh-CN" : "id-ID"
+}
+
+function getWeekdayLabels(locale: Locale) {
+  const base = new Date("2026-06-21T00:00:00")
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(base)
+    date.setDate(base.getDate() + index)
+    return new Intl.DateTimeFormat(getLocaleTag(locale), { weekday: "short" }).format(date)
+  })
+}
+
+function isBeforeDate(date: Date, min?: string) {
+  if (!min) return false
+  return formatDateKey(date) < min
+}
+
+function monthLabel(date: Date, locale: Locale) {
+  return new Intl.DateTimeFormat(getLocaleTag(locale), { month: "long", year: "numeric" }).format(date)
+}
+
 function DateField({
+  locale,
   title,
   helper,
   value,
@@ -346,6 +433,7 @@ function DateField({
   onChange,
   doneLabel,
 }: {
+  locale: Locale
   title: string
   helper: string
   value: string
@@ -356,7 +444,14 @@ function DateField({
   doneLabel: string
 }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [visibleMonth, setVisibleMonth] = useState(() => {
+    const selected = parseLocalDate(value)
+    return new Date(selected.getFullYear(), selected.getMonth(), 1)
+  })
   const layerRef = useDismissableLayer(isOpen, () => setIsOpen(false))
+  const selectedDate = parseLocalDate(value)
+  const calendarDays = getCalendarDays(visibleMonth)
+  const weekdayLabels = getWeekdayLabels(locale)
 
   return (
     <div ref={layerRef} className="relative">
@@ -367,21 +462,65 @@ function DateField({
         sublabel={sublabel}
         withLeftBorder={withLeftBorder}
         isOpen={isOpen}
-        onClick={() => setIsOpen((current) => !current)}
+        onClick={() => {
+          const selected = parseLocalDate(value)
+          setVisibleMonth(new Date(selected.getFullYear(), selected.getMonth(), 1))
+          setIsOpen((current) => !current)
+        }}
       />
       <FloatingPanel isOpen={isOpen} onClose={() => setIsOpen(false)}>
         <div className="border-b border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#f9fbff_100%)] px-5 py-4">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{title}</p>
+          <p className="mt-2 text-[18px] font-semibold text-slate-950">{formatDateValue(value)}</p>
           <p className="mt-1 text-[13px] text-slate-500">{helper}</p>
         </div>
         <div className="px-4 py-4">
-          <input
-            type="date"
-            value={value}
-            min={min}
-            onChange={(event) => onChange(event.target.value)}
-            className="w-full rounded-[18px] border border-[#e4ebf4] bg-[#fbfdff] px-4 py-3 text-[14px] text-slate-900 outline-none focus:border-[#bfd7ff]"
-          />
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setVisibleMonth((current) => addMonths(current, -1))}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e4ebf4] text-slate-500 transition hover:bg-slate-50"
+            >
+              <ArrowLeftIcon />
+            </button>
+            <p className="text-[15px] font-semibold text-slate-950">{monthLabel(visibleMonth, locale)}</p>
+            <button
+              type="button"
+              onClick={() => setVisibleMonth((current) => addMonths(current, 1))}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e4ebf4] text-slate-500 transition hover:bg-slate-50"
+            >
+              <ArrowRightIcon />
+            </button>
+          </div>
+          <div className="mt-4 grid grid-cols-7 gap-1 text-center">
+            {weekdayLabels.map((label) => (
+              <span key={label} className="py-1 text-[11px] font-semibold text-slate-400">{label}</span>
+            ))}
+            {calendarDays.map((date) => {
+              const dateKey = formatDateKey(date)
+              const isCurrentMonth = date.getMonth() === visibleMonth.getMonth()
+              const isSelected = dateKey === formatDateKey(selectedDate)
+              const disabled = isBeforeDate(date, min)
+
+              return (
+                <button
+                  key={dateKey}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => onChange(dateKey)}
+                  className={`h-10 rounded-[13px] text-[13px] font-semibold transition ${
+                    isSelected
+                      ? "bg-[linear-gradient(135deg,#4092ff_0%,#2f6ee5_100%)] text-white shadow-[0_14px_24px_-16px_rgba(47,110,229,0.9)]"
+                      : isCurrentMonth
+                        ? "text-slate-800 hover:bg-[#f4f8ff]"
+                        : "text-slate-300 hover:bg-slate-50"
+                  } disabled:cursor-not-allowed disabled:text-slate-200 disabled:hover:bg-transparent`}
+                >
+                  {date.getDate()}
+                </button>
+              )
+            })}
+          </div>
         </div>
         <div className="border-t border-slate-100 bg-[#fbfdff] px-4 py-4">
           <button
@@ -515,7 +654,18 @@ function formatWeekday(value: string, locale: Locale) {
 function addDays(value: string, amount: number) {
   const date = new Date(`${value}T00:00:00`)
   date.setDate(date.getDate() + amount)
-  return date.toISOString().slice(0, 10)
+  return formatDateKey(date)
+}
+
+function getDefaultHotelDates() {
+  const checkinDate = new Date()
+  checkinDate.setDate(checkinDate.getDate() + 7)
+  const checkoutDate = new Date(checkinDate)
+  checkoutDate.setDate(checkinDate.getDate() + 3)
+  return {
+    checkin: formatDateKey(checkinDate),
+    checkout: formatDateKey(checkoutDate),
+  }
 }
 
 export default function HotelHeroSearchBar({ locale, buttonLabel }: { locale: Locale; buttonLabel: string }) {
@@ -549,12 +699,12 @@ export default function HotelHeroSearchBar({ locale, buttonLabel }: { locale: Lo
           nights: "nights",
           searchPath: "/hotel/catalog",
           destinationOptions: [
-            { value: "Bali", sublabel: "Indonesia" },
-            { value: "Jakarta", sublabel: "Indonesia" },
-            { value: "Singapore", sublabel: "Singapore" },
-            { value: "Bangkok", sublabel: "Thailand" },
-            { value: "Tokyo", sublabel: "Japan" },
-            { value: "Labuan Bajo", sublabel: "Indonesia" },
+            { value: "Bali", sublabel: "Indonesia", hint: "Beach resorts, villas, and family stays" },
+            { value: "Jakarta", sublabel: "Indonesia", hint: "Business hotels and city stays" },
+            { value: "Singapore", sublabel: "Singapore", hint: "Orchard, Marina Bay, Sentosa" },
+            { value: "Bangkok", sublabel: "Thailand", hint: "Shopping, nightlife, and family hotels" },
+            { value: "Tokyo", sublabel: "Japan", hint: "Shinjuku, Ginza, and city hotels" },
+            { value: "Labuan Bajo", sublabel: "Indonesia", hint: "Resorts near Komodo gateways" },
           ],
         }
       : locale === "zh"
@@ -622,18 +772,19 @@ export default function HotelHeroSearchBar({ locale, buttonLabel }: { locale: Lo
             nights: "malam",
             searchPath: "/hotel/catalog",
             destinationOptions: [
-              { value: "Bali", sublabel: "Indonesia" },
-              { value: "Jakarta", sublabel: "Indonesia" },
-              { value: "Singapore", sublabel: "Singapore" },
-              { value: "Bangkok", sublabel: "Thailand" },
-              { value: "Tokyo", sublabel: "Japan" },
-              { value: "Labuan Bajo", sublabel: "Indonesia" },
+              { value: "Bali", sublabel: "Indonesia", hint: "Resort pantai, villa, dan family stay" },
+              { value: "Jakarta", sublabel: "Indonesia", hint: "Hotel bisnis dan stay kota" },
+              { value: "Singapore", sublabel: "Singapore", hint: "Orchard, Marina Bay, Sentosa" },
+              { value: "Bangkok", sublabel: "Thailand", hint: "Shopping, nightlife, dan family hotel" },
+              { value: "Tokyo", sublabel: "Japan", hint: "Shinjuku, Ginza, dan city hotel" },
+              { value: "Labuan Bajo", sublabel: "Indonesia", hint: "Resort dekat gerbang Komodo" },
             ],
           }
 
   const [destination, setDestination] = useState(copy.destinationOptions[0])
-  const [checkin, setCheckin] = useState("2026-05-27")
-  const [checkout, setCheckout] = useState("2026-05-30")
+  const defaultDates = useMemo(() => getDefaultHotelDates(), [])
+  const [checkin, setCheckin] = useState(defaultDates.checkin)
+  const [checkout, setCheckout] = useState(defaultDates.checkout)
   const [adults, setAdults] = useState(2)
   const [children, setChildren] = useState(0)
   const [rooms, setRooms] = useState(1)
@@ -670,6 +821,7 @@ export default function HotelHeroSearchBar({ locale, buttonLabel }: { locale: Lo
     <div className="grid gap-2.5 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.92fr)_minmax(0,0.92fr)_minmax(0,1fr)_56px]">
       <DestinationField copy={copy} value={destination.value} sublabel={destination.sublabel} onPick={setDestination} />
       <DateField
+        locale={locale}
         title={copy.checkin}
         helper={copy.dateHint}
         value={checkin}
@@ -679,6 +831,7 @@ export default function HotelHeroSearchBar({ locale, buttonLabel }: { locale: Lo
         doneLabel={copy.doneDate}
       />
       <DateField
+        locale={locale}
         title={copy.checkout}
         helper={`${nightsCount} ${copy.nights}`}
         value={checkout}
