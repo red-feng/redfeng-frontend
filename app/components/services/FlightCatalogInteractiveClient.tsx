@@ -415,16 +415,19 @@ function extractAirportCode(value: string) {
   const leadingCodeMatch = normalized.match(/^([A-Z]{3})\b/)
   if (leadingCodeMatch) return leadingCodeMatch[1]
 
+  const embeddedCodeMatch = normalized.match(/\b([A-Z]{3})\b/)
+  if (embeddedCodeMatch) return embeddedCodeMatch[1]
+
   return ""
 }
 
 function matchesFlightEndpointField(query: string, ...candidates: string[]) {
+  const airportCode = extractAirportCode(query)
+  if (airportCode && matchesFlightField(airportCode, ...candidates)) return true
+
   if (matchesFlightField(query, ...candidates)) return true
 
-  const airportCode = extractAirportCode(query)
-  if (!airportCode) return false
-
-  return matchesFlightField(airportCode, ...candidates)
+  return false
 }
 
 function matchesFlightTripMode(tripMode: FlightTripMode, item: FlightItem) {
@@ -1227,6 +1230,7 @@ export default function FlightCatalogInteractiveClient({
 
   const filteredItems = sortFlightResults(items
     .filter((item) => {
+      const isLiveSupplierItem = dataSource === "live"
       const keyword = state.q.trim().toLowerCase()
       const matchesKeyword =
         keyword.length === 0 ||
@@ -1250,9 +1254,9 @@ export default function FlightCatalogInteractiveClient({
       const matchesTo = matchesFlightEndpointField(state.to, item.title, item.location, item.meta.destination, item.meta.routeCode)
       const matchesVia = matchesFlightVia(state.via, state.tripMode, item)
       const matchesTripMode = matchesFlightTripMode(state.tripMode, item)
-      const matchesDepartDate = matchesFlightDate(state.depart, item)
-      const matchesReturnDate = state.tripMode === "round_trip" ? matchesFlightReturnDate(state.depart, state.returnDate, item) : true
-      const matchesCabin = matchesFlightCabin(state.cabin, item)
+      const matchesDepartDate = isLiveSupplierItem || matchesFlightDate(state.depart, item)
+      const matchesReturnDate = isLiveSupplierItem || state.tripMode !== "round_trip" ? true : matchesFlightReturnDate(state.depart, state.returnDate, item)
+      const matchesCabin = isLiveSupplierItem || matchesFlightCabin(state.cabin, item)
       const requestedPassengers = parsePassengerCount(state.passengers)
       const matchesPassengers = requestedPassengers <= item.meta.maxPassengers
       return matchesKeyword && matchesRegion && matchesGroup && matchesAirline && matchesDepartWindow && matchesTransit && matchesPrice && matchesFrom && matchesTo && matchesVia && matchesTripMode && matchesDepartDate && matchesReturnDate && matchesCabin && matchesPassengers
