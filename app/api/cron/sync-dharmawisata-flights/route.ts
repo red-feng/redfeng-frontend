@@ -20,7 +20,16 @@ async function handleSync(request: Request) {
   }
 
   try {
-    const flight = await syncDharmawisataFlightRoutes()
+    const url = new URL(request.url)
+    const mode = url.searchParams.get("mode")
+    const airline = url.searchParams.get("airline")
+    const routesParam = url.searchParams.get("routes")
+    const syncRoutes = mode === "routes" || routesParam === "1" || Boolean(airline)
+    const flight = await syncDharmawisataFlightRoutes({
+      syncAirports: mode !== "routes",
+      syncRoutes,
+      airlineCodes: airline ? airline.split(",") : undefined,
+    })
     return NextResponse.json({ ok: flight.ok, flight })
   } catch (error) {
     return NextResponse.json(

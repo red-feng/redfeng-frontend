@@ -32,6 +32,12 @@ export type DharmawisataFlightRouteSyncResult = {
   message: string
 }
 
+export type DharmawisataFlightRouteSyncOptions = {
+  syncAirports?: boolean
+  syncRoutes?: boolean
+  airlineCodes?: string[]
+}
+
 function asRecord(value: unknown): RecordValue {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as RecordValue) : {}
 }
@@ -165,7 +171,7 @@ function normalizeRoute(row: RecordValue, airline: { code: string; name: string 
   }
 }
 
-export async function syncDharmawisataFlightRoutes(): Promise<DharmawisataFlightRouteSyncResult> {
+export async function syncDharmawisataFlightRoutes(options?: DharmawisataFlightRouteSyncOptions): Promise<DharmawisataFlightRouteSyncResult> {
   if (!isDharmawisataConfigured()) {
     return { ok: false, airportCount: 0, routeCount: 0, message: "Environment Dharmawisata belum lengkap." }
   }
@@ -179,42 +185,58 @@ export async function syncDharmawisataFlightRoutes(): Promise<DharmawisataFlight
   const credentials = getDharmawisataCredentials()
   const syncedAt = new Date().toISOString()
   const adminSupabase = createAdminClient()
+  const shouldSyncAirports = options?.syncAirports ?? true
+  const shouldSyncRoutes = options?.syncRoutes ?? false
 
-  const cityBody = asRecord(
-    await dharmawisataJsonFetch({
-      path: getPath("DHARMAWISATA_H2H_AIRLINE_CITY_PATH", "/Airline/City"),
-      timeoutMs: 30000,
-      body: {
-        userID: credentials.userId,
-        accessToken,
-      },
-    }),
-  )
+  let airportCount = 0
+  if (shouldSyncAirports) {
+    const cityBody = asRecord(
+      await dharmawisataJsonFetch({
+        path: getPath("DHARMAWISATA_H2H_AIRLINE_CITY_PATH", "/Airline/City"),
+        timeoutMs: 25000,
+        body: {
+          userID: credentials.userId,
+          accessToken,
+        },
+      }),
+    )
 
-  const airportRows = uniqueBy(firstRecordArray(cityBody, ["cities", "Cities", "city", "City", "airports", "Airports", "data", "Data", "result", "Result"])
-    .map((row) => {
-      const airportCode = getAirportCode(row)
-      const cityName = getAirportCity(row)
-      return {
-        airport_code: airportCode,
-        city_name: cityName,
-        airport_name: asString(firstValue(row, ["airportName", "AirportName", "airport", "Airport", "name", "Name"])) || cityName,
-        country_id: asString(firstValue(row, ["countryID", "CountryID", "countryCode", "CountryCode"])),
-        is_active: Boolean(airportCode && cityName),
-        raw: row,
-        synced_at: syncedAt,
-        updated_at: syncedAt,
+    const airportRows = uniqueBy(firstRecordArray(cityBody, ["cities", "Cities", "city", "City", "airports", "Airports", "data", "Data", "result", "Result"])
+      .map((row) => {
+        const airportCode = getAirportCode(row)
+        const cityName = getAirportCity(row)
+        return {
+          airport_code: airportCode,
+          city_name: cityName,
+          airport_name: asString(firstValue(row, ["airportName", "AirportName", "airport", "Airport", "name", "Name"])) || cityName,
+          country_id: asString(firstValue(row, ["countryID", "CountryID", "countryCode", "CountryCode"])),
+          is_active: Boolean(airportCode && cityName),
+          raw: row,
+          synced_at: syncedAt,
+          updated_at: syncedAt,
+        }
+      })
+      .filter((row) => row.is_active), (row) => row.airport_code)
+
+    for (let index = 0; index < airportRows.length; index += FLIGHT_AIRPORT_UPSERT_BATCH_SIZE) {
+      const { error } = await adminSupabase
+        .from("dharmawisata_flight_airports")
+        .upsert(airportRows.slice(index, index + FLIGHT_AIRPORT_UPSERT_BATCH_SIZE), { onConflict: "airport_code" })
+
+      if (error) {
+        return { ok: false, airportCount: index, routeCount: 0, message: error.message }
       }
-    })
-    .filter((row) => row.is_active), (row) => row.airport_code)
+    }
 
-  for (let index = 0; index < airportRows.length; index += FLIGHT_AIRPORT_UPSERT_BATCH_SIZE) {
-    const { error } = await adminSupabase
-      .from("dharmawisata_flight_airports")
-      .upsert(airportRows.slice(index, index + FLIGHT_AIRPORT_UPSERT_BATCH_SIZE), { onConflict: "airport_code" })
+    airportCount = airportRows.length
+  }
 
-    if (error) {
-      return { ok: false, airportCount: index, routeCount: 0, message: error.message }
+  if (!shouldSyncRoutes) {
+    return {
+      ok: true,
+      airportCount,
+      routeCount: 0,
+      message: "Airport pesawat Dharmawisata berhasil disync. Rute dilewati agar tidak timeout.",
     }
   }
 
@@ -231,7 +253,9 @@ export async function syncDharmawisataFlightRoutes(): Promise<DharmawisataFlight
   const parsedAirlines = firstRecordArray(airlineBody, ["airlines", "Airlines", "airline", "Airline", "data", "Data", "result", "Result"])
     .map(normalizeAirline)
     .filter((airline) => airline.code && airline.isActive)
-  const airlines = parsedAirlines.length > 0 ? parsedAirlines : DEFAULT_ACTIVE_AIRLINES
+  const allowedAirlineCodes = new Set((options?.airlineCodes || []).map((code) => code.trim().toUpperCase()).filter(Boolean))
+  const airlines = (parsedAirlines.length > 0 ? parsedAirlines : DEFAULT_ACTIVE_AIRLINES)
+    .filter((airline) => allowedAirlineCodes.size === 0 || allowedAirlineCodes.has(airline.code))
 
   let routeCount = 0
   for (const airline of airlines) {
@@ -257,7 +281,7 @@ export async function syncDharmawisataFlightRoutes(): Promise<DharmawisataFlight
         .upsert(chunk, { onConflict: "airline_code,origin_code,destination_code" })
 
       if (error) {
-        return { ok: false, airportCount: airportRows.length, routeCount, message: error.message }
+        return { ok: false, airportCount, routeCount, message: error.message }
       }
       routeCount += chunk.length
     }
@@ -265,7 +289,7 @@ export async function syncDharmawisataFlightRoutes(): Promise<DharmawisataFlight
 
   return {
     ok: true,
-    airportCount: airportRows.length,
+    airportCount,
     routeCount,
     message: "Airport dan rute pesawat Dharmawisata berhasil disync.",
   }
