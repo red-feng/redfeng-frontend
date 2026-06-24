@@ -39,6 +39,16 @@ function firstArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : []
 }
 
+function uniqueBy<T>(items: T[], getKey: (item: T) => string) {
+  const map = new Map<string, T>()
+  for (const item of items) {
+    const key = getKey(item)
+    if (!key || map.has(key)) continue
+    map.set(key, item)
+  }
+  return Array.from(map.values())
+}
+
 function getPath(envName: string, fallback: string) {
   return getDharmawisataConfiguredPath(envName) || fallback.replace(/^\/+/, "")
 }
@@ -150,7 +160,7 @@ export async function syncDharmawisataFlightRoutes(): Promise<DharmawisataFlight
     }),
   )
 
-  const airportRows = firstArray<RecordValue>(cityBody.cities)
+  const airportRows = uniqueBy(firstArray<RecordValue>(cityBody.cities)
     .map((row) => {
       const airportCode = getAirportCode(row)
       const cityName = getAirportCity(row)
@@ -165,7 +175,7 @@ export async function syncDharmawisataFlightRoutes(): Promise<DharmawisataFlight
         updated_at: syncedAt,
       }
     })
-    .filter((row) => row.is_active)
+    .filter((row) => row.is_active), (row) => row.airport_code)
 
   for (let index = 0; index < airportRows.length; index += FLIGHT_AIRPORT_UPSERT_BATCH_SIZE) {
     const { error } = await adminSupabase
@@ -202,9 +212,9 @@ export async function syncDharmawisataFlightRoutes(): Promise<DharmawisataFlight
         },
       }),
     )
-    const routeRows = firstArray<RecordValue>(routeBody.routes)
+    const routeRows = uniqueBy(firstArray<RecordValue>(routeBody.routes)
       .map((row) => normalizeRoute(row, airline, syncedAt))
-      .filter((row): row is NonNullable<ReturnType<typeof normalizeRoute>> => Boolean(row))
+      .filter((row): row is NonNullable<ReturnType<typeof normalizeRoute>> => Boolean(row)), (row) => `${row.airline_code}:${row.origin_code}:${row.destination_code}`)
 
     for (let index = 0; index < routeRows.length; index += FLIGHT_ROUTE_UPSERT_BATCH_SIZE) {
       const chunk = routeRows.slice(index, index + FLIGHT_ROUTE_UPSERT_BATCH_SIZE)

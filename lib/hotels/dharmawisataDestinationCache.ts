@@ -46,6 +46,16 @@ function firstArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : []
 }
 
+function uniqueBy<T>(items: T[], getKey: (item: T) => string) {
+  const map = new Map<string, T>()
+  for (const item of items) {
+    const key = getKey(item)
+    if (!key || map.has(key)) continue
+    map.set(key, item)
+  }
+  return Array.from(map.values())
+}
+
 function getPath(envName: string, fallback: string) {
   return getDharmawisataConfiguredPath(envName) || fallback.replace(/^\/+/, "")
 }
@@ -130,7 +140,7 @@ export async function syncDharmawisataHotelDestinations(): Promise<DharmawisataH
 
   const countries = firstArray<RecordValue>(body.countries)
   const syncedAt = new Date().toISOString()
-  const rows = countries.flatMap((country) => {
+  const rows = uniqueBy(countries.flatMap((country) => {
     const countryName = asString(country.Name ?? country.name)
     const countryId = asString(country.ID ?? country.id)
     return firstArray<RecordValue>(country.cities).map((city) => {
@@ -152,7 +162,7 @@ export async function syncDharmawisataHotelDestinations(): Promise<DharmawisataH
         updated_at: syncedAt,
       }
     })
-  }).filter((row) => row.is_active)
+  }).filter((row) => row.is_active), (row) => `${row.country_id}:${row.city_id}`)
 
   if (rows.length === 0) {
     return { ok: false, count: 0, message: "Dharmawisata belum mengembalikan city hotel." }
