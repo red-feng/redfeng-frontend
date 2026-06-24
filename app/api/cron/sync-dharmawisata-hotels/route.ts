@@ -3,6 +3,8 @@ import { NextResponse } from "next/server"
 import { syncDharmawisataHotelDestinations } from "@/lib/hotels/dharmawisataDestinationCache"
 import { getOptionalEnv } from "@/lib/env"
 
+export const maxDuration = 60
+
 function isAuthorized(request: Request) {
   const secret = getOptionalEnv("CRON_SECRET").trim()
   if (!secret) return true
@@ -18,7 +20,13 @@ async function handleSync(request: Request) {
   }
 
   try {
-    const hotel = await syncDharmawisataHotelDestinations()
+    const url = new URL(request.url)
+    const offset = Number(url.searchParams.get("offset") || "0")
+    const limit = Number(url.searchParams.get("limit") || "15")
+    const hotel = await syncDharmawisataHotelDestinations({
+      countryOffset: Number.isFinite(offset) ? offset : 0,
+      countryLimit: Number.isFinite(limit) ? limit : 15,
+    })
     return NextResponse.json({ ok: hotel.ok, hotel })
   } catch (error) {
     return NextResponse.json(

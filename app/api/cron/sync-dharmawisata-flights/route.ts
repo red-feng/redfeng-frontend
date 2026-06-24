@@ -3,6 +3,8 @@ import { NextResponse } from "next/server"
 import { syncDharmawisataFlightRoutes } from "@/lib/flights/dharmawisataRouteCache"
 import { getOptionalEnv } from "@/lib/env"
 
+export const maxDuration = 60
+
 function isAuthorized(request: Request) {
   const secret = getOptionalEnv("CRON_SECRET").trim()
   if (!secret) return true

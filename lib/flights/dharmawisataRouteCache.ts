@@ -12,6 +12,11 @@ type RecordValue = Record<string, unknown>
 
 const FLIGHT_AIRPORT_UPSERT_BATCH_SIZE = 100
 const FLIGHT_ROUTE_UPSERT_BATCH_SIZE = 100
+const DEFAULT_ACTIVE_AIRLINES = [
+  { code: "QZ", name: "Indonesia AirAsia", isActive: true },
+  { code: "QG", name: "Citilink", isActive: true },
+  { code: "JT", name: "Lion Air", isActive: true },
+]
 
 export type DharmawisataFlightAirportOption = {
   code: string
@@ -39,6 +44,32 @@ function firstArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : []
 }
 
+function firstRecordArray(value: unknown, keys: string[]): RecordValue[] {
+  if (Array.isArray(value)) return value.filter((item): item is RecordValue => typeof item === "object" && item !== null && !Array.isArray(item))
+
+  const record = asRecord(value)
+  for (const key of keys) {
+    const direct = firstArray<RecordValue>(record[key])
+    if (direct.length > 0) return direct
+
+    const nested = asRecord(record[key])
+    for (const nestedKey of keys) {
+      const nestedArray = firstArray<RecordValue>(nested[nestedKey])
+      if (nestedArray.length > 0) return nestedArray
+    }
+  }
+
+  return []
+}
+
+function firstValue(record: RecordValue, keys: string[]) {
+  for (const key of keys) {
+    const value = record[key]
+    if (value !== undefined && value !== null && asString(value)) return value
+  }
+  return ""
+}
+
 function uniqueBy<T>(items: T[], getKey: (item: T) => string) {
   const map = new Map<string, T>()
   for (const item of items) {
@@ -54,11 +85,11 @@ function getPath(envName: string, fallback: string) {
 }
 
 function getAirportCode(row: RecordValue) {
-  return asString(row.cityID ?? row.airportCode ?? row.code ?? row.ID).toUpperCase()
+  return asString(firstValue(row, ["cityID", "CityID", "airportCode", "AirportCode", "code", "Code", "ID", "id"])).toUpperCase()
 }
 
 function getAirportCity(row: RecordValue) {
-  return asString(row.cityName ?? row.name ?? row.Name ?? row.airportName)
+  return asString(firstValue(row, ["cityName", "CityName", "name", "Name", "airportName", "AirportName"]))
 }
 
 function toFallbackAirports(): DharmawisataFlightAirportOption[] {
@@ -109,24 +140,24 @@ export async function loadFlightAirportOptions(limit = 120): Promise<Dharmawisat
 
 function normalizeAirline(row: RecordValue) {
   return {
-    code: asString(row.airlineID ?? row.airlineCode ?? row.code ?? row.ID).toUpperCase(),
-    name: asString(row.airlineName ?? row.name ?? row.Name),
+    code: asString(firstValue(row, ["airlineID", "AirlineID", "airlineId", "airlineCode", "AirlineCode", "code", "Code", "ID", "id"])).toUpperCase(),
+    name: asString(firstValue(row, ["airlineName", "AirlineName", "name", "Name"])),
     isActive: String(row.isActive ?? row.active ?? "true").toLowerCase() !== "false",
   }
 }
 
 function normalizeRoute(row: RecordValue, airline: { code: string; name: string }, syncedAt: string) {
-  const originCode = asString(row.origin ?? row.originCode ?? row.departure ?? row.from).toUpperCase()
-  const destinationCode = asString(row.destination ?? row.destinationCode ?? row.arrival ?? row.to).toUpperCase()
+  const originCode = asString(firstValue(row, ["origin", "Origin", "originCode", "OriginCode", "departure", "Departure", "from", "From"])).toUpperCase()
+  const destinationCode = asString(firstValue(row, ["destination", "Destination", "destinationCode", "DestinationCode", "arrival", "Arrival", "to", "To"])).toUpperCase()
   if (!originCode || !destinationCode) return null
 
   return {
     airline_code: airline.code,
     airline_name: airline.name,
     origin_code: originCode,
-    origin_name: asString(row.originName ?? row.originCity ?? row.fromName),
+    origin_name: asString(firstValue(row, ["originName", "OriginName", "originCity", "OriginCity", "fromName", "FromName"])),
     destination_code: destinationCode,
-    destination_name: asString(row.destinationName ?? row.destinationCity ?? row.toName),
+    destination_name: asString(firstValue(row, ["destinationName", "DestinationName", "destinationCity", "DestinationCity", "toName", "ToName"])),
     is_active: true,
     raw: row,
     synced_at: syncedAt,
@@ -160,15 +191,15 @@ export async function syncDharmawisataFlightRoutes(): Promise<DharmawisataFlight
     }),
   )
 
-  const airportRows = uniqueBy(firstArray<RecordValue>(cityBody.cities)
+  const airportRows = uniqueBy(firstRecordArray(cityBody, ["cities", "Cities", "city", "City", "airports", "Airports", "data", "Data", "result", "Result"])
     .map((row) => {
       const airportCode = getAirportCode(row)
       const cityName = getAirportCity(row)
       return {
         airport_code: airportCode,
         city_name: cityName,
-        airport_name: asString(row.airportName ?? row.airport ?? row.name) || cityName,
-        country_id: asString(row.countryID ?? row.countryCode),
+        airport_name: asString(firstValue(row, ["airportName", "AirportName", "airport", "Airport", "name", "Name"])) || cityName,
+        country_id: asString(firstValue(row, ["countryID", "CountryID", "countryCode", "CountryCode"])),
         is_active: Boolean(airportCode && cityName),
         raw: row,
         synced_at: syncedAt,
@@ -197,7 +228,10 @@ export async function syncDharmawisataFlightRoutes(): Promise<DharmawisataFlight
       },
     }),
   )
-  const airlines = firstArray<RecordValue>(airlineBody.airlines).map(normalizeAirline).filter((airline) => airline.code && airline.isActive)
+  const parsedAirlines = firstRecordArray(airlineBody, ["airlines", "Airlines", "airline", "Airline", "data", "Data", "result", "Result"])
+    .map(normalizeAirline)
+    .filter((airline) => airline.code && airline.isActive)
+  const airlines = parsedAirlines.length > 0 ? parsedAirlines : DEFAULT_ACTIVE_AIRLINES
 
   let routeCount = 0
   for (const airline of airlines) {
@@ -212,7 +246,7 @@ export async function syncDharmawisataFlightRoutes(): Promise<DharmawisataFlight
         },
       }),
     )
-    const routeRows = uniqueBy(firstArray<RecordValue>(routeBody.routes)
+    const routeRows = uniqueBy(firstRecordArray(routeBody, ["routes", "Routes", "route", "Route", "data", "Data", "result", "Result"])
       .map((row) => normalizeRoute(row, airline, syncedAt))
       .filter((row): row is NonNullable<ReturnType<typeof normalizeRoute>> => Boolean(row)), (row) => `${row.airline_code}:${row.origin_code}:${row.destination_code}`)
 

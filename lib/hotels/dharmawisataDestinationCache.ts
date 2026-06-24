@@ -20,6 +20,9 @@ export type DharmawisataHotelDestinationOption = {
 export type DharmawisataHotelDestinationSyncResult = {
   ok: boolean
   count: number
+  totalCount?: number
+  offset?: number
+  limit?: number
   message: string
 }
 
@@ -32,7 +35,8 @@ const FALLBACK_HOTEL_DESTINATIONS: DharmawisataHotelDestinationOption[] = [
   { value: "Labuan Bajo", sublabel: "Indonesia", hint: "Resort dekat gerbang Komodo", countryId: "ID" },
 ]
 
-const HOTEL_DESTINATION_UPSERT_BATCH_SIZE = 100
+const HOTEL_DESTINATION_UPSERT_BATCH_SIZE = 50
+const HOTEL_DESTINATION_DEFAULT_COUNTRY_LIMIT = 15
 
 function asRecord(value: unknown): RecordValue {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as RecordValue) : {}
@@ -44,6 +48,24 @@ function asString(value: unknown) {
 
 function firstArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : []
+}
+
+function firstRecordArray(value: unknown, keys: string[]): RecordValue[] {
+  if (Array.isArray(value)) return value.filter((item): item is RecordValue => typeof item === "object" && item !== null && !Array.isArray(item))
+
+  const record = asRecord(value)
+  for (const key of keys) {
+    const direct = firstArray<RecordValue>(record[key])
+    if (direct.length > 0) return direct
+
+    const nested = asRecord(record[key])
+    for (const nestedKey of keys) {
+      const nestedArray = firstArray<RecordValue>(nested[nestedKey])
+      if (nestedArray.length > 0) return nestedArray
+    }
+  }
+
+  return []
 }
 
 function uniqueBy<T>(items: T[], getKey: (item: T) => string) {
@@ -115,7 +137,10 @@ export async function loadHotelDestinationOptions(limit = 80): Promise<Dharmawis
   }
 }
 
-export async function syncDharmawisataHotelDestinations(): Promise<DharmawisataHotelDestinationSyncResult> {
+export async function syncDharmawisataHotelDestinations(options?: {
+  countryOffset?: number
+  countryLimit?: number
+}): Promise<DharmawisataHotelDestinationSyncResult> {
   if (!isDharmawisataConfigured()) {
     return { ok: false, count: 0, message: "Environment Dharmawisata belum lengkap." }
   }
@@ -138,12 +163,16 @@ export async function syncDharmawisataHotelDestinations(): Promise<DharmawisataH
     }),
   )
 
-  const countries = firstArray<RecordValue>(body.countries)
+  const countries = firstRecordArray(body, ["countries", "Countries", "country", "Country", "data", "Data", "result", "Result"])
+  const countryOffset = Math.max(0, options?.countryOffset ?? 0)
+  const countryLimit = Math.max(1, options?.countryLimit ?? HOTEL_DESTINATION_DEFAULT_COUNTRY_LIMIT)
+  const selectedCountries = countries.slice(countryOffset, countryOffset + countryLimit)
   const syncedAt = new Date().toISOString()
-  const rows = uniqueBy(countries.flatMap((country) => {
+  const rows = uniqueBy(selectedCountries.flatMap((country) => {
     const countryName = asString(country.Name ?? country.name)
     const countryId = asString(country.ID ?? country.id)
-    return firstArray<RecordValue>(country.cities).map((city) => {
+    const cities = firstRecordArray(country, ["cities", "Cities", "city", "City"])
+    return cities.map((city) => {
       const cityName = asString(city.Name ?? city.name)
       const cityId = asString(city.ID ?? city.id)
       return {
@@ -165,7 +194,14 @@ export async function syncDharmawisataHotelDestinations(): Promise<DharmawisataH
   }).filter((row) => row.is_active), (row) => `${row.country_id}:${row.city_id}`)
 
   if (rows.length === 0) {
-    return { ok: false, count: 0, message: "Dharmawisata belum mengembalikan city hotel." }
+    return {
+      ok: false,
+      count: 0,
+      totalCount: countries.length,
+      offset: countryOffset,
+      limit: countryLimit,
+      message: "Dharmawisata belum mengembalikan city hotel pada bagian country ini.",
+    }
   }
 
   const adminSupabase = createAdminClient()
@@ -176,9 +212,23 @@ export async function syncDharmawisataHotelDestinations(): Promise<DharmawisataH
       .upsert(chunk, { onConflict: "country_id,city_id" })
 
     if (error) {
-      return { ok: false, count: index, message: error.message }
+      return {
+        ok: false,
+        count: index,
+        totalCount: countries.length,
+        offset: countryOffset,
+        limit: countryLimit,
+        message: error.message,
+      }
     }
   }
 
-  return { ok: true, count: rows.length, message: "Destination hotel Dharmawisata berhasil disync." }
+  return {
+    ok: true,
+    count: rows.length,
+    totalCount: countries.length,
+    offset: countryOffset,
+    limit: countryLimit,
+    message: "Destination hotel Dharmawisata berhasil disync.",
+  }
 }
