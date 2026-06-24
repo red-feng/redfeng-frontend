@@ -10,6 +10,9 @@ import { createAdminClient } from "@/lib/supabase/admin"
 
 type RecordValue = Record<string, unknown>
 
+const FLIGHT_AIRPORT_UPSERT_BATCH_SIZE = 100
+const FLIGHT_ROUTE_UPSERT_BATCH_SIZE = 100
+
 export type DharmawisataFlightAirportOption = {
   code: string
   city: string
@@ -164,10 +167,10 @@ export async function syncDharmawisataFlightRoutes(): Promise<DharmawisataFlight
     })
     .filter((row) => row.is_active)
 
-  for (let index = 0; index < airportRows.length; index += 500) {
+  for (let index = 0; index < airportRows.length; index += FLIGHT_AIRPORT_UPSERT_BATCH_SIZE) {
     const { error } = await adminSupabase
       .from("dharmawisata_flight_airports")
-      .upsert(airportRows.slice(index, index + 500), { onConflict: "airport_code" })
+      .upsert(airportRows.slice(index, index + FLIGHT_AIRPORT_UPSERT_BATCH_SIZE), { onConflict: "airport_code" })
 
     if (error) {
       return { ok: false, airportCount: index, routeCount: 0, message: error.message }
@@ -203,8 +206,8 @@ export async function syncDharmawisataFlightRoutes(): Promise<DharmawisataFlight
       .map((row) => normalizeRoute(row, airline, syncedAt))
       .filter((row): row is NonNullable<ReturnType<typeof normalizeRoute>> => Boolean(row))
 
-    for (let index = 0; index < routeRows.length; index += 500) {
-      const chunk = routeRows.slice(index, index + 500)
+    for (let index = 0; index < routeRows.length; index += FLIGHT_ROUTE_UPSERT_BATCH_SIZE) {
+      const chunk = routeRows.slice(index, index + FLIGHT_ROUTE_UPSERT_BATCH_SIZE)
       const { error } = await adminSupabase
         .from("dharmawisata_flight_routes")
         .upsert(chunk, { onConflict: "airline_code,origin_code,destination_code" })

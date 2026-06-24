@@ -32,6 +32,8 @@ const FALLBACK_HOTEL_DESTINATIONS: DharmawisataHotelDestinationOption[] = [
   { value: "Labuan Bajo", sublabel: "Indonesia", hint: "Resort dekat gerbang Komodo", countryId: "ID" },
 ]
 
+const HOTEL_DESTINATION_UPSERT_BATCH_SIZE = 100
+
 function asRecord(value: unknown): RecordValue {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as RecordValue) : {}
 }
@@ -142,7 +144,10 @@ export async function syncDharmawisataHotelDestinations(): Promise<DharmawisataH
         search_label: [cityName, countryName, countryId].filter(Boolean).join(" "),
         search_group: countryName || countryId,
         is_active: Boolean(cityName && cityId && countryId),
-        raw: { country, city },
+        raw: {
+          country: { ID: countryId, Name: countryName },
+          city,
+        },
         synced_at: syncedAt,
         updated_at: syncedAt,
       }
@@ -154,8 +159,8 @@ export async function syncDharmawisataHotelDestinations(): Promise<DharmawisataH
   }
 
   const adminSupabase = createAdminClient()
-  for (let index = 0; index < rows.length; index += 500) {
-    const chunk = rows.slice(index, index + 500)
+  for (let index = 0; index < rows.length; index += HOTEL_DESTINATION_UPSERT_BATCH_SIZE) {
+    const chunk = rows.slice(index, index + HOTEL_DESTINATION_UPSERT_BATCH_SIZE)
     const { error } = await adminSupabase
       .from("dharmawisata_hotel_destinations")
       .upsert(chunk, { onConflict: "country_id,city_id" })
