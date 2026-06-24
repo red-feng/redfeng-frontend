@@ -57,6 +57,8 @@ function SearchBar({ search }: { search: HotelAvailabilitySearch }) {
         <input name="rooms" type="number" min={1} defaultValue={search.rooms} className="mt-1 h-11 w-full rounded-[8px] border border-slate-200 px-3 text-sm outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100" />
       </label>
       <input type="hidden" name="children" value={search.children} />
+      {search.countryId ? <input type="hidden" name="country_id" value={search.countryId} /> : null}
+      {search.cityId ? <input type="hidden" name="city_id" value={search.cityId} /> : null}
       <button type="submit" className="h-11 self-end rounded-[8px] bg-orange-600 px-5 text-sm font-semibold text-white transition hover:bg-orange-700">
         Cari hotel
       </button>

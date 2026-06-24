@@ -312,7 +312,11 @@ export async function loadDharmawisataHotelCatalog(search: HotelAvailabilitySear
       .map((row) => normalizeDirectoryHotel(row, search))
       .filter((item): item is DharmawisataHotelCatalogItem => Boolean(item))
 
-    const databaseCity = await getDatabaseHotelCity(destination)
+    const suppliedCity = {
+      cityId: asString(search.cityId),
+      countryId: asString(search.countryId),
+    }
+    const databaseCity = suppliedCity.cityId && suppliedCity.countryId ? suppliedCity : await getDatabaseHotelCity(destination)
     const configuredCity = databaseCity.cityId && databaseCity.countryId ? databaseCity : getConfiguredHotelCity(destination)
     const cityId = configuredCity.cityId || directoryItems.find((item) => item.cityId)?.cityId || ""
     const countryId = configuredCity.countryId || directoryItems.find((item) => item.countryId)?.countryId || ""

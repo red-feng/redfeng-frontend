@@ -13,6 +13,7 @@ import {
   dharmawisataVerifiedLiveRoutes,
   getDharmawisataCatalogStatusSummary,
 } from "@/lib/flights/dharmawisataSupplierCatalog"
+import { loadFlightAirportOptions } from "@/lib/flights/dharmawisataRouteCache"
 import { getMarketingPromosResolved } from "@/lib/marketing-content"
 import { getCurrentLocale } from "@/lib/locale"
 
@@ -27,6 +28,7 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
     limit: 4,
     requiredProductType: "flight",
   })
+  const flightAirportChoices = await loadFlightAirportOptions()
   const supplierCatalogSummary = getDharmawisataCatalogStatusSummary()
 
   const baseCopy = {
@@ -179,7 +181,7 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
 
           <section className={`relative z-[220] ${homeLayoutLock.floatingSearchShellClass} lg:-mt-[7.5rem]`}>
           <div className={homeLayoutLock.contentWidthClass}>
-            <FlightsLandingHeroSearchCard locale={locale} />
+            <FlightsLandingHeroSearchCard locale={locale} flightAirportChoices={flightAirportChoices} />
           </div>
 
           <div className="mt-8 grid gap-3 sm:mt-10 sm:gap-4 lg:grid-cols-4">

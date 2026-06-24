@@ -15,6 +15,14 @@
     {
       "path": "/api/cron/purge-deleted-commerce-chat-threads",
       "schedule": "35 17 * * *"
+    },
+    {
+      "path": "/api/cron/sync-dharmawisata-hotels",
+      "schedule": "45 17 * * *"
+    },
+    {
+      "path": "/api/cron/sync-dharmawisata-flights",
+      "schedule": "10 18 * * *"
     }
   ]
 }

@@ -1,0 +1,169 @@
+import {
+  dharmawisataJsonFetch,
+  dharmawisataLogin,
+  getDharmawisataConfiguredPath,
+  getDharmawisataCredentials,
+  isDharmawisataConfigured,
+} from "@/lib/dharmawisata/client"
+import { createAdminClient } from "@/lib/supabase/admin"
+
+type RecordValue = Record<string, unknown>
+
+export type DharmawisataHotelDestinationOption = {
+  value: string
+  sublabel: string
+  hint?: string
+  countryId?: string
+  cityId?: string
+}
+
+export type DharmawisataHotelDestinationSyncResult = {
+  ok: boolean
+  count: number
+  message: string
+}
+
+const FALLBACK_HOTEL_DESTINATIONS: DharmawisataHotelDestinationOption[] = [
+  { value: "Bali", sublabel: "Indonesia", hint: "Resort pantai, villa, dan family stay", countryId: "ID" },
+  { value: "Jakarta", sublabel: "Indonesia", hint: "Hotel bisnis dan stay kota", countryId: "ID" },
+  { value: "Singapore", sublabel: "Singapore", hint: "Orchard, Marina Bay, Sentosa", countryId: "SG" },
+  { value: "Bangkok", sublabel: "Thailand", hint: "Shopping, nightlife, dan family hotel", countryId: "TH" },
+  { value: "Tokyo", sublabel: "Japan", hint: "Shinjuku, Ginza, dan city hotel", countryId: "JP" },
+  { value: "Labuan Bajo", sublabel: "Indonesia", hint: "Resort dekat gerbang Komodo", countryId: "ID" },
+]
+
+function asRecord(value: unknown): RecordValue {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as RecordValue) : {}
+}
+
+function asString(value: unknown) {
+  return String(value || "").trim()
+}
+
+function firstArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : []
+}
+
+function getPath(envName: string, fallback: string) {
+  return getDharmawisataConfiguredPath(envName) || fallback.replace(/^\/+/, "")
+}
+
+function buildHint(cityName: string, countryName: string) {
+  return countryName ? `${cityName}, ${countryName}` : cityName
+}
+
+function toDestinationOption(row: {
+  city_name: string | null
+  country_name: string | null
+  city_id: string | null
+  country_id: string | null
+}): DharmawisataHotelDestinationOption | null {
+  const cityName = asString(row.city_name)
+  const countryName = asString(row.country_name)
+  if (!cityName) return null
+
+  return {
+    value: cityName,
+    sublabel: countryName || asString(row.country_id) || "Dharmawisata",
+    hint: buildHint(cityName, countryName),
+    cityId: asString(row.city_id),
+    countryId: asString(row.country_id),
+  }
+}
+
+export function getFallbackHotelDestinationOptions() {
+  return FALLBACK_HOTEL_DESTINATIONS
+}
+
+export async function loadHotelDestinationOptions(limit = 80): Promise<DharmawisataHotelDestinationOption[]> {
+  try {
+    const adminSupabase = createAdminClient()
+    const { data, error } = await adminSupabase
+      .from("dharmawisata_hotel_destinations")
+      .select("city_name, country_name, city_id, country_id")
+      .eq("is_active", true)
+      .order("country_name", { ascending: true })
+      .order("city_name", { ascending: true })
+      .limit(limit)
+
+    if (error) return FALLBACK_HOTEL_DESTINATIONS
+
+    const options = ((data || []) as Array<{
+      city_name: string | null
+      country_name: string | null
+      city_id: string | null
+      country_id: string | null
+    }>)
+      .map(toDestinationOption)
+      .filter((option): option is DharmawisataHotelDestinationOption => Boolean(option))
+
+    return options.length > 0 ? options : FALLBACK_HOTEL_DESTINATIONS
+  } catch {
+    return FALLBACK_HOTEL_DESTINATIONS
+  }
+}
+
+export async function syncDharmawisataHotelDestinations(): Promise<DharmawisataHotelDestinationSyncResult> {
+  if (!isDharmawisataConfigured()) {
+    return { ok: false, count: 0, message: "Environment Dharmawisata belum lengkap." }
+  }
+
+  const login = await dharmawisataLogin({ language: 1 })
+  const accessToken = asString(login.accessToken)
+  if (!accessToken) {
+    return { ok: false, count: 0, message: login.respMessage || "Login Dharmawisata tidak mengembalikan access token." }
+  }
+
+  const credentials = getDharmawisataCredentials()
+  const body = asRecord(
+    await dharmawisataJsonFetch({
+      path: getPath("DHARMAWISATA_H2H_HOTEL_ALL_COUNTRY_CITY_PATH", "/Hotel/AllCountryAllCity5"),
+      timeoutMs: 30000,
+      body: {
+        userID: credentials.userId,
+        accessToken,
+      },
+    }),
+  )
+
+  const countries = firstArray<RecordValue>(body.countries)
+  const syncedAt = new Date().toISOString()
+  const rows = countries.flatMap((country) => {
+    const countryName = asString(country.Name ?? country.name)
+    const countryId = asString(country.ID ?? country.id)
+    return firstArray<RecordValue>(country.cities).map((city) => {
+      const cityName = asString(city.Name ?? city.name)
+      const cityId = asString(city.ID ?? city.id)
+      return {
+        country_id: countryId,
+        country_name: countryName,
+        city_id: cityId,
+        city_name: cityName,
+        search_label: [cityName, countryName, countryId].filter(Boolean).join(" "),
+        search_group: countryName || countryId,
+        is_active: Boolean(cityName && cityId && countryId),
+        raw: { country, city },
+        synced_at: syncedAt,
+        updated_at: syncedAt,
+      }
+    })
+  }).filter((row) => row.is_active)
+
+  if (rows.length === 0) {
+    return { ok: false, count: 0, message: "Dharmawisata belum mengembalikan city hotel." }
+  }
+
+  const adminSupabase = createAdminClient()
+  for (let index = 0; index < rows.length; index += 500) {
+    const chunk = rows.slice(index, index + 500)
+    const { error } = await adminSupabase
+      .from("dharmawisata_hotel_destinations")
+      .upsert(chunk, { onConflict: "country_id,city_id" })
+
+    if (error) {
+      return { ok: false, count: index, message: error.message }
+    }
+  }
+
+  return { ok: true, count: rows.length, message: "Destination hotel Dharmawisata berhasil disync." }
+}

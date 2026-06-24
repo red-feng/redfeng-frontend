@@ -17,6 +17,8 @@ export type HotelAvailabilitySearch = {
   adults: number
   children: number
   rooms: number
+  countryId?: string
+  cityId?: string
 }
 
 export function getHotelCatalogItems() {
@@ -57,6 +59,8 @@ export function normalizeHotelSearchParams(params: Record<string, string | strin
     adults: parsePositiveInteger(first(params.adults), 2, 1),
     children: parsePositiveInteger(first(params.children), 0, 0),
     rooms: parsePositiveInteger(first(params.rooms), 1, 1),
+    countryId: first(params.country_id) || first(params.countryId) || undefined,
+    cityId: first(params.city_id) || first(params.cityId) || undefined,
   }
 }
 
@@ -68,6 +72,8 @@ export function buildHotelCatalogQuery(search: HotelAvailabilitySearch) {
   params.set("adults", String(Math.max(search.adults, 1)))
   if (search.children > 0) params.set("children", String(search.children))
   params.set("rooms", String(Math.max(search.rooms, 1)))
+  if (search.countryId) params.set("country_id", search.countryId)
+  if (search.cityId) params.set("city_id", search.cityId)
   return params.toString()
 }
 

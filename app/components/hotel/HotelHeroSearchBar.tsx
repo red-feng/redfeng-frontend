@@ -4,10 +4,12 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import type { ReactNode } from "react"
 import type { Locale } from "@/lib/i18n"
 
-type DestinationOption = {
+export type DestinationOption = {
   value: string
   sublabel: string
   hint?: string
+  countryId?: string
+  cityId?: string
 }
 
 type SearchCopy = {
@@ -668,8 +670,16 @@ function getDefaultHotelDates() {
   }
 }
 
-export default function HotelHeroSearchBar({ locale, buttonLabel }: { locale: Locale; buttonLabel: string }) {
-  const copy: SearchCopy =
+export default function HotelHeroSearchBar({
+  locale,
+  buttonLabel,
+  destinationOptions,
+}: {
+  locale: Locale
+  buttonLabel: string
+  destinationOptions?: DestinationOption[]
+}) {
+  const copy = useMemo<SearchCopy>(() =>
     locale === "en"
       ? {
           destination: "Destination",
@@ -779,9 +789,19 @@ export default function HotelHeroSearchBar({ locale, buttonLabel }: { locale: Lo
               { value: "Tokyo", sublabel: "Japan", hint: "Shinjuku, Ginza, dan city hotel" },
               { value: "Labuan Bajo", sublabel: "Indonesia", hint: "Resort dekat gerbang Komodo" },
             ],
-          }
+          },
+    [locale],
+  )
 
-  const [destination, setDestination] = useState(copy.destinationOptions[0])
+  const resolvedDestinationOptions = useMemo(
+    () => (destinationOptions && destinationOptions.length > 0 ? destinationOptions : copy.destinationOptions),
+    [copy.destinationOptions, destinationOptions],
+  )
+  const resolvedCopy = useMemo(
+    () => ({ ...copy, destinationOptions: resolvedDestinationOptions }),
+    [copy, resolvedDestinationOptions],
+  )
+  const [destination, setDestination] = useState(resolvedDestinationOptions[0] ?? copy.destinationOptions[0])
   const defaultDates = useMemo(() => getDefaultHotelDates(), [])
   const [checkin, setCheckin] = useState(defaultDates.checkin)
   const [checkout, setCheckout] = useState(defaultDates.checkout)
@@ -799,8 +819,10 @@ export default function HotelHeroSearchBar({ locale, buttonLabel }: { locale: Lo
     params.set("adults", String(adults))
     params.set("children", String(children))
     params.set("rooms", String(displayedRooms))
+    if (destination.countryId) params.set("country_id", destination.countryId)
+    if (destination.cityId) params.set("city_id", destination.cityId)
     return `${copy.searchPath}?${params.toString()}`
-  }, [adults, checkin, checkout, copy.searchPath, destination.value, displayedRooms, children])
+  }, [adults, checkin, checkout, copy.searchPath, destination.cityId, destination.countryId, destination.value, displayedRooms, children])
 
   function updateCheckin(value: string) {
     setCheckin(value)
@@ -819,7 +841,7 @@ export default function HotelHeroSearchBar({ locale, buttonLabel }: { locale: Lo
 
   return (
     <div className="grid gap-2.5 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.92fr)_minmax(0,0.92fr)_minmax(0,1fr)_56px]">
-      <DestinationField copy={copy} value={destination.value} sublabel={destination.sublabel} onPick={setDestination} />
+      <DestinationField copy={resolvedCopy} value={destination.value} sublabel={destination.sublabel} onPick={setDestination} />
       <DateField
         locale={locale}
         title={copy.checkin}

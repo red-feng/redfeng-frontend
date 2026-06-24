@@ -8,6 +8,7 @@ import { HomeFooter, HomeNewsletterSection } from "@/app/components/home/shared/
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PromoPlacementImpressionBeacon from "@/app/components/promo/PromoPlacementImpressionBeacon"
 import HotelHeroSearchBar from "@/app/components/hotel/HotelHeroSearchBar"
+import { loadHotelDestinationOptions } from "@/lib/hotels/dharmawisataDestinationCache"
 import { getMarketingPromosResolved } from "@/lib/marketing-content"
 import { getCurrentLocale } from "@/lib/locale"
 
@@ -22,6 +23,7 @@ export default async function HotelMarketingLanding({ searchParams }: HotelMarke
     fallbackPlacement: "homepage_feed",
     limit: 4,
   })
+  const hotelDestinationOptions = await loadHotelDestinationOptions()
   const baseCopy = {
     id: {
       eyebrow: "HOTEL STAYS",
@@ -172,7 +174,7 @@ export default async function HotelMarketingLanding({ searchParams }: HotelMarke
 
         <section className={`${homeLayoutLock.contentWidthClass} relative z-[210] -mt-20 sm:-mt-24 lg:-mt-28`}>
           <div className={`${homeLayoutLock.wideContentWidthClass} ${homeLayoutLock.cardRadiusClass} border border-[#f0e4da] bg-white p-3 shadow-[0_28px_56px_-26px_rgba(15,23,42,0.22)] md:p-4`}>
-            <HotelHeroSearchBar locale={locale} buttonLabel={copy.searchButton} />
+            <HotelHeroSearchBar locale={locale} buttonLabel={copy.searchButton} destinationOptions={hotelDestinationOptions} />
           </div>
 
           <div className="mt-6 grid gap-3 sm:mt-8 sm:gap-4 lg:grid-cols-4">

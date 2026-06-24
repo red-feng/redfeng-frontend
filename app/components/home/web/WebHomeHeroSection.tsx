@@ -22,7 +22,20 @@ import type { HeroPassengerState, HeroSearchFieldData, HeroSearchProviderKey } f
 import { servicePageConfigByLabel } from "@/app/components/services/serviceCatalog"
 import { dharmawisataReferenceAirports } from "@/lib/flights/dharmawisataSupplierCatalog"
 
-export default function WebHomeHeroSection({ locale }: { locale: Locale }) {
+export type FlightAirportChoice = {
+  code: string
+  city: string
+  name: string
+  countryCode?: string
+}
+
+export default function WebHomeHeroSection({
+  locale,
+  flightAirportChoices,
+}: {
+  locale: Locale
+  flightAirportChoices?: FlightAirportChoice[]
+}) {
   const [activeTab, setActiveTab] = useState<HeroTabKey>("flight")
   const [activeOptions, setActiveOptions] = useState<Record<HeroTabKey, string>>({
     flight: heroSearchConfigs.flight.defaultOption,
@@ -54,6 +67,7 @@ export default function WebHomeHeroSection({ locale }: { locale: Locale }) {
             activeTab={activeTab}
             activeOption={activeOptions[activeTab]}
             locale={locale}
+            flightAirportChoices={flightAirportChoices}
             onOptionChange={(optionKey) =>
               setActiveOptions((current) => ({
                 ...current,
@@ -118,6 +132,7 @@ export function HeroSearchPanel({
   onOptionChange,
   showStatus = true,
   showBenefits = true,
+  flightAirportChoices,
 }: {
   activeTab: HeroTabKey
   activeOption: string
@@ -125,12 +140,13 @@ export function HeroSearchPanel({
   onOptionChange: (optionKey: string) => void
   showStatus?: boolean
   showBenefits?: boolean
+  flightAirportChoices?: FlightAirportChoice[]
 }) {
   const baseConfig = getHeroSearchConfig(activeTab, activeOption)
   const stateKey = `${activeTab}:${activeOption}`
   const [fieldStates, setFieldStates] = useState<Record<string, HeroSearchFieldData>>({})
-  const desktopFields = buildFormFields(baseConfig.desktopFields, activeTab, stateKey, fieldStates, locale)
-  const mobileFields = buildFormFields(baseConfig.mobileFields, activeTab, stateKey, fieldStates, locale)
+  const desktopFields = buildFormFields(baseConfig.desktopFields, activeTab, stateKey, fieldStates, locale, flightAirportChoices)
+  const mobileFields = buildFormFields(baseConfig.mobileFields, activeTab, stateKey, fieldStates, locale, flightAirportChoices)
   const desktopCabinField = activeTab === "flight" ? desktopFields.find((field) => getFieldSemanticKey(field.label) === "cabin") : undefined
   const desktopSearchFields = desktopCabinField ? desktopFields.filter((field) => field !== desktopCabinField) : desktopFields
   const isFlightOneWayDesktop = activeTab === "flight" && activeOption === "one_way" && Boolean(desktopCabinField)
@@ -490,6 +506,7 @@ export function buildFormFields(
   stateKey: string,
   fieldStates: Record<string, HeroSearchFieldData>,
   locale: Locale,
+  flightAirportChoices?: FlightAirportChoice[],
 ) {
   const providerKey = heroSearchConfigs[activeTab].dataProvider
   const passengerFieldWithCabinOptions =
@@ -508,7 +525,7 @@ export function buildFormFields(
       ...stateField,
       cabinOptions: sharedFlightCabinOptions,
     }
-    const choices = getFieldChoicesForProvider(activeTab, resolvedField, providerKey)
+    const choices = getFieldChoicesForProvider(activeTab, resolvedField, providerKey, flightAirportChoices)
     const inputType = getFieldInputType(activeTab, field, choices)
 
     return {
@@ -620,7 +637,9 @@ export function updateFieldState(
 
   if (field.inputType === "select" || field.inputType === "autocomplete") {
     const providerKey = heroSearchConfigs[activeTab].dataProvider
-    const matchedChoice = getFieldChoicesForProvider(activeTab, field, providerKey).find((choice) => choice.value.toLowerCase() === nextValue.toLowerCase())
+    const matchedChoice =
+      field.options?.find((choice) => choice.value.toLowerCase() === nextValue.toLowerCase()) ||
+      getFieldChoicesForProvider(activeTab, field, providerKey).find((choice) => choice.value.toLowerCase() === nextValue.toLowerCase())
 
     if (activeTab === "flight" && getFieldSemanticKey(field.label) === "cabin") {
       const passengerKey = `${stateKey}:passenger`
@@ -805,7 +824,12 @@ function parsePassengerPayload(input: string): HeroPassengerState | null {
   }
 }
 
-function getFieldChoicesForProvider(activeTab: HeroTabKey, field: HeroSearchFieldData, providerKey: HeroSearchProviderKey) {
+function getFieldChoicesForProvider(
+  activeTab: HeroTabKey,
+  field: HeroSearchFieldData,
+  providerKey: HeroSearchProviderKey,
+  flightAirportChoices?: FlightAirportChoice[],
+) {
   const providerChoices = getHeroSearchProviderAdapter(providerKey).getFieldChoices?.({
     activeTab,
     field,
@@ -815,10 +839,10 @@ function getFieldChoicesForProvider(activeTab: HeroTabKey, field: HeroSearchFiel
     return dedupeFieldChoices(providerChoices, field)
   }
 
-  return getFallbackFieldChoices(activeTab, field)
+  return getFallbackFieldChoices(activeTab, field, flightAirportChoices)
 }
 
-function getFallbackFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): HeroSearchFieldData[] {
+function getFallbackFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData, flightAirportChoices?: FlightAirportChoice[]): HeroSearchFieldData[] {
   const label = field.label.toLowerCase()
   const current = [{ label: field.label, value: field.value, sublabel: field.sublabel, withChevron: field.withChevron, withSwap: field.withSwap }]
   let choices: HeroSearchFieldData[] = current
@@ -826,7 +850,7 @@ function getFallbackFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldDa
   if (isOriginLabel(label)) {
     choices =
       activeTab === "flight"
-        ? [...buildFlightAirportChoices(field.label), ...current]
+        ? [...buildFlightAirportChoices(field.label, flightAirportChoices), ...current]
         : activeTab === "train"
           ? [...buildTrainStationChoices(field.label), ...current]
           : activeTab === "ship"
@@ -843,7 +867,7 @@ function getFallbackFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldDa
   } else if (isDestinationLabel(label)) {
     choices =
       activeTab === "flight"
-        ? [...buildFlightAirportChoices(field.label), ...current]
+        ? [...buildFlightAirportChoices(field.label, flightAirportChoices), ...current]
         : activeTab === "train"
           ? [...buildTrainStationChoices(field.label), ...current]
           : activeTab === "ship"
@@ -1845,8 +1869,10 @@ function getHeroReplacementMap(locale: Locale): Record<string, string> {
   }
 }
 
-function buildFlightAirportChoices(label: string): HeroSearchFieldData[] {
-  return flightAirportMaster.map((airport) => ({
+function buildFlightAirportChoices(label: string, flightAirportChoices?: FlightAirportChoice[]): HeroSearchFieldData[] {
+  const airports = flightAirportChoices && flightAirportChoices.length > 0 ? flightAirportChoices : flightAirportMaster
+
+  return airports.map((airport) => ({
     label,
     value: `${airport.code}   ${airport.city}`,
     sublabel: airport.name,
