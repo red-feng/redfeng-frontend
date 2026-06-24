@@ -24,11 +24,15 @@ async function handleSync(request: Request) {
     const mode = url.searchParams.get("mode")
     const airline = url.searchParams.get("airline")
     const routesParam = url.searchParams.get("routes")
+    const offset = Number(url.searchParams.get("offset") || "0")
+    const limit = Number(url.searchParams.get("limit") || "500")
     const syncRoutes = mode === "routes" || routesParam === "1" || Boolean(airline)
     const flight = await syncDharmawisataFlightRoutes({
       syncAirports: mode !== "routes",
       syncRoutes,
       airlineCodes: airline ? airline.split(",") : undefined,
+      routeOffset: Number.isFinite(offset) ? offset : 0,
+      routeLimit: Number.isFinite(limit) ? limit : 500,
     })
     return NextResponse.json({ ok: flight.ok, flight })
   } catch (error) {

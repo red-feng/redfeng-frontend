@@ -11,7 +11,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 type RecordValue = Record<string, unknown>
 
 const FLIGHT_AIRPORT_UPSERT_BATCH_SIZE = 100
-const FLIGHT_ROUTE_UPSERT_BATCH_SIZE = 100
+const FLIGHT_ROUTE_UPSERT_BATCH_SIZE = 50
 const DEFAULT_ACTIVE_AIRLINES = [
   { code: "QZ", name: "Indonesia AirAsia", isActive: true },
   { code: "QG", name: "Citilink", isActive: true },
@@ -29,6 +29,9 @@ export type DharmawisataFlightRouteSyncResult = {
   ok: boolean
   airportCount: number
   routeCount: number
+  totalRouteCount?: number
+  routeOffset?: number
+  routeLimit?: number
   message: string
 }
 
@@ -36,6 +39,8 @@ export type DharmawisataFlightRouteSyncOptions = {
   syncAirports?: boolean
   syncRoutes?: boolean
   airlineCodes?: string[]
+  routeOffset?: number
+  routeLimit?: number
 }
 
 function asRecord(value: unknown): RecordValue {
@@ -187,6 +192,8 @@ export async function syncDharmawisataFlightRoutes(options?: DharmawisataFlightR
   const adminSupabase = createAdminClient()
   const shouldSyncAirports = options?.syncAirports ?? true
   const shouldSyncRoutes = options?.syncRoutes ?? false
+  const routeOffset = Math.max(0, options?.routeOffset ?? 0)
+  const routeLimit = Math.max(1, options?.routeLimit ?? 500)
 
   let airportCount = 0
   if (shouldSyncAirports) {
@@ -258,6 +265,7 @@ export async function syncDharmawisataFlightRoutes(options?: DharmawisataFlightR
     .filter((airline) => allowedAirlineCodes.size === 0 || allowedAirlineCodes.has(airline.code))
 
   let routeCount = 0
+  let totalRouteCount = 0
   for (const airline of airlines) {
     const routeBody = asRecord(
       await dharmawisataJsonFetch({
@@ -270,9 +278,11 @@ export async function syncDharmawisataFlightRoutes(options?: DharmawisataFlightR
         },
       }),
     )
-    const routeRows = uniqueBy(firstRecordArray(routeBody, ["routes", "Routes", "route", "Route", "data", "Data", "result", "Result"])
+    const allRouteRows = uniqueBy(firstRecordArray(routeBody, ["routes", "Routes", "route", "Route", "data", "Data", "result", "Result"])
       .map((row) => normalizeRoute(row, airline, syncedAt))
       .filter((row): row is NonNullable<ReturnType<typeof normalizeRoute>> => Boolean(row)), (row) => `${row.airline_code}:${row.origin_code}:${row.destination_code}`)
+    totalRouteCount += allRouteRows.length
+    const routeRows = allRouteRows.slice(routeOffset, routeOffset + routeLimit)
 
     for (let index = 0; index < routeRows.length; index += FLIGHT_ROUTE_UPSERT_BATCH_SIZE) {
       const chunk = routeRows.slice(index, index + FLIGHT_ROUTE_UPSERT_BATCH_SIZE)
@@ -281,7 +291,15 @@ export async function syncDharmawisataFlightRoutes(options?: DharmawisataFlightR
         .upsert(chunk, { onConflict: "airline_code,origin_code,destination_code" })
 
       if (error) {
-        return { ok: false, airportCount, routeCount, message: error.message }
+        return {
+          ok: false,
+          airportCount,
+          routeCount,
+          totalRouteCount,
+          routeOffset,
+          routeLimit,
+          message: error.message,
+        }
       }
       routeCount += chunk.length
     }
@@ -291,6 +309,9 @@ export async function syncDharmawisataFlightRoutes(options?: DharmawisataFlightR
     ok: true,
     airportCount,
     routeCount,
+    totalRouteCount,
+    routeOffset,
+    routeLimit,
     message: "Airport dan rute pesawat Dharmawisata berhasil disync.",
   }
 }
