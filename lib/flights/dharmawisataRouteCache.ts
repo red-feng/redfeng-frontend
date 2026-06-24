@@ -32,6 +32,7 @@ export type DharmawisataFlightRouteSyncResult = {
   totalRouteCount?: number
   routeOffset?: number
   routeLimit?: number
+  airlineCode?: string
   message: string
 }
 
@@ -267,17 +268,33 @@ export async function syncDharmawisataFlightRoutes(options?: DharmawisataFlightR
   let routeCount = 0
   let totalRouteCount = 0
   for (const airline of airlines) {
-    const routeBody = asRecord(
-      await dharmawisataJsonFetch({
-        path: getPath("DHARMAWISATA_H2H_AIRLINE_ROUTE_PATH", "/Airline/Route"),
-        timeoutMs: 45000,
-        body: {
-          airlineID: airline.code,
-          userID: credentials.userId,
-          accessToken,
-        },
-      }),
-    )
+    let routeBody: RecordValue
+    try {
+      routeBody = asRecord(
+        await dharmawisataJsonFetch({
+          path: getPath("DHARMAWISATA_H2H_AIRLINE_ROUTE_PATH", "/Airline/Route"),
+          timeoutMs: 45000,
+          body: {
+            airlineID: airline.code,
+            userID: credentials.userId,
+            accessToken,
+          },
+        }),
+      )
+    } catch (error) {
+      return {
+        ok: false,
+        airportCount,
+        routeCount,
+        totalRouteCount,
+        routeOffset,
+        routeLimit,
+        airlineCode: airline.code,
+        message: error instanceof Error
+          ? `Rute ${airline.code} gagal diambil dari Dharmawisata: ${error.message}`
+          : `Rute ${airline.code} gagal diambil dari Dharmawisata.`,
+      }
+    }
     const allRouteRows = uniqueBy(firstRecordArray(routeBody, ["routes", "Routes", "route", "Route", "data", "Data", "result", "Result"])
       .map((row) => normalizeRoute(row, airline, syncedAt))
       .filter((row): row is NonNullable<ReturnType<typeof normalizeRoute>> => Boolean(row)), (row) => `${row.airline_code}:${row.origin_code}:${row.destination_code}`)
@@ -298,6 +315,7 @@ export async function syncDharmawisataFlightRoutes(options?: DharmawisataFlightR
           totalRouteCount,
           routeOffset,
           routeLimit,
+          airlineCode: airline.code,
           message: error.message,
         }
       }
@@ -312,6 +330,7 @@ export async function syncDharmawisataFlightRoutes(options?: DharmawisataFlightR
     totalRouteCount,
     routeOffset,
     routeLimit,
+    airlineCode: airlines.map((airline) => airline.code).join(","),
     message: "Airport dan rute pesawat Dharmawisata berhasil disync.",
   }
 }

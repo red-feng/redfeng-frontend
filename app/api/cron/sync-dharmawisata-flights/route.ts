@@ -34,7 +34,7 @@ async function handleSync(request: Request) {
       routeOffset: Number.isFinite(offset) ? offset : 0,
       routeLimit: Number.isFinite(limit) ? limit : 500,
     })
-    return NextResponse.json({ ok: flight.ok, flight })
+    return NextResponse.json({ ok: flight.ok, flight }, { status: flight.ok ? 200 : 422 })
   } catch (error) {
     return NextResponse.json(
       {
