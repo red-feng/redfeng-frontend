@@ -363,21 +363,24 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
             </form>
           </div>
 
-          <div id="flight-diagnostics-hold-preview" className="rounded-[20px] border border-amber-200 bg-amber-50 p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+          <details id="flight-diagnostics-hold-preview" className="group rounded-[20px] border border-amber-200 bg-amber-50 p-5">
+            <summary className="flex cursor-pointer list-none flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-700">Step 3</p>
-                <h2 className="mt-2 text-base font-semibold text-amber-900">Preview Payload Hold</h2>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-700">Advanced/manual</p>
+                <h2 className="mt-2 text-base font-semibold text-amber-900">Preview Payload Hold Manual</h2>
                 <p className="mt-2 text-sm leading-6 text-amber-800">
-                  Dry-run untuk merakit payload `/Airline/Booking`. Action ini tidak membuat PNR dan tidak mengirim request booking ke supplier.
+                  Opsional untuk debugging detail. Tes normal cukup pakai Simple Mode di atas.
                 </p>
               </div>
               <span className="rounded-[12px] border border-amber-300 bg-white px-3 py-1 text-xs font-semibold text-amber-800">
-                Dry-run
+                Buka form manual
               </span>
-            </div>
+            </summary>
 
-            <form action={previewDharmawisataHoldPayload} className="mt-5 space-y-4">
+            <form action={previewDharmawisataHoldPayload} className="mt-5 space-y-4 border-t border-amber-200 pt-5">
+              <p className="text-sm leading-6 text-amber-800">
+                Form ini hanya merakit payload `/Airline/Booking`. Action ini tidak membuat PNR dan tidak mengirim request booking ke supplier.
+              </p>
               <div className="grid gap-4 sm:grid-cols-3">
                 <label className="text-sm font-semibold text-amber-950">
                   Airline ID
@@ -599,7 +602,7 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
                 Preview payload hold
               </button>
             </form>
-          </div>
+          </details>
         </div>
 
         <div className="space-y-5">
