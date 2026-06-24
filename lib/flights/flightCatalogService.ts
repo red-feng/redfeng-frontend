@@ -140,6 +140,8 @@ function findTemplateItemForOffer(
   offer: AffiliateFlightOffer,
   items: DummyCatalogItem[],
 ) {
+  if (offer.supplierMeta?.supplierKey === "fallback") return null
+
   return (
     items.find((item) => findAffiliateOfferForItem(item, [offer])) ||
     items.find((item) => {
