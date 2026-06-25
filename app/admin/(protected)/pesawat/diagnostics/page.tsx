@@ -4,10 +4,12 @@ import AdminProductWorkspace from "@/app/components/AdminProductWorkspace"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { getAccessibleInternalProducts, hasInternalProductAccess } from "@/lib/internal-product-access"
+import { DHARMAWISATA_AIRLINE_ENDPOINTS } from "@/lib/flights/dharmawisataAirlineApi"
 import {
   autoDharmawisataSearchAndPreviewHold,
   checkFlightSchemaReadiness,
   previewDharmawisataHoldPayload,
+  testDharmawisataAirlineEndpoint,
   testDharmawisataLogin,
   testDharmawisataSearch,
 } from "./actions"
@@ -65,11 +67,18 @@ function summarizeResult(result: ResultRecord | null) {
     ["Status", asText(result.status) || asText(result.authStatus) || "-"],
     ["Message", asText(result.respMessage) || asText(result.authMessage) || asText(result.error) || "-"],
     ["Elapsed", result.elapsedMs ? `${result.elapsedMs} ms` : "-"],
+    ["Endpoint", asText(result.endpoint) || "-"],
     ["Journeys", typeof result.journeyDepartCount === "number" ? `${result.journeyDepartCount}` : "-"],
     ["Search attempts", typeof result.searchAttemptCount === "number" ? `${result.searchAttemptCount}` : "-"],
     ["Missing columns", typeof result.missingColumnCount === "number" ? `${result.missingColumnCount}` : "-"],
   ]
 }
+
+const DEFAULT_AIRLINE_ENDPOINT_PAYLOAD = JSON.stringify(
+  {},
+  null,
+  2,
+)
 
 async function ensureFlightDiagnosticsPageAccess() {
   const supabase = await createClient("admin")
@@ -123,7 +132,7 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
       primaryActionLabel="Kembali ke dashboard Pesawat"
       secondaryActionHref="/admin/pesawat/coverage"
       secondaryActionLabel="Lihat coverage supplier"
-      preparedModules={["Schema readiness", "Login token", "Low fare search", "TLS visibility", "Redacted response", "Hold readiness"]}
+      preparedModules={["Schema readiness", "Login token", "Low fare search", "Airline endpoint explorer", "Redacted response", "Hold readiness"]}
     >
       <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-5">
@@ -641,6 +650,78 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
                 className="inline-flex w-full items-center justify-center rounded-[14px] bg-amber-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-amber-800 sm:w-auto"
               >
                 Preview payload hold
+              </button>
+            </form>
+          </details>
+
+          <details id="flight-diagnostics-airline-endpoints" className="group rounded-[20px] border border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+            <summary className="flex cursor-pointer list-none flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">Supplier adapter</p>
+                <h2 className="mt-2 text-base font-semibold text-slate-950">Airline Endpoint Explorer</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Panel UAT untuk semua endpoint `Airline/*`. Payload tambahan dikirim sebagai JSON, sedangkan `userID` dan `accessToken` diisi otomatis.
+                </p>
+              </div>
+              <span className="rounded-[12px] border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+                {DHARMAWISATA_AIRLINE_ENDPOINTS.length} endpoint
+              </span>
+            </summary>
+
+            <form action={testDharmawisataAirlineEndpoint} className="mt-5 space-y-4 border-t border-slate-200 pt-5">
+              <label className="block text-sm font-semibold text-slate-700">
+                Endpoint
+                <select
+                  name="endpoint"
+                  defaultValue="nationality"
+                  className="mt-2 h-11 w-full rounded-[12px] border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                >
+                  {DHARMAWISATA_AIRLINE_ENDPOINTS.map((endpoint) => (
+                    <option key={endpoint.key} value={endpoint.key}>
+                      {endpoint.label} - {endpoint.mode} - {endpoint.customerFlow}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block text-sm font-semibold text-slate-700">
+                Payload JSON
+                <textarea
+                  name="payload_json"
+                  rows={8}
+                  defaultValue={DEFAULT_AIRLINE_ENDPOINT_PAYLOAD}
+                  className="mt-2 w-full rounded-[12px] border border-slate-200 bg-slate-950 px-3 py-3 font-mono text-xs leading-6 text-slate-100 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                />
+              </label>
+
+              <label className="flex items-start gap-3 rounded-[14px] border border-rose-200 bg-rose-50 p-4 text-sm leading-6 text-rose-800">
+                <input
+                  type="checkbox"
+                  name="allow_mutating"
+                  className="mt-1 h-4 w-4 rounded border-rose-300 text-rose-600 focus:ring-rose-200"
+                />
+                <span>
+                  Izinkan endpoint private/mutating seperti `Airline/Booking` atau `Airline/Issued`. Aktifkan hanya saat benar-benar ingin memanggil supplier.
+                </span>
+              </label>
+
+              <div className="rounded-[14px] border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status integrasi</p>
+                <div className="mt-3 grid gap-2 text-xs leading-5 text-slate-600 sm:grid-cols-2">
+                  {DHARMAWISATA_AIRLINE_ENDPOINTS.map((endpoint) => (
+                    <div key={endpoint.key} className="rounded-[12px] border border-slate-200 bg-white p-3">
+                      <p className="font-semibold text-slate-900">{endpoint.label}</p>
+                      <p className="mt-1">{endpoint.summary}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="inline-flex w-full items-center justify-center rounded-[14px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto"
+              >
+                Test endpoint Airline
               </button>
             </form>
           </details>

@@ -16,6 +16,11 @@ import {
   buildDharmawisataFlightBookingPayloadPreview,
   type DharmawisataPassenger,
 } from "@/lib/flights/dharmawisataFlightBooking"
+import {
+  callDharmawisataAirlineEndpoint,
+  getDharmawisataAirlineEndpoint,
+  type DharmawisataAirlineEndpointKey,
+} from "@/lib/flights/dharmawisataAirlineApi"
 
 type JsonRecord = Record<string, unknown>
 
@@ -135,6 +140,18 @@ async function ensureFlightDiagnosticsAccess() {
 
 function buildResultPayload(value: unknown) {
   return JSON.stringify(value)
+}
+
+function parseJsonObject(value: FormDataEntryValue | null): JsonRecord {
+  const raw = asString(value)
+  if (!raw) return {}
+
+  const parsed = JSON.parse(raw)
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("Payload JSON harus berupa object.")
+  }
+
+  return parsed as JsonRecord
 }
 
 function isMissingSchemaObjectError(error: { message?: string | null; code?: string | null } | null | undefined) {
@@ -870,4 +887,61 @@ export async function previewDharmawisataHoldPayload(formData: FormData) {
       payload: preview.payload,
     }),
   })
+}
+
+export async function testDharmawisataAirlineEndpoint(formData: FormData) {
+  await ensureFlightDiagnosticsAccess()
+  const startedAt = Date.now()
+  const endpointKey = asString(formData.get("endpoint")) as DharmawisataAirlineEndpointKey
+  const endpoint = getDharmawisataAirlineEndpoint(endpointKey)
+
+  if (!endpoint) {
+    diagnosticsRedirect({
+      panel: "airline-endpoints",
+      status: "error",
+      result: buildResultPayload({
+        title: "Endpoint Airline tidak dikenal",
+        elapsedMs: Date.now() - startedAt,
+        error: endpointKey || "Endpoint kosong",
+      }),
+    })
+  }
+
+  try {
+    const payload = parseJsonObject(formData.get("payload_json"))
+    const result = await callDharmawisataAirlineEndpoint({
+      endpointKey,
+      payload,
+      allowMutating: formData.get("allow_mutating") === "on",
+    })
+
+    diagnosticsRedirect({
+      panel: "airline-endpoints",
+      status: result.ok ? "success" : result.skipped ? "warning" : "error",
+      result: buildResultPayload({
+        title: `Test ${result.endpoint.label}`,
+        elapsedMs: result.elapsedMs,
+        status: result.status,
+        respMessage: result.message,
+        respTime: result.respTime || "",
+        endpoint: result.endpoint.label,
+        path: result.path,
+        mode: result.endpoint.mode,
+        customerFlow: result.endpoint.customerFlow,
+        raw: result.raw,
+      }),
+    })
+  } catch (error) {
+    rethrowNextRedirect(error)
+    diagnosticsRedirect({
+      panel: "airline-endpoints",
+      status: "error",
+      result: buildResultPayload({
+        title: endpoint ? `Test ${endpoint.label} gagal` : "Test Airline endpoint gagal",
+        elapsedMs: Date.now() - startedAt,
+        endpoint: endpoint?.label || endpointKey,
+        error: error instanceof Error ? error.message : "Unknown error",
+      }),
+    })
+  }
 }
