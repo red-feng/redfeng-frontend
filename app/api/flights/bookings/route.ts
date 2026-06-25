@@ -340,6 +340,15 @@ export async function POST(req: Request) {
     const fareAmount = asMoney(body.price)
     const passengerDetails = parsePassengerDetails(body.passenger_details, passengerMix.adults)
     const seatAddOns = parseSeatAddOns(body.selected_seats, passengerDetails, originAirportCode, destinationAirportCode)
+    const selectedSeatDetails = Object.entries(seatAddOns).flatMap(([passengerIndex, addOns]) =>
+      addOns.map((addOn) => ({
+        passengerSequenceNo: Number(passengerIndex) + 1,
+        origin: addOn.aoOrigin,
+        destination: addOn.aoDestination,
+        seat: addOn.seat,
+        compartment: addOn.compartment,
+      })),
+    )
     const airlineCode = normalizeAirlineCode(body.airline_code || body.flight_number, body.airline)
     const flightNumber = normalizeFlightNumber(body.flight_number)
     const airlineAccessCode = asString(body.airline_access_code || body.fare_reference_id || body.offer_id)
@@ -482,6 +491,7 @@ export async function POST(req: Request) {
         nationality: passenger.nationality,
         age: passenger.age,
       })),
+      selectedSeats: selectedSeatDetails,
       passengerMix,
     }
 
