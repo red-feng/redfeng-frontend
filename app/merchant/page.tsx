@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 
 export default async function MerchantDashboard() {
@@ -32,7 +33,7 @@ export default async function MerchantDashboard() {
 
 <h2>Tambah Paket</h2>
 
-<a
+<Link
   href="/merchant/paket/tambah?step=1"
   style={{
     display: "inline-block",
@@ -42,10 +43,10 @@ export default async function MerchantDashboard() {
     borderRadius: "8px",
     textDecoration: "none",
     marginBottom: "20px"
-  }}
+}}
 >
   + Buat Paket Baru
-</a>
+</Link>
 
 
       <hr />

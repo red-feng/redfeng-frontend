@@ -232,6 +232,8 @@ function buildFallbackInspirationRows(): InspirationRow[] {
 
 const promoSelect =
   "id, slug, title_id, title_en, title_zh, badge_id, badge_en, badge_zh, eyebrow_id, eyebrow_en, eyebrow_zh, price_id, price_en, price_zh, cta_id, cta_en, cta_zh, image, gradient, image_class, overlay_class, glow_class, target_href, is_active, status, starts_at, ends_at, sort_order"
+const inspirationSelect =
+  "id, slug, category_id, category_en, category_zh, title_id, title_en, title_zh, read_time_id, read_time_en, read_time_zh, body_intro_id, body_intro_en, body_intro_zh, section_one_id, section_one_en, section_one_zh, section_two_id, section_two_en, section_two_zh, section_three_id, section_three_en, section_three_zh, image, href, is_active, sort_order"
 
 function isPromoCurrentlyVisible(row: PromoRow, nowIso: string) {
   return getMarketingPromoEffectiveState(row, nowIso) === "live"
@@ -413,99 +415,123 @@ export async function getMarketingPromos(locale: Locale, options: MarketingPromo
 }
 
 export async function getMarketingPromoBySlug(slug: string, locale: Locale) {
-  const adminSupabase = createAdminClient()
-  const { data } = await adminSupabase
-    .from("marketing_promos")
-    .select(promoSelect)
-    .eq("slug", slug)
-    .maybeSingle()
+  try {
+    const adminSupabase = createAdminClient()
+    const { data } = await adminSupabase
+      .from("marketing_promos")
+      .select(promoSelect)
+      .eq("slug", slug)
+      .maybeSingle()
 
-  if (data && isPromoCurrentlyVisible(data as PromoRow, new Date().toISOString())) return mapPromoRow(data as PromoRow, locale)
+    if (data && isPromoCurrentlyVisible(data as PromoRow, new Date().toISOString())) return mapPromoRow(data as PromoRow, locale)
+  } catch {
+    // Fall back to bundled promos when Supabase admin env is unavailable during local builds.
+  }
 
   const fallback = buildFallbackPromos().find((row) => row.slug === slug)
   return fallback ? mapPromoRow(fallback, locale) : null
 }
 
 export async function getMarketingPromoSlugs() {
-  const adminSupabase = createAdminClient()
-  const { data } = await adminSupabase
-    .from("marketing_promos")
-    .select("slug, is_active, status, starts_at, ends_at")
-    .in("status", ["active", "scheduled"])
-  if (data?.length) {
-    const nowIso = new Date().toISOString()
-    const rows = (data as Array<{ slug: string } & Pick<PromoRow, "is_active" | "status" | "starts_at" | "ends_at">>).filter((row) =>
-      isPromoCurrentlyVisible(
-        {
-          id: "",
-          title_id: "",
-          title_en: "",
-          title_zh: "",
-          badge_id: null,
-          badge_en: null,
-          badge_zh: null,
-          eyebrow_id: "",
-          eyebrow_en: "",
-          eyebrow_zh: "",
-          price_id: "",
-          price_en: "",
-          price_zh: "",
-          cta_id: "",
-          cta_en: "",
-          cta_zh: "",
-          image: "",
-          gradient: "",
-          image_class: "",
-          overlay_class: "",
-          glow_class: "",
-          target_href: "/promo",
-          sort_order: 0,
-          ...row,
-        },
-        nowIso,
-      ),
-    )
-    if (rows.length) return rows.map((item) => ({ slug: item.slug }))
+  try {
+    const adminSupabase = createAdminClient()
+    const { data } = await adminSupabase
+      .from("marketing_promos")
+      .select("slug, is_active, status, starts_at, ends_at")
+      .in("status", ["active", "scheduled"])
+    if (data?.length) {
+      const nowIso = new Date().toISOString()
+      const rows = (data as Array<{ slug: string } & Pick<PromoRow, "is_active" | "status" | "starts_at" | "ends_at">>).filter((row) =>
+        isPromoCurrentlyVisible(
+          {
+            id: "",
+            title_id: "",
+            title_en: "",
+            title_zh: "",
+            badge_id: null,
+            badge_en: null,
+            badge_zh: null,
+            eyebrow_id: "",
+            eyebrow_en: "",
+            eyebrow_zh: "",
+            price_id: "",
+            price_en: "",
+            price_zh: "",
+            cta_id: "",
+            cta_en: "",
+            cta_zh: "",
+            image: "",
+            gradient: "",
+            image_class: "",
+            overlay_class: "",
+            glow_class: "",
+            target_href: "/promo",
+            sort_order: 0,
+            ...row,
+          },
+          nowIso,
+        ),
+      )
+      if (rows.length) return rows.map((item) => ({ slug: item.slug }))
+    }
+  } catch {
+    // Local builds without Supabase service role can still prerender bundled promo pages.
   }
   return buildFallbackPromos().map((row) => ({ slug: row.slug }))
 }
 
 export async function getMarketingInspirationArticles(locale: Locale) {
-  const adminSupabase = createAdminClient()
-  const { data, error } = await adminSupabase
-    .from("marketing_inspiration_articles")
-    .select("id, slug, category_id, category_en, category_zh, title_id, title_en, title_zh, read_time_id, read_time_en, read_time_zh, body_intro_id, body_intro_en, body_intro_zh, section_one_id, section_one_en, section_one_zh, section_two_id, section_two_en, section_two_zh, section_three_id, section_three_en, section_three_zh, image, href, is_active, sort_order")
-    .eq("is_active", true)
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true })
+  let rows = buildFallbackInspirationRows()
 
-  const rows = error || !data?.length ? buildFallbackInspirationRows() : (data as InspirationRow[])
+  try {
+    const adminSupabase = createAdminClient()
+    const { data, error } = await adminSupabase
+      .from("marketing_inspiration_articles")
+      .select(inspirationSelect)
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true })
+
+    if (!error && data?.length) rows = data as InspirationRow[]
+  } catch {
+    rows = buildFallbackInspirationRows()
+  }
+
   return rows.map((row) => mapInspirationRow(row, locale))
 }
 
 export async function getMarketingInspirationArticleBySlug(slug: string, locale: Locale) {
-  const adminSupabase = createAdminClient()
-  const { data } = await adminSupabase
-    .from("marketing_inspiration_articles")
-    .select("id, slug, category_id, category_en, category_zh, title_id, title_en, title_zh, read_time_id, read_time_en, read_time_zh, body_intro_id, body_intro_en, body_intro_zh, section_one_id, section_one_en, section_one_zh, section_two_id, section_two_en, section_two_zh, section_three_id, section_three_en, section_three_zh, image, href, is_active, sort_order")
-    .eq("slug", slug)
-    .eq("is_active", true)
-    .maybeSingle()
+  try {
+    const adminSupabase = createAdminClient()
+    const { data } = await adminSupabase
+      .from("marketing_inspiration_articles")
+      .select(inspirationSelect)
+      .eq("slug", slug)
+      .eq("is_active", true)
+      .maybeSingle()
 
-  if (data) return mapInspirationRow(data as InspirationRow, locale)
+    if (data) return mapInspirationRow(data as InspirationRow, locale)
+  } catch {
+    // Fall back to the bundled catalog when Supabase admin env is unavailable during local builds.
+  }
 
   const fallback = buildFallbackInspirationRows().find((row) => row.slug === slug)
   return fallback ? mapInspirationRow(fallback, locale) : null
 }
 
 export async function getMarketingInspirationSlugs() {
-  const adminSupabase = createAdminClient()
-  const { data } = await adminSupabase
-    .from("marketing_inspiration_articles")
-    .select("slug")
-    .eq("is_active", true)
-    .order("sort_order", { ascending: true })
+  try {
+    const adminSupabase = createAdminClient()
+    const { data } = await adminSupabase
+      .from("marketing_inspiration_articles")
+      .select("slug")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
 
-  if (data?.length) return data.map((item) => ({ slug: item.slug }))
+    if (data?.length) return data.map((item) => ({ slug: item.slug }))
+  } catch {
+    // Local builds without Supabase service role can still prerender bundled inspiration pages.
+  }
+
   return buildFallbackInspirationRows().map((row) => ({ slug: row.slug }))
 }

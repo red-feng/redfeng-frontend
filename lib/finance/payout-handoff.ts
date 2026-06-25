@@ -9,15 +9,31 @@ type AdminSupabaseLike = {
   from: (table: string) => {
     select: (columns: string) => {
       eq: (column: string, value: string) => {
-        single: () => Promise<{ data: any; error: { message?: string } | null }>
-        maybeSingle: () => Promise<{ data: any; error: { message?: string } | null }>
+        single: <T = Record<string, unknown>>() => Promise<{ data: T | null; error: { message?: string } | null }>
+        maybeSingle: <T = Record<string, unknown>>() => Promise<{ data: T | null; error: { message?: string } | null }>
       }
     }
-    insert: (payload: any) => Promise<{ error: { message?: string } | null }>
-    update: (payload: any) => {
+    insert: (payload: Record<string, unknown> | Record<string, unknown>[]) => Promise<{ error: { message?: string } | null }>
+    update: (payload: Record<string, unknown>) => {
       eq: (column: string, value: string) => Promise<{ error: { message?: string } | null }>
     }
   }
+}
+
+type PayoutRow = {
+  id?: string | null
+  status?: string | null
+}
+
+type PackageRow = {
+  merchant_id?: string | null
+}
+
+type MerchantRow = {
+  id: string
+  bank_name: string | null
+  bank_account_number: string | null
+  bank_account_holder: string | null
 }
 
 type BookingForPayout = {
@@ -56,19 +72,19 @@ export async function detectAutomaticPayoutRedFlags(
 
   if (!isBookingEligibleForAutomaticFinanceHandoff(booking)) {
     reasons.push("Booking belum memenuhi syarat auto handoff")
-    return { reasons, merchant: null as null | Record<string, any>, existingPayout: null as null | Record<string, any> }
+    return { reasons, merchant: null as null | MerchantRow, existingPayout: null as null | PayoutRow }
   }
 
   if (!booking.package_id) {
     reasons.push("Package booking tidak ditemukan")
-    return { reasons, merchant: null as null | Record<string, any>, existingPayout: null as null | Record<string, any> }
+    return { reasons, merchant: null as null | MerchantRow, existingPayout: null as null | PayoutRow }
   }
 
   const { data: existingPayout } = await adminSupabase
     .from("payout_requests")
     .select("id, status")
     .eq("booking_id", booking.id)
-    .maybeSingle()
+    .maybeSingle<PayoutRow>()
 
   if (existingPayout?.id && hasActivePayoutStatus(existingPayout.status)) {
     reasons.push("Booking sudah memiliki payout aktif")
@@ -78,18 +94,18 @@ export async function detectAutomaticPayoutRedFlags(
     .from("packages")
     .select("merchant_id")
     .eq("id", booking.package_id)
-    .single()
+    .single<PackageRow>()
 
   if (!pkg?.merchant_id) {
     reasons.push("Merchant package tidak ditemukan")
-    return { reasons, merchant: null as null | Record<string, any>, existingPayout }
+    return { reasons, merchant: null as null | MerchantRow, existingPayout }
   }
 
   const { data: merchant } = await adminSupabase
     .from("merchants")
     .select("id, bank_name, bank_account_number, bank_account_holder")
     .eq("id", pkg.merchant_id)
-    .single()
+    .single<MerchantRow>()
 
   if (!merchant) {
     reasons.push("Data merchant tidak ditemukan")

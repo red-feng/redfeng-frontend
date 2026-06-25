@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import fs from "node:fs"
 import chromium from "@sparticuz/chromium"
-import puppeteer from "puppeteer-core"
+import puppeteer, { type BrowserContext, type Page } from "puppeteer-core"
 import { getPortalSessionCookieName, type ActivePortal } from "../lib/portal-context.ts"
 
 type SupportedPortal = "merchant" | "admin" | "finance" | "superadmin"
@@ -104,7 +104,7 @@ function ensureEnoughCredentials(portals: PortalCredentials[]) {
   process.exit(0)
 }
 
-async function assertNoServerError(page: Awaited<ReturnType<typeof puppeteer.launch>>["pages"] extends never ? never : any, context: string) {
+async function assertNoServerError(page: Page, context: string) {
   const bodyText = await page.evaluate(() => document.body?.innerText || "")
   assert.equal(
     bodyText.includes("Application error: a server-side exception has occurred"),
@@ -113,7 +113,7 @@ async function assertNoServerError(page: Awaited<ReturnType<typeof puppeteer.lau
   )
 }
 
-async function loginPortal(page: any, baseUrl: string, credentials: PortalCredentials) {
+async function loginPortal(page: Page, baseUrl: string, credentials: PortalCredentials) {
   await page.goto(`${baseUrl}${credentials.loginPath}`, { waitUntil: "networkidle2", timeout: DEFAULT_WAIT_TIMEOUT_MS })
   await assertNoServerError(page, `${credentials.portal} login page`)
 
@@ -139,7 +139,7 @@ async function loginPortal(page: any, baseUrl: string, credentials: PortalCreden
   await assertNoServerError(page, `${credentials.portal} dashboard after login`)
 }
 
-async function assertPortalStillAlive(page: any, credentials: PortalCredentials) {
+async function assertPortalStillAlive(page: Page, credentials: PortalCredentials) {
   await page.reload({ waitUntil: "networkidle2", timeout: DEFAULT_WAIT_TIMEOUT_MS })
   await page.waitForFunction(
     (expectedPath: string) => window.location.pathname.startsWith(expectedPath),
@@ -149,8 +149,8 @@ async function assertPortalStillAlive(page: any, credentials: PortalCredentials)
   await assertNoServerError(page, `${credentials.portal} dashboard after reload`)
 }
 
-async function assertPortalCookies(browser: any, baseUrl: string, portals: ActivePortal[]) {
-  const cookies = await browser.cookies(baseUrl)
+async function assertPortalCookies(browserContext: BrowserContext, portals: ActivePortal[]) {
+  const cookies = await browserContext.cookies()
   const cookieNames = new Set(cookies.map((cookie: { name: string }) => cookie.name))
 
   for (const portal of portals) {
@@ -183,7 +183,7 @@ async function main() {
     await loginPortal(pageA, DEFAULT_BASE_URL, scenario[0])
     await loginPortal(pageB, DEFAULT_BASE_URL, scenario[1])
 
-    await assertPortalCookies(browser.defaultBrowserContext(), DEFAULT_BASE_URL, [
+    await assertPortalCookies(browser.defaultBrowserContext(), [
       scenario[0].portal,
       scenario[1].portal,
     ])
