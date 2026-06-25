@@ -122,6 +122,7 @@ export default async function SuperadminProtectedLayout({
     { href: "/superadmin/dashboard", label: "Dashboard", badgeCount: 0 },
     { href: "/superadmin/operations-manager", label: "Operations Overview", badgeCount: 0 },
     { href: "/superadmin/finance-manager", label: "Finance Overview", badgeCount: 0 },
+    { href: "/superadmin/supplier-balances", label: "Supplier Balances", badgeCount: 0 },
     {
       label: "Marketing Overview",
       children: [

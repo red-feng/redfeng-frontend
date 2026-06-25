@@ -12,7 +12,6 @@ import {
   getDharmawisataCredentials,
   isDharmawisataConfigured,
 } from "@/lib/dharmawisata/client"
-import { getDharmawisataAgentBalance } from "@/lib/dharmawisata/agentBalance"
 import {
   buildDharmawisataFlightBookingPayloadPreview,
   type DharmawisataPassenger,
@@ -98,13 +97,17 @@ function diagnosticsRedirect(params: Record<string, string>) {
   redirect(`/admin/pesawat/diagnostics?${searchParams.toString()}#flight-diagnostics-${panel}`)
 }
 
+function isFlightDiagnosticsRole(role: string | null | undefined) {
+  return role === "operations_manager" || role === "superadmin"
+}
+
 function rethrowNextRedirect(error: unknown) {
   const digest =
     error && typeof error === "object" && "digest" in error ? String((error as { digest?: unknown }).digest || "") : ""
   if (digest.startsWith("NEXT_REDIRECT")) throw error
 }
 
-async function ensureFlightAdmin() {
+async function ensureFlightDiagnosticsAccess() {
   const supabase = await createClient("admin")
   const adminSupabase = createAdminClient()
   const {
@@ -116,6 +119,11 @@ async function ensureFlightAdmin() {
   }
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+
+  if (!isFlightDiagnosticsRole(profile?.role)) {
+    redirect("/admin/dashboard?error=Akses%20diagnostics%20Pesawat%20hanya%20untuk%20Operations%20Manager")
+  }
+
   const accessibleProducts = await getAccessibleInternalProducts(adminSupabase, user.id, profile?.role)
 
   if (!hasInternalProductAccess(accessibleProducts, "flight", "execute")) {
@@ -142,7 +150,7 @@ function isMissingSchemaObjectError(error: { message?: string | null; code?: str
 }
 
 export async function checkFlightSchemaReadiness() {
-  await ensureFlightAdmin()
+  await ensureFlightDiagnosticsAccess()
   const adminSupabase = createAdminClient()
   const startedAt = Date.now()
 
@@ -223,7 +231,7 @@ function summarizeEnv() {
 }
 
 export async function testDharmawisataLogin() {
-  await ensureFlightAdmin()
+  await ensureFlightDiagnosticsAccess()
 
   if (!isDharmawisataConfigured()) {
     diagnosticsRedirect({
@@ -261,46 +269,6 @@ export async function testDharmawisataLogin() {
       status: "error",
       result: buildResultPayload({
         title: "Login Dharmawisata gagal",
-        elapsedMs: Date.now() - startedAt,
-        error: error instanceof Error ? error.message : "Unknown error",
-        env: summarizeEnv(),
-      }),
-    })
-  }
-}
-
-export async function testDharmawisataAgentBalance() {
-  await ensureFlightAdmin()
-
-  const startedAt = Date.now()
-
-  try {
-    const result = await getDharmawisataAgentBalance()
-
-    diagnosticsRedirect({
-      panel: "balance",
-      status: result.ok ? "success" : result.skipped ? "warning" : "error",
-      result: buildResultPayload({
-        title: "Saldo agent Dharmawisata",
-        elapsedMs: Date.now() - startedAt,
-        status: result.status || (result.skipped ? "SKIPPED" : "FAILED"),
-        respMessage: result.message,
-        respTime: result.respTime || "",
-        userID: result.userId || "",
-        balance: result.balance,
-        balanceFormatted: result.balanceFormatted,
-        hasBalance: result.balance !== null,
-        raw: result.raw,
-        env: summarizeEnv(),
-      }),
-    })
-  } catch (error) {
-    rethrowNextRedirect(error)
-    diagnosticsRedirect({
-      panel: "balance",
-      status: "error",
-      result: buildResultPayload({
-        title: "Cek saldo agent gagal",
         elapsedMs: Date.now() - startedAt,
         error: error instanceof Error ? error.message : "Unknown error",
         env: summarizeEnv(),
@@ -540,7 +508,7 @@ async function collectLowFareDiagnostics(input: {
 }
 
 export async function testDharmawisataSearch(formData: FormData) {
-  await ensureFlightAdmin()
+  await ensureFlightDiagnosticsAccess()
 
   if (!isDharmawisataConfigured()) {
     diagnosticsRedirect({
@@ -661,7 +629,7 @@ export async function testDharmawisataSearch(formData: FormData) {
 }
 
 export async function autoDharmawisataSearchAndPreviewHold(formData: FormData) {
-  await ensureFlightAdmin()
+  await ensureFlightDiagnosticsAccess()
 
   if (!isDharmawisataConfigured()) {
     diagnosticsRedirect({
@@ -848,7 +816,7 @@ export async function autoDharmawisataSearchAndPreviewHold(formData: FormData) {
 }
 
 export async function previewDharmawisataHoldPayload(formData: FormData) {
-  await ensureFlightAdmin()
+  await ensureFlightDiagnosticsAccess()
 
   const contactName = asString(formData.get("contact_name")) || "Red Feng Test"
   const contactEmail = asString(formData.get("contact_email")) || "ops@redfeng.co"

@@ -78,6 +78,7 @@ export default async function FinanceProtectedLayout({
           badgeCount: transactionPromoReadyCount || 0,
           secondaryBadgeCount: transactionPromoActiveCount || 0,
         },
+        { href: "/finance/supplier-balances", label: "Supplier Balances" },
         { href: "/finance/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
         { label: "SISTEM" },
         { href: "/finance/settings", label: "Finance Settings" },
