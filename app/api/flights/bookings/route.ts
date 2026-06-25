@@ -244,6 +244,7 @@ function buildDharmawisataPassengers(
   passengerDetails: ReturnType<typeof parsePassengerDetails>,
   fallbackName: string,
   fallbackEmail: string,
+  seatAddOns: Record<number, { aoOrigin: string; aoDestination: string; seat: string; compartment: string }[]> = {},
 ): DharmawisataPassenger[] {
   const fallbackNameParts = splitPersonName(fallbackName)
   const source: Array<{
@@ -266,7 +267,7 @@ function buildDharmawisataPassengers(
         },
       ]
 
-  return source.map((passenger) => ({
+  return source.map((passenger, index) => ({
     title: normalizePassengerTitle(passenger.title),
     firstName: passenger.first_name || splitPersonName(passenger.full_name || fallbackName).firstName,
     lastName: passenger.last_name || splitPersonName(passenger.full_name || fallbackName).lastName,
@@ -274,7 +275,42 @@ function buildDharmawisataPassengers(
     gender: passenger.gender || null,
     email: fallbackEmail,
     type: "Adult",
+    addOns: seatAddOns[index] || [],
   }))
+}
+
+function parseSeatAddOns(value: unknown, passengerDetails: ReturnType<typeof parsePassengerDetails>, fallbackOrigin: string, fallbackDestination: string) {
+  if (!Array.isArray(value)) return {}
+
+  return value.reduce<Record<number, { aoOrigin: string; aoDestination: string; baggageString: string; meals: string[]; seat: string; compartment: string }[]>>(
+    (accumulator, item) => {
+      const record = asRecord(item)
+      if (!record) return accumulator
+
+      const passengerId = asString(record.passenger_id ?? record.passengerId)
+      const seat = asString(record.seat ?? record.seatDesignator)
+      if (!passengerId || !seat) return accumulator
+
+      const index = passengerDetails.findIndex((passenger) => {
+        const expectedId = `passenger-${passenger.sequence_no}`
+        return expectedId === passengerId
+      })
+      if (index < 0) return accumulator
+
+      accumulator[index] = [
+        {
+          aoOrigin: extractAirportCode(record.origin) || fallbackOrigin,
+          aoDestination: extractAirportCode(record.destination) || fallbackDestination,
+          baggageString: "",
+          meals: [],
+          seat,
+          compartment: asString(record.compartment),
+        },
+      ]
+      return accumulator
+    },
+    {},
+  )
 }
 
 export async function POST(req: Request) {
@@ -303,6 +339,7 @@ export async function POST(req: Request) {
     const passengerCount = passengerMix.adults + passengerMix.children
     const fareAmount = asMoney(body.price)
     const passengerDetails = parsePassengerDetails(body.passenger_details, passengerMix.adults)
+    const seatAddOns = parseSeatAddOns(body.selected_seats, passengerDetails, originAirportCode, destinationAirportCode)
     const airlineCode = normalizeAirlineCode(body.airline_code || body.flight_number, body.airline)
     const flightNumber = normalizeFlightNumber(body.flight_number)
     const airlineAccessCode = asString(body.airline_access_code || body.fare_reference_id || body.offer_id)
@@ -550,7 +587,7 @@ export async function POST(req: Request) {
 
     const contactNameParts = splitPersonName(customerName)
     const contactPhone = splitIndonesianPhone(customerPhone)
-    const dharmawisataPassengers = buildDharmawisataPassengers(passengerDetails, customerName, customerEmail)
+    const dharmawisataPassengers = buildDharmawisataPassengers(passengerDetails, customerName, customerEmail, seatAddOns)
     const automationPolicy = getFlightAutomationPolicy({
       airlineCode,
       airlineName: asString(body.airline),

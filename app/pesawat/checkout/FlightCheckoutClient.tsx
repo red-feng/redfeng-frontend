@@ -46,6 +46,39 @@ type PassengerForm = {
   identityNumber: string
 }
 
+type SeatInfo = {
+  compartment: string
+  assignable: boolean
+  isOpen: boolean
+  x: number
+  y: number
+  width: number
+  height: number
+  seatDesignator: string
+  seatType: string
+  seatPrice: number
+  seatText: string
+  currency: string
+}
+
+type SeatSegment = {
+  origin: string
+  destination: string
+  departTime: string
+  arrivalTime: string
+  infos: SeatInfo[]
+}
+
+type SelectedSeat = {
+  passengerId: string
+  origin: string
+  destination: string
+  seat: string
+  compartment: string
+  seatPrice: number
+  currency: string
+}
+
 type CheckoutDraft = {
   contactFirstName: string
   contactLastName: string
@@ -53,6 +86,7 @@ type CheckoutDraft = {
   phone: string
   sendEticket: boolean
   passengers: PassengerForm[]
+  selectedSeats?: Record<string, SelectedSeat>
 }
 
 function createPassengerForm(index: number): PassengerForm {
@@ -309,6 +343,47 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   return <span className="mb-2 block text-xs font-semibold text-neutral-700">{children}</span>
 }
 
+function passengerDisplayName(passenger: PassengerForm, index: number) {
+  const name = [passenger.firstName, passenger.lastName].filter(Boolean).join(" ").trim()
+  return name || `Penumpang ${index + 1}`
+}
+
+function normalizeSeatSegments(value: unknown): SeatSegment[] {
+  if (!Array.isArray(value)) return []
+
+  return value
+    .map((segment) => {
+      if (!segment || typeof segment !== "object") return null
+      const record = segment as Partial<SeatSegment>
+      const infos = Array.isArray(record.infos) ? record.infos.filter((seat): seat is SeatInfo => Boolean(seat?.seatDesignator)) : []
+      if (infos.length === 0) return null
+
+      return {
+        origin: String(record.origin || ""),
+        destination: String(record.destination || ""),
+        departTime: String(record.departTime || ""),
+        arrivalTime: String(record.arrivalTime || ""),
+        infos,
+      }
+    })
+    .filter((segment): segment is SeatSegment => Boolean(segment))
+}
+
+function buildSeatRows(seats: SeatInfo[]) {
+  const sorted = [...seats].sort((left, right) => left.y - right.y || left.x - right.x || left.seatDesignator.localeCompare(right.seatDesignator))
+  const rows = new Map<number, SeatInfo[]>()
+
+  sorted.forEach((seat) => {
+    const rowKey = Number.isFinite(seat.y) ? seat.y : 0
+    rows.set(rowKey, [...(rows.get(rowKey) || []), seat])
+  })
+
+  return Array.from(rows.entries()).map(([row, rowSeats]) => ({
+    row,
+    seats: rowSeats,
+  }))
+}
+
 export default function FlightCheckoutClient({ data }: { data: FlightCheckoutData }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -337,6 +412,12 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
     Array.from({ length: initialPassengerCount }, (_, index) => createPassengerForm(index + 1)),
   )
   const [openPassengerId, setOpenPassengerId] = useState(() => `passenger-1`)
+  const [seatPassengerId, setSeatPassengerId] = useState(() => `passenger-1`)
+  const [seatLoading, setSeatLoading] = useState(false)
+  const [seatError, setSeatError] = useState("")
+  const [seatMessage, setSeatMessage] = useState("")
+  const [seatSegments, setSeatSegments] = useState<SeatSegment[]>([])
+  const [selectedSeats, setSelectedSeats] = useState<Record<string, SelectedSeat>>({})
   const passengerCount = passengers.length || 1
   const subtotal = data.price * passengerCount
   const taxAndFees = Math.round(subtotal * 0.1)
@@ -345,6 +426,11 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
   const completePassengerCount = passengers.filter(isPassengerComplete).length
   const manifestIsComplete = completePassengerCount === passengerCount
   const contactName = [contactFirstName, contactLastName].filter(Boolean).join(" ").trim()
+  const activeSeatPassengerId = passengers.some((passenger) => passenger.id === seatPassengerId) ? seatPassengerId : passengers[0]?.id || "passenger-1"
+  const currentSeatSegment = seatSegments[0] || null
+  const selectedSeatCount = Object.keys(selectedSeats).filter((passengerId) =>
+    passengers.some((passenger) => passenger.id === passengerId),
+  ).length
   const contactNameError = submitted && !contactFirstName.trim() ? "Nama depan wajib diisi." : ""
   const emailError =
     submitted && !email.trim() ? "Email wajib diisi." : email.trim() && !isValidEmail(email) ? "Format email belum valid." : ""
@@ -392,6 +478,12 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
       setSendEticket(typeof draft.sendEticket === "boolean" ? draft.sendEticket : true)
       setPassengers(sanitizePassengerList(draft.passengers, initialPassengerCount))
       setOpenPassengerId(sanitizePassengerList(draft.passengers, initialPassengerCount)[0]?.id || "passenger-1")
+      setSeatPassengerId(sanitizePassengerList(draft.passengers, initialPassengerCount)[0]?.id || "passenger-1")
+      setSelectedSeats(
+        draft.selectedSeats && typeof draft.selectedSeats === "object" && !Array.isArray(draft.selectedSeats)
+          ? draft.selectedSeats
+          : {},
+      )
     } catch {
       window.localStorage.removeItem(draftStorageKey)
     } finally {
@@ -409,10 +501,22 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
       phone,
       sendEticket,
       passengers,
+      selectedSeats,
     }
 
     window.localStorage.setItem(draftStorageKey, JSON.stringify(draft))
-  }, [contactFirstName, contactLastName, draftReady, draftStorageKey, email, passengers, phone, sendEticket])
+  }, [contactFirstName, contactLastName, draftReady, draftStorageKey, email, passengers, phone, selectedSeats, sendEticket])
+
+  useEffect(() => {
+    setSelectedSeats((currentSeats) => {
+      const passengerIds = new Set(passengers.map((passenger) => passenger.id))
+      const nextSeats = Object.fromEntries(Object.entries(currentSeats).filter(([passengerId]) => passengerIds.has(passengerId)))
+      return Object.keys(nextSeats).length === Object.keys(currentSeats).length ? currentSeats : nextSeats
+    })
+    if (!passengers.some((passenger) => passenger.id === seatPassengerId)) {
+      setSeatPassengerId(passengers[0]?.id || "passenger-1")
+    }
+  }, [passengers, seatPassengerId])
 
   function updatePassenger(id: string, patch: Partial<PassengerForm>) {
     setPassengers((currentPassengers) =>
@@ -424,6 +528,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
     const nextPassenger = createPassengerForm(Date.now())
     setPassengers((currentPassengers) => [...currentPassengers, nextPassenger])
     setOpenPassengerId(nextPassenger.id)
+    setSeatPassengerId(nextPassenger.id)
   }
 
   function removePassenger(id: string) {
@@ -466,6 +571,121 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
       .join("\n")
   }
 
+  function buildPassengerDetailsPayload() {
+    return passengers.map((passenger) => ({
+      title: passenger.title,
+      gender: passenger.gender,
+      first_name: passenger.firstName,
+      last_name: passenger.lastName,
+      no_last_name: passenger.noLastName,
+      birth_date: passenger.birthDate,
+      nationality: passenger.nationality,
+      identity_type: passenger.identityType,
+      identity_number: passenger.identityNumber,
+      type: "adult",
+    }))
+  }
+
+  function buildSelectedSeatsPayload() {
+    return Object.entries(selectedSeats)
+      .filter(([passengerId]) => passengers.some((passenger) => passenger.id === passengerId))
+      .map(([passengerId, seat]) => ({
+        passenger_id: passengerId,
+        origin: seat.origin,
+        destination: seat.destination,
+        seat: seat.seat,
+        compartment: seat.compartment,
+        seat_price: seat.seatPrice,
+        currency: seat.currency,
+      }))
+  }
+
+  function buildFlightRequestPayload() {
+    return {
+      offer_id: data.offerId,
+      title: data.title,
+      airline: data.airline,
+      airline_code: data.airlineCode,
+      flight_number: data.flightNumber,
+      origin: data.origin,
+      destination: data.destination,
+      route: data.route,
+      depart_date: data.departDate,
+      return_date: data.returnDate,
+      departure_time: data.departureTime,
+      arrival_time: data.arrivalTime,
+      duration: data.duration,
+      transit: data.transit,
+      cabin: data.cabin,
+      trip_type: data.tripType,
+      passengers: passengerSummary,
+      price: data.price,
+      fare_reference_id: data.fareReferenceId,
+      airline_access_code: data.airlineAccessCode,
+      search_key: data.searchKey,
+      detail_schedule: data.detailSchedule,
+      source: data.source,
+      customer_name: contactName,
+      customer_email: email,
+      customer_phone: normalizePhone(phone),
+      passenger_manifest: buildPassengerManifest(),
+      passenger_details: buildPassengerDetailsPayload(),
+      selected_seats: buildSelectedSeatsPayload(),
+    }
+  }
+
+  async function handleCheckSeats() {
+    setSeatError("")
+    setSeatMessage("")
+    setSubmitted(true)
+
+    if (!isAuthenticated) {
+      router.push(`/login?next=${encodeURIComponent(currentPath)}`)
+      return
+    }
+
+    if (!contactFirstName.trim() || !isValidEmail(email) || !isValidPhone(phone)) {
+      setSeatError("Lengkapi data kontak dengan nama depan, email valid, dan nomor telepon aktif sebelum cek kursi.")
+      return
+    }
+
+    const incompletePassengerIndex = passengers.findIndex((passenger) => !isPassengerComplete(passenger))
+    if (incompletePassengerIndex >= 0) {
+      setOpenPassengerId(passengers[incompletePassengerIndex]?.id || passengers[0]?.id || "passenger-1")
+      setSeatPassengerId(passengers[incompletePassengerIndex]?.id || passengers[0]?.id || "passenger-1")
+      setSeatError(`Lengkapi data Penumpang Dewasa ${incompletePassengerIndex + 1} sebelum cek kursi.`)
+      return
+    }
+
+    setSeatLoading(true)
+
+    try {
+      const response = await fetch("/api/flights/seat-map", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(buildFlightRequestPayload()),
+      })
+      const payload = await response.json()
+      const segments = normalizeSeatSegments(payload.segments)
+
+      if (!response.ok) {
+        setSeatSegments([])
+        setSelectedSeats({})
+        setSeatError(payload.error || "Seat map belum bisa dicek.")
+        return
+      }
+
+      setSeatSegments(segments)
+      setSelectedSeats({})
+      setSeatMessage(payload.message || (segments.length ? "Seat map tersedia." : "Seat map tidak tersedia untuk rute ini."))
+    } catch {
+      setSeatSegments([])
+      setSeatError("Server belum bisa mengecek seat map.")
+    } finally {
+      setSeatLoading(false)
+    }
+  }
+
   async function handleSubmit() {
     setError("")
     setSubmitted(true)
@@ -474,8 +694,6 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
       router.push(`/login?next=${encodeURIComponent(currentPath)}`)
       return
     }
-
-    const manifest = buildPassengerManifest()
 
     if (!contactFirstName.trim() || !isValidEmail(email) || !isValidPhone(phone)) {
       setError("Lengkapi data kontak dengan nama depan, email valid, dan nomor telepon aktif.")
@@ -496,47 +714,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
       const response = await fetch("/api/flights/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          offer_id: data.offerId,
-          title: data.title,
-          airline: data.airline,
-          airline_code: data.airlineCode,
-          flight_number: data.flightNumber,
-          origin: data.origin,
-          destination: data.destination,
-          route: data.route,
-          depart_date: data.departDate,
-          return_date: data.returnDate,
-          departure_time: data.departureTime,
-          arrival_time: data.arrivalTime,
-          duration: data.duration,
-          transit: data.transit,
-          cabin: data.cabin,
-          trip_type: data.tripType,
-          passengers: passengerSummary,
-          price: data.price,
-          fare_reference_id: data.fareReferenceId,
-          airline_access_code: data.airlineAccessCode,
-          search_key: data.searchKey,
-          detail_schedule: data.detailSchedule,
-          source: data.source,
-          customer_name: contactName,
-          customer_email: email,
-          customer_phone: normalizePhone(phone),
-          passenger_manifest: manifest,
-          passenger_details: passengers.map((passenger) => ({
-            title: passenger.title,
-            gender: passenger.gender,
-            first_name: passenger.firstName,
-            last_name: passenger.lastName,
-            no_last_name: passenger.noLastName,
-            birth_date: passenger.birthDate,
-            nationality: passenger.nationality,
-            identity_type: passenger.identityType,
-            identity_number: passenger.identityNumber,
-            type: "adult",
-          })),
-        }),
+        body: JSON.stringify(buildFlightRequestPayload()),
       })
       const payload = await response.json()
 
@@ -922,31 +1100,143 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                 {data.airline || "Airline"} <span className="px-2">.</span> {data.flightNumber || "-"}
               </p>
             </div>
-            <div className="mt-5 grid items-center gap-5 rounded-lg border border-orange-100 px-5 py-6 md:grid-cols-[180px_1fr]">
-              <div className="flex justify-center text-[#ff4b00]">
-                <svg viewBox="0 0 180 110" className="h-28 w-44" aria-hidden="true">
-                  <rect x="34" y="36" width="42" height="42" rx="8" fill="#ff7a1a" />
-                  <rect x="84" y="36" width="42" height="42" rx="8" fill="#ff7a1a" />
-                  <path d="M44 78h20v22H44zM94 78h20v22H94z" fill="#ff4b00" />
-                  <path d="M27 100h126" stroke="#ff4b00" strokeWidth="5" strokeLinecap="round" />
-                  <path d="M75 57h10M125 57h10" stroke="#fff" strokeWidth="5" strokeLinecap="round" />
-                </svg>
+            {currentSeatSegment ? (
+              <div className="mt-5 rounded-lg border border-orange-100 px-5 py-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-neutral-900">Seat map tersedia</h3>
+                    <p className="mt-1 text-sm text-neutral-600">
+                      Pilih penumpang, lalu pilih kursi yang masih terbuka.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCheckSeats}
+                    disabled={seatLoading}
+                    className="rounded-lg border border-orange-200 bg-white px-4 py-2 text-sm font-bold text-[#ff4b00] transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:text-orange-300"
+                  >
+                    {seatLoading ? "Mengecek..." : "Refresh Kursi"}
+                  </button>
+                </div>
+
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {passengers.map((passenger, index) => {
+                    const active = activeSeatPassengerId === passenger.id
+                    const selectedSeat = selectedSeats[passenger.id]
+
+                    return (
+                      <button
+                        key={passenger.id}
+                        type="button"
+                        onClick={() => setSeatPassengerId(passenger.id)}
+                        className={`rounded-lg border px-4 py-2 text-left text-sm transition ${
+                          active
+                            ? "border-[#ff4b00] bg-orange-50 text-[#ff4b00]"
+                            : "border-orange-100 bg-white text-neutral-700 hover:bg-orange-50"
+                        }`}
+                      >
+                        <span className="block font-bold">{passengerDisplayName(passenger, index)}</span>
+                        <span className="mt-0.5 block text-xs">{selectedSeat ? `Kursi ${selectedSeat.seat}` : "Belum pilih"}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <div className="mt-5 overflow-x-auto rounded-lg bg-slate-50 px-4 py-5">
+                  <div className="mx-auto w-max min-w-[260px]">
+                    <div className="mx-auto mb-4 h-8 w-32 rounded-t-full bg-[#ff4b00] text-center text-xs font-bold leading-8 text-white">
+                      DEPAN
+                    </div>
+                    <div className="space-y-2">
+                      {buildSeatRows(currentSeatSegment.infos).map((row) => (
+                        <div key={row.row} className="flex items-center justify-center gap-2">
+                          {row.seats.map((seat) => {
+                            const selectedEntry = Object.entries(selectedSeats).find(([, selected]) => selected.seat === seat.seatDesignator)
+                            const selectedByOther = Boolean(selectedEntry && selectedEntry[0] !== activeSeatPassengerId)
+                            const selectedForActive = selectedSeats[activeSeatPassengerId]?.seat === seat.seatDesignator
+                            const available = seat.assignable && seat.isOpen && !selectedByOther
+
+                            return (
+                              <button
+                                key={`${row.row}-${seat.seatDesignator}`}
+                                type="button"
+                                disabled={!available}
+                                onClick={() => {
+                                  setSelectedSeats((currentSeats) => ({
+                                    ...currentSeats,
+                                    [activeSeatPassengerId]: {
+                                      passengerId: activeSeatPassengerId,
+                                      origin: currentSeatSegment.origin || data.origin,
+                                      destination: currentSeatSegment.destination || data.destination,
+                                      seat: seat.seatDesignator,
+                                      compartment: seat.compartment,
+                                      seatPrice: seat.seatPrice,
+                                      currency: seat.currency,
+                                    },
+                                  }))
+                                }}
+                                title={seat.seatText || seat.seatDesignator}
+                                className={`h-11 w-11 rounded-lg border text-xs font-bold transition ${
+                                  selectedForActive
+                                    ? "border-[#ff4b00] bg-[#ff4b00] text-white"
+                                    : selectedByOther
+                                      ? "border-blue-200 bg-blue-50 text-blue-500"
+                                      : seat.assignable && seat.isOpen
+                                        ? "border-green-200 bg-white text-green-700 hover:border-[#ff4b00] hover:text-[#ff4b00]"
+                                        : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-300"
+                                }`}
+                              >
+                                {seat.seatDesignator}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-3 text-xs text-neutral-600">
+                  <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded border border-green-200 bg-white" />Tersedia</span>
+                  <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded bg-[#ff4b00]" />Dipilih</span>
+                  <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded bg-slate-100" />Tidak tersedia</span>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-neutral-900">Pilih kursi belum aktif</h3>
-                <p className="mt-2 text-sm leading-6 text-neutral-600">
-                  Booking tetap bisa dilanjutkan tanpa memilih kursi. Pilihan kursi akan dibuka setelah fitur seat map
-                  supplier selesai dikonfirmasi dan diaktifkan di Red Feng.
-                </p>
-                <button
-                  type="button"
-                  disabled
-                  className="mt-4 rounded-lg border border-orange-200 bg-orange-50 px-5 py-3 text-sm font-bold text-orange-400"
-                >
-                  Belum Tersedia
-                </button>
+            ) : (
+              <div className="mt-5 grid items-center gap-5 rounded-lg border border-orange-100 px-5 py-6 md:grid-cols-[180px_1fr]">
+                <div className="flex justify-center text-[#ff4b00]">
+                  <svg viewBox="0 0 180 110" className="h-28 w-44" aria-hidden="true">
+                    <rect x="34" y="36" width="42" height="42" rx="8" fill="#ff7a1a" />
+                    <rect x="84" y="36" width="42" height="42" rx="8" fill="#ff7a1a" />
+                    <path d="M44 78h20v22H44zM94 78h20v22H94z" fill="#ff4b00" />
+                    <path d="M27 100h126" stroke="#ff4b00" strokeWidth="5" strokeLinecap="round" />
+                    <path d="M75 57h10M125 57h10" stroke="#fff" strokeWidth="5" strokeLinecap="round" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-neutral-900">Cek seat map supplier</h3>
+                  <p className="mt-2 text-sm leading-6 text-neutral-600">
+                    Seat map akan muncul jika Dharmawisata mengembalikan data kursi untuk maskapai dan rute ini.
+                    Booking tetap bisa dilanjutkan tanpa memilih kursi.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleCheckSeats}
+                    disabled={seatLoading}
+                    className="mt-4 rounded-lg border border-[#ff4b00] bg-white px-5 py-3 text-sm font-bold text-[#ff4b00] transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:border-orange-200 disabled:text-orange-300"
+                  >
+                    {seatLoading ? "Mengecek Kursi..." : "Cek Kursi"}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
+            {seatError ? <p className="mt-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{seatError}</p> : null}
+            {seatMessage ? <p className="mt-3 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">{seatMessage}</p> : null}
+            {selectedSeatCount > 0 ? (
+              <p className="mt-3 rounded-lg bg-orange-50 px-4 py-3 text-sm text-orange-700">
+                {selectedSeatCount}/{passengerCount} penumpang sudah memilih kursi. Kursi akan dikirim ke supplier saat booking diajukan.
+              </p>
+            ) : null}
           </div>
 
           <div className="rounded-lg border border-orange-100 bg-white p-5 shadow-[0_8px_24px_rgba(255,75,0,0.07)] md:p-6">

@@ -17,6 +17,16 @@ export type DharmawisataPassenger = {
   gender?: string | null
   email?: string | null
   type?: "Adult" | "Child" | "Infant"
+  addOns?: DharmawisataPassengerAddOn[]
+}
+
+export type DharmawisataPassengerAddOn = {
+  aoOrigin: string
+  aoDestination: string
+  baggageString?: string
+  meals?: string[]
+  seat?: string
+  compartment?: string
 }
 
 export type DharmawisataFlightBookingInput = {
@@ -133,7 +143,7 @@ function normalizeDharmawisataGender(value: string | null | undefined, title: st
 
 function buildPassengerPayload(passengers: DharmawisataPassenger[], fallbackEmail?: string | null) {
   return passengers.map((passenger) => ({
-    addOns: [],
+    addOns: passenger.addOns || [],
     IDNumber: "",
     title: passenger.title || "MR",
     firstName: passenger.firstName,
