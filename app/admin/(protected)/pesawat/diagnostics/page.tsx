@@ -4,6 +4,7 @@ import {
   autoDharmawisataSearchAndPreviewHold,
   checkFlightSchemaReadiness,
   previewDharmawisataHoldPayload,
+  testDharmawisataAgentBalance,
   testDharmawisataLogin,
   testDharmawisataSearch,
 } from "./actions"
@@ -61,6 +62,7 @@ function summarizeResult(result: ResultRecord | null) {
     ["Status", asText(result.status) || asText(result.authStatus) || "-"],
     ["Message", asText(result.respMessage) || asText(result.authMessage) || asText(result.error) || "-"],
     ["Elapsed", result.elapsedMs ? `${result.elapsedMs} ms` : "-"],
+    ["Balance", asText(result.balanceFormatted) || (typeof result.balance === "number" ? `IDR ${result.balance.toLocaleString("id-ID")}` : "-")],
     ["Journeys", typeof result.journeyDepartCount === "number" ? `${result.journeyDepartCount}` : "-"],
     ["Search attempts", typeof result.searchAttemptCount === "number" ? `${result.searchAttemptCount}` : "-"],
     ["Missing columns", typeof result.missingColumnCount === "number" ? `${result.missingColumnCount}` : "-"],
@@ -90,14 +92,14 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
     <AdminProductWorkspace
       productType="flight"
       productLabel="Pesawat Diagnostics"
-      description="Panel ini dipakai untuk menguji kesiapan pesawat: schema database, login token, low fare search, dan payload sebelum hold booking."
+      description="Panel ini dipakai untuk menguji kesiapan pesawat: schema database, login token, saldo agent, low fare search, dan payload sebelum hold booking."
       statusLabel="Flight test console"
       statusNote="Gunakan panel ini setelah update environment variable Vercel, migration Supabase, atau saat mengecek apakah UAT/production Dharmawisata sedang sehat."
       primaryActionHref="/admin/pesawat"
       primaryActionLabel="Kembali ke dashboard Pesawat"
       secondaryActionHref="/admin/pesawat/coverage"
       secondaryActionLabel="Lihat coverage supplier"
-      preparedModules={["Schema readiness", "Login token", "Low fare search", "TLS visibility", "Redacted response", "Hold readiness"]}
+      preparedModules={["Schema readiness", "Login token", "Agent balance", "Low fare search", "TLS visibility", "Redacted response", "Hold readiness"]}
     >
       <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-5">
@@ -145,6 +147,30 @@ export default async function AdminFlightsDiagnosticsPage({ searchParams }: { se
                 className="inline-flex w-full items-center justify-center rounded-[14px] bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700 sm:w-auto"
               >
                 Test login Dharmawisata
+              </button>
+            </form>
+          </div>
+
+          <div id="flight-diagnostics-balance" className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Step 1b</p>
+                <h2 className="mt-2 text-base font-semibold text-slate-950">Cek Saldo Agent</h2>
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+                  Memanggil `POST Agent/Balance` setelah login untuk memastikan token UAT bisa membaca saldo agent.
+                </p>
+              </div>
+              <span className="rounded-[12px] border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                Token redacted
+              </span>
+            </div>
+
+            <form action={testDharmawisataAgentBalance} className="mt-5">
+              <button
+                type="submit"
+                className="inline-flex w-full items-center justify-center rounded-[14px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto"
+              >
+                Cek saldo agent Dharmawisata
               </button>
             </form>
           </div>

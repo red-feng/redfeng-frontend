@@ -12,6 +12,7 @@ import {
   getDharmawisataCredentials,
   isDharmawisataConfigured,
 } from "@/lib/dharmawisata/client"
+import { getDharmawisataAgentBalance } from "@/lib/dharmawisata/agentBalance"
 import {
   buildDharmawisataFlightBookingPayloadPreview,
   type DharmawisataPassenger,
@@ -205,6 +206,7 @@ function summarizeEnv() {
     "DHARMAWISATA_H2H_BOOKING_PATH",
     "DHARMAWISATA_H2H_BOOKING_DETAIL_PATH",
     "DHARMAWISATA_H2H_ISSUE_PATH",
+    "DHARMAWISATA_H2H_AGENT_BALANCE_PATH",
   ]
 
   return {
@@ -259,6 +261,46 @@ export async function testDharmawisataLogin() {
       status: "error",
       result: buildResultPayload({
         title: "Login Dharmawisata gagal",
+        elapsedMs: Date.now() - startedAt,
+        error: error instanceof Error ? error.message : "Unknown error",
+        env: summarizeEnv(),
+      }),
+    })
+  }
+}
+
+export async function testDharmawisataAgentBalance() {
+  await ensureFlightAdmin()
+
+  const startedAt = Date.now()
+
+  try {
+    const result = await getDharmawisataAgentBalance()
+
+    diagnosticsRedirect({
+      panel: "balance",
+      status: result.ok ? "success" : result.skipped ? "warning" : "error",
+      result: buildResultPayload({
+        title: "Saldo agent Dharmawisata",
+        elapsedMs: Date.now() - startedAt,
+        status: result.status || (result.skipped ? "SKIPPED" : "FAILED"),
+        respMessage: result.message,
+        respTime: result.respTime || "",
+        userID: result.userId || "",
+        balance: result.balance,
+        balanceFormatted: result.balanceFormatted,
+        hasBalance: result.balance !== null,
+        raw: result.raw,
+        env: summarizeEnv(),
+      }),
+    })
+  } catch (error) {
+    rethrowNextRedirect(error)
+    diagnosticsRedirect({
+      panel: "balance",
+      status: "error",
+      result: buildResultPayload({
+        title: "Cek saldo agent gagal",
         elapsedMs: Date.now() - startedAt,
         error: error instanceof Error ? error.message : "Unknown error",
         env: summarizeEnv(),
