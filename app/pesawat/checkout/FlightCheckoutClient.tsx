@@ -933,16 +933,17 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                 </svg>
               </div>
               <div>
-                <h3 className="text-lg font-bold text-neutral-900">Seat selection setelah hold supplier</h3>
+                <h3 className="text-lg font-bold text-neutral-900">Pilih kursi belum aktif</h3>
                 <p className="mt-2 text-sm leading-6 text-neutral-600">
-                  Kursi baru bisa dipilih setelah Red Feng berhasil recheck fare dan mengunci booking/PNR.
+                  Booking tetap bisa dilanjutkan tanpa memilih kursi. Pilihan kursi akan dibuka setelah fitur seat map
+                  supplier selesai dikonfirmasi dan diaktifkan di Red Feng.
                 </p>
                 <button
                   type="button"
                   disabled
                   className="mt-4 rounded-lg border border-orange-200 bg-orange-50 px-5 py-3 text-sm font-bold text-orange-400"
                 >
-                  Menunggu Hold
+                  Belum Tersedia
                 </button>
               </div>
             </div>
