@@ -173,6 +173,33 @@ function composeDharmawisataLookupDateTime(dateValue: string | null | undefined,
   return `${date}T${normalizedTime}`
 }
 
+function extractDharmawisataDepartureDateTimeFromReference(
+  reference: string | null | undefined,
+  fallbackDate: string | null | undefined,
+  originAirportCode: string | null | undefined,
+) {
+  const normalized = normalizeDharmawisataReference(reference)
+  if (!looksLikeDharmawisataJourneyReference(normalized)) return ""
+
+  const origin = String(originAirportCode || "").toUpperCase()
+  const escapedOrigin = origin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  const pattern = origin
+    ? new RegExp(`~${escapedOrigin}~(\\d{1,2})/(\\d{1,2})/(\\d{4})\\s+(\\d{1,2}):(\\d{2})`)
+    : /~[A-Z]{3}~(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/
+  const match = normalized.match(pattern)
+  if (!match) return ""
+
+  const fallbackMonth = String(fallbackDate || "").match(/^\d{4}-(\d{2})-/)?.[1] || ""
+  const rawMonth = Number(match[1] || "0")
+  const day = String(Number(match[2] || "0")).padStart(2, "0")
+  const year = match[3] || ""
+  const hour = String(Number(match[4] || "0")).padStart(2, "0")
+  const minute = String(Number(match[5] || "0")).padStart(2, "0")
+  const month = String(rawMonth > 0 ? rawMonth : Number(fallbackMonth || "0")).padStart(2, "0")
+
+  return year && month !== "00" && day !== "00" ? `${year}-${month}-${day}T${hour}:${minute}:00` : ""
+}
+
 function buildDharmawisataHoldErrorMessage(
   holdMessage: string,
   lookup: Awaited<ReturnType<typeof findDharmawisataLowFareScheduleForBooking>> | null,
@@ -919,6 +946,8 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
     flightDetail.cabin_class ||
     "Economy"
   const lookupDepartureAt =
+    extractDharmawisataDepartureDateTimeFromReference(storedDetailSchedule, booking.pickup_date, flightDetail.origin_airport_code) ||
+    composeDharmawisataLookupDateTime(readNestedString(requestPayload, ["departDate", "departureDate"]), readNestedString(requestPayload, ["departureTime"])) ||
     composeDharmawisataLookupDateTime(booking.pickup_date, readNestedString(requestPayload, ["departureTime"])) ||
     flightDetail.departure_at
   let scheduleLookup: Awaited<ReturnType<typeof findDharmawisataLowFareScheduleForBooking>> | null = null

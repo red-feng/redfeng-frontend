@@ -476,6 +476,8 @@ export async function POST(req: Request) {
       source: asString(body.source),
       title: asString(body.title),
       route: asString(body.route),
+      departDate: asString(body.depart_date),
+      returnDate: asString(body.return_date),
       departureTime: asString(body.departure_time),
       arrivalTime: asString(body.arrival_time),
       duration: asString(body.duration),
