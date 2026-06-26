@@ -165,6 +165,26 @@ function summarizeDharmawisataScheduleLookup(
   }
 }
 
+function composeDharmawisataLookupDateTime(dateValue: string | null | undefined, timeValue: string | null | undefined) {
+  const date = String(dateValue || "").trim()
+  const time = String(timeValue || "").trim()
+  if (!date || !time) return ""
+  const normalizedTime = time.match(/^\d{1,2}:\d{2}$/) ? `${time}:00` : time
+  return `${date}T${normalizedTime}`
+}
+
+function buildDharmawisataHoldErrorMessage(
+  holdMessage: string,
+  lookup: Awaited<ReturnType<typeof findDharmawisataLowFareScheduleForBooking>> | null,
+) {
+  const lookupSummary = summarizeDharmawisataScheduleLookup(lookup)
+  if (!lookupSummary) return `Hold Dharmawisata gagal: ${holdMessage}`
+
+  const lookupStatus = lookupSummary.ok ? "schedule lookup ditemukan" : "schedule lookup tidak ketemu"
+  const classLabel = lookupSummary.flightClass ? `, class ${lookupSummary.flightClass}` : ""
+  return `Hold Dharmawisata gagal: ${holdMessage} (${lookupStatus}${classLabel})`
+}
+
 function asJsonRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
 }
@@ -487,7 +507,7 @@ async function getFlightBookingForAction(bookingId: string, formData: FormData) 
   const adminSupabase = createAdminClient()
   const { data: booking, error: bookingError } = await adminSupabase
     .from("bookings")
-    .select("id, booking_code, booking_product_type, payment_status, booking_status, supplier_order_status, supplier_booking_reference, customer_name, customer_email, customer_phone, customer_locale, adult_count, child_count, created_at")
+    .select("id, booking_code, booking_product_type, payment_status, booking_status, supplier_order_status, supplier_booking_reference, customer_name, customer_email, customer_phone, customer_locale, adult_count, child_count, pickup_date, created_at")
     .eq("id", bookingId)
     .maybeSingle<{
       id: string
@@ -503,6 +523,7 @@ async function getFlightBookingForAction(bookingId: string, formData: FormData) 
       customer_locale: string | null
       adult_count: number | null
       child_count: number | null
+      pickup_date: string | null
       created_at: string | null
     }>()
 
@@ -897,6 +918,9 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
     extractFlightClassFromDharmawisataReference(storedDetailSchedule) ||
     flightDetail.cabin_class ||
     "Economy"
+  const lookupDepartureAt =
+    composeDharmawisataLookupDateTime(booking.pickup_date, readNestedString(requestPayload, ["departureTime"])) ||
+    flightDetail.departure_at
   let scheduleLookup: Awaited<ReturnType<typeof findDharmawisataLowFareScheduleForBooking>> | null = null
 
   try {
@@ -906,7 +930,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
       originAirportCode: flightDetail.origin_airport_code,
       destinationAirportCode: flightDetail.destination_airport_code,
       tripType: flightDetail.trip_type,
-      departureAt: flightDetail.departure_at,
+      departureAt: lookupDepartureAt,
       returnAt: flightDetail.return_at,
       paxAdult,
       paxChild,
@@ -932,7 +956,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
     scheduleLookup.ok && scheduleLookup.airlineAccessCode ? scheduleLookup.airlineAccessCode : airlineAccessCode
   const supplierFlightClass = scheduleLookup.ok && scheduleLookup.flightClass ? scheduleLookup.flightClass : storedSupplierFlightClass
   const resolvedFlightNumber = scheduleLookup.ok && scheduleLookup.flightNumber ? scheduleLookup.flightNumber : flightDetail.flight_number
-  const resolvedDepartureAt = scheduleLookup.ok && scheduleLookup.departureAt ? scheduleLookup.departureAt : flightDetail.departure_at
+  const resolvedDepartureAt = scheduleLookup.ok && scheduleLookup.departureAt ? scheduleLookup.departureAt : lookupDepartureAt
   const resolvedArrivalAt = scheduleLookup.ok && scheduleLookup.arrivalAt ? scheduleLookup.arrivalAt : flightDetail.arrival_at
 
   const holdResult = await createDharmawisataFlightBooking({
@@ -981,12 +1005,14 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
       })
       .eq("id", supplierOrder.id)
 
+    const holdErrorMessage = buildDharmawisataHoldErrorMessage(holdResult.message, scheduleLookup)
+
     await insertSupplierOrderEvent({
       supplierOrderId: supplierOrder.id,
       actorId: adminActor.user.id,
       actorRole: adminActor.role,
       eventType: holdResult.skipped ? "flight_booking_hold_skipped" : "flight_booking_hold_failed",
-      summary: `Hold Dharmawisata gagal: ${holdResult.message}`,
+      summary: holdErrorMessage,
       metadata: {
         bookingId,
         mode: holdResult.mode,
@@ -1014,7 +1040,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
     })
 
     revalidateBookingDetailPaths(bookingId, portal)
-    backToBookingDetailWithState(bookingId, "error", `Hold Dharmawisata gagal: ${holdResult.message}`, formData)
+    backToBookingDetailWithState(bookingId, "error", holdErrorMessage, formData)
   }
 
   const now = new Date().toISOString()

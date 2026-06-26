@@ -58,14 +58,22 @@ function normalizeFlightNumber(value: string | null | undefined, airlineCode?: s
 }
 
 function dateOnly(value: string | null | undefined) {
-  const parsed = new Date(String(value || ""))
+  const normalized = String(value || "").trim()
+  const direct = normalized.match(/^(\d{4}-\d{2}-\d{2})/)
+  if (direct) return direct[1] || ""
+
+  const parsed = new Date(normalized)
   return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10)
 }
 
 function minutesOfDay(value: string | null | undefined) {
-  const parsed = new Date(String(value || ""))
-  if (Number.isNaN(parsed.getTime())) return null
-  return parsed.getHours() * 60 + parsed.getMinutes()
+  const normalized = String(value || "").trim()
+  const embeddedTimeMatch = normalized.match(/(?:T|\s)(\d{1,2}):(\d{2})(?::\d{2})?/)
+  const standaloneTimeMatch = normalized.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/)
+  const match = embeddedTimeMatch || standaloneTimeMatch
+
+  if (!match) return null
+  return Number(match[1] || "0") * 60 + Number(match[2] || "0")
 }
 
 function sameDepartureWindow(left: string | null | undefined, right: string | null | undefined) {
