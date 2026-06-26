@@ -416,6 +416,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
   const [seatLoading, setSeatLoading] = useState(false)
   const [seatError, setSeatError] = useState("")
   const [seatMessage, setSeatMessage] = useState("")
+  const [seatMessageTone, setSeatMessageTone] = useState<"success" | "warning">("success")
   const [seatSegments, setSeatSegments] = useState<SeatSegment[]>([])
   const [selectedSeats, setSelectedSeats] = useState<Record<string, SelectedSeat>>({})
   const passengerCount = passengers.length || 1
@@ -637,6 +638,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
   async function handleCheckSeats() {
     setSeatError("")
     setSeatMessage("")
+    setSeatMessageTone("success")
     setSubmitted(true)
 
     if (!isAuthenticated) {
@@ -677,7 +679,13 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
 
       setSeatSegments(segments)
       setSelectedSeats({})
-      setSeatMessage(payload.message || (segments.length ? "Seat map tersedia." : "Seat map tidak tersedia untuk rute ini."))
+      setSeatMessageTone(segments.length ? "success" : "warning")
+      setSeatMessage(
+        payload.message ||
+          (segments.length
+            ? "Seat map tersedia."
+            : "Dharmawisata membalas SUCCESS, tetapi tidak mengirim layout kursi untuk penerbangan ini. Booking tetap bisa dilanjutkan tanpa memilih kursi."),
+      )
     } catch {
       setSeatSegments([])
       setSeatError("Server belum bisa mengecek seat map.")
@@ -1231,7 +1239,15 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
               </div>
             )}
             {seatError ? <p className="mt-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{seatError}</p> : null}
-            {seatMessage ? <p className="mt-3 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">{seatMessage}</p> : null}
+            {seatMessage ? (
+              <p
+                className={`mt-3 rounded-lg px-4 py-3 text-sm ${
+                  seatMessageTone === "warning" ? "bg-amber-50 text-amber-800" : "bg-green-50 text-green-700"
+                }`}
+              >
+                {seatMessage}
+              </p>
+            ) : null}
             {selectedSeatCount > 0 ? (
               <p className="mt-3 rounded-lg bg-orange-50 px-4 py-3 text-sm text-orange-700">
                 {selectedSeatCount}/{passengerCount} penumpang sudah memilih kursi. Kursi akan dikirim ke supplier saat booking diajukan.

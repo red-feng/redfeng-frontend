@@ -311,7 +311,9 @@ export async function getDharmawisataFlightSeatMap(
       skipped: false,
       message: segments.length > 0
         ? "Seat map tersedia dari Dharmawisata."
-        : respMessage || "Seat map tidak tersedia untuk rute atau maskapai ini.",
+        : respMessage && respMessage.toUpperCase() !== "SUCCESS"
+          ? respMessage
+          : "Dharmawisata membalas SUCCESS, tetapi tidak mengirim layout kursi untuk penerbangan ini. Booking tetap bisa dilanjutkan tanpa memilih kursi.",
       segments,
       raw: {
         seatMode: "api",
