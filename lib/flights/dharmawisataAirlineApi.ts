@@ -40,6 +40,7 @@ export type DharmawisataAirlineEndpointDefinition = {
   summary: string
   requiresAuth: boolean
   customerFlow: "active" | "adapter" | "protected"
+  timeoutMs?: number
 }
 
 export type DharmawisataAirlineCallResult = {
@@ -94,6 +95,7 @@ export const DHARMAWISATA_AIRLINE_ENDPOINTS: DharmawisataAirlineEndpointDefiniti
     summary: "Baca route untuk maskapai tertentu.",
     requiresAuth: true,
     customerFlow: "active",
+    timeoutMs: 45000,
   },
   {
     key: "nationality",
@@ -274,6 +276,29 @@ export function redactRecord(value: unknown): JsonRecord {
   return Object.fromEntries(Object.entries(source).map(([key, entry]) => [key, redactValue(key, entry)]))
 }
 
+function compactValue(key: string, value: unknown): unknown {
+  if (/token|password|securitycode/i.test(key)) {
+    return normalizeText(value) ? "present-redacted" : ""
+  }
+
+  if (Array.isArray(value)) {
+    const sampleSize = value.length > 20 ? 5 : 20
+    return {
+      count: value.length,
+      sample: value.slice(0, sampleSize).map((item) => (item && typeof item === "object" ? compactRecord(item) : item)),
+      truncated: value.length > sampleSize,
+    }
+  }
+
+  if (value && typeof value === "object") return compactRecord(value)
+  return value
+}
+
+export function compactRecord(value: unknown): JsonRecord {
+  const source = asRecord(value)
+  return Object.fromEntries(Object.entries(source).map(([key, entry]) => [key, compactValue(key, entry)]))
+}
+
 function resolveEndpointPath(endpoint: DharmawisataAirlineEndpointDefinition) {
   return getDharmawisataConfiguredPath(endpoint.envName) || endpoint.defaultPath
 }
@@ -360,6 +385,7 @@ export async function callDharmawisataAirlineEndpoint({
     path: resolveEndpointPath(endpoint),
     method: "POST",
     body: endpoint.requiresAuth || requestPayload ? requestPayload || {} : undefined,
+    timeoutMs: endpoint.timeoutMs,
   })
   const raw = asRecord(response)
   const status = normalizeText(raw.status)
@@ -383,7 +409,7 @@ export async function callDharmawisataAirlineEndpoint({
         customerFlow: endpoint.customerFlow,
         payload: redactRecord(requestPayload),
       },
-      response: redactRecord(raw),
+      response: compactRecord(raw),
     },
   }
 }
