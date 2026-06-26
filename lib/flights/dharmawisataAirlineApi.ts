@@ -116,6 +116,7 @@ export const DHARMAWISATA_AIRLINE_ENDPOINTS: DharmawisataAirlineEndpointDefiniti
     summary: "Baca route semua maskapai untuk low-fare schedule.",
     requiresAuth: true,
     customerFlow: "adapter",
+    timeoutMs: 45000,
   },
   {
     key: "city",
@@ -146,6 +147,7 @@ export const DHARMAWISATA_AIRLINE_ENDPOINTS: DharmawisataAirlineEndpointDefiniti
     summary: "Baca booking list yang dibuat agent H2H.",
     requiresAuth: true,
     customerFlow: "adapter",
+    timeoutMs: 45000,
   },
   {
     key: "bookingDetail",
@@ -182,10 +184,10 @@ export const DHARMAWISATA_AIRLINE_ENDPOINTS: DharmawisataAirlineEndpointDefiniti
     label: "Airline/BookingIssued",
     defaultPath: "/Airline/BookingIssued",
     envName: "DHARMAWISATA_H2H_BOOKING_ISSUED_PATH",
-    mode: "read",
-    summary: "Baca booking yang sudah issued menurut supplier.",
+    mode: "mutating",
+    summary: "Booking request dengan payload penuh. Dilindungi karena bisa berdampak ke supplier.",
     requiresAuth: true,
-    customerFlow: "adapter",
+    customerFlow: "protected",
   },
   {
     key: "price",
