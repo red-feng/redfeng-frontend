@@ -139,7 +139,7 @@ export default async function FlightETicketPage({ params }: PageProps) {
                 <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-orange-100">Red Feng E-ticket</p>
                 <h1 className="mt-3 text-3xl font-bold tracking-tight">{route}</h1>
                 <p className="mt-2 text-sm text-orange-50">
-                  Data tiket diterbitkan berdasarkan hasil issued resmi supplier/maskapai.
+                  Data tiket diterbitkan berdasarkan konfirmasi resmi maskapai.
                 </p>
               </div>
               <div className="rounded-[18px] border border-white/30 bg-white/15 px-5 py-4 text-left sm:text-right">

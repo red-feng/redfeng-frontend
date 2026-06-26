@@ -191,10 +191,10 @@ function getFlightPaymentGateNotice(
             : "Pembayaran sudah dibuka.",
       body:
         locale === "en"
-          ? `The supplier hold is valid${holdUntil !== "-" ? ` until ${holdUntil}` : ""}. Complete payment before the hold expires.`
+          ? `The airline hold is valid${holdUntil !== "-" ? ` until ${holdUntil}` : ""}. Complete payment before the hold expires.`
           : locale === "zh"
-            ? `供应商锁位有效${holdUntil !== "-" ? `至 ${holdUntil}` : ""}。请在锁位到期前完成付款。`
-            : `Hold supplier valid${holdUntil !== "-" ? ` sampai ${holdUntil}` : ""}. Selesaikan pembayaran sebelum batas hold berakhir.`,
+            ? `航司锁位有效${holdUntil !== "-" ? `至 ${holdUntil}` : ""}。请在锁位到期前完成付款。`
+            : `Hold maskapai valid${holdUntil !== "-" ? ` sampai ${holdUntil}` : ""}. Selesaikan pembayaran sebelum batas hold berakhir.`,
     }
   }
 
@@ -226,10 +226,10 @@ function getFlightPaymentGateNotice(
           : "Pembayaran belum dibuka.",
     body:
       locale === "en"
-        ? "Red Feng is checking fare and seat availability with the supplier. The Midtrans button appears after the hold is valid."
+        ? "Red Feng is checking fare and seat availability with the airline. The Midtrans button appears after the hold is valid."
         : locale === "zh"
-          ? "Red Feng 正在向供应商核验票价和座位。锁位有效后才会显示 Midtrans 按钮。"
-          : "Red Feng sedang cek fare dan ketersediaan seat ke supplier. Tombol Midtrans akan muncul setelah hold valid.",
+          ? "Red Feng 正在向航司核验票价和座位。锁位有效后才会显示 Midtrans 按钮。"
+          : "Red Feng sedang cek fare dan ketersediaan seat ke maskapai. Tombol Midtrans akan muncul setelah hold valid.",
   }
 }
 

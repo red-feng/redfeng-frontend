@@ -41,7 +41,7 @@ function asStringArray(value: unknown) {
   return Array.isArray(value) ? value.map((item) => asString(item)).filter(Boolean) : []
 }
 
-function getAirlineDisplayName(value: string, fallback = "Dharmawisata Partner") {
+function getAirlineDisplayName(value: string, fallback = "Mitra Maskapai") {
   const normalized = value.trim().toUpperCase()
   if (!normalized) return fallback
   return DHARMAWISATA_AIRLINE_LABELS[normalized] || value
@@ -153,7 +153,7 @@ function mapJourneyToOffer(
           destinationCode,
           departureTime: formatTime(rawDepartureTime),
           arrivalTime: formatTime(rawArrivalTime),
-          marketingAirline: asString(journey.airlineID, "Dharmawisata Partner"),
+          marketingAirline: asString(journey.airlineID, "Mitra Maskapai"),
         },
       ]
   const primarySegment = Array.isArray(journey.segment) && journey.segment.length > 0 && isRecord(journey.segment[0])
@@ -203,7 +203,7 @@ function mapJourneyToOffer(
     policy: {
       refundable: false,
       reschedulable: false,
-      baggageSummary: "Follow supplier rules",
+      baggageSummary: "Mengikuti ketentuan maskapai",
     },
     highlights: buildHighlights(primarySegment),
     sourceItemId: `${originCode}-${destinationCode}-${index + 1}`.toLowerCase(),
@@ -228,7 +228,7 @@ function mapOffer(offer: unknown, index: number, params: AffiliateFlightSearchPa
   const destinationCode = asString(offer.destinationCode ?? offer.destination, params.destinationCode)
   const departureTime = asString(offer.departureTime ?? offer.departure, "00:00")
   const arrivalTime = asString(offer.arrivalTime ?? offer.arrival, departureTime)
-  const airlineName = asString(offer.airlineName ?? offer.airline, "Dharmawisata Partner")
+  const airlineName = asString(offer.airlineName ?? offer.airline, "Mitra Maskapai")
   const segmentsSource = Array.isArray(offer.segments) ? offer.segments : []
   const segments = segmentsSource.length > 0 ? segmentsSource.map((segment) => mapSegment(segment, offer)) : [{
     originCode,
@@ -280,7 +280,7 @@ function mapOffer(offer: unknown, index: number, params: AffiliateFlightSearchPa
       reschedulable: Boolean(offer.reschedulable ?? (isRecord(offer.policy) ? offer.policy.reschedulable : false)),
       baggageSummary: asString(
         offer.baggageSummary ?? (isRecord(offer.policy) ? offer.policy.baggageSummary : ""),
-        "Baggage policy follows supplier rules",
+        "Baggage policy follows airline rules",
       ),
     },
     highlights: asStringArray(offer.highlights),

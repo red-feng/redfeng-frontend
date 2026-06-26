@@ -166,7 +166,7 @@ function buildItemFromAffiliateOffer(
     region: templateItem?.region || "Live route",
     group: templateItem?.group || (offer.tripType === "round_trip" ? "Pulang pergi" : offer.tripType === "multi_city" ? "Multi kota" : "Sekali jalan"),
     image: templateItem?.image || "/home-assets/card-flight.png",
-    availabilityNote: templateItem?.availabilityNote || "Data jadwal live dari supplier affiliate.",
+    availabilityNote: templateItem?.availabilityNote || "Data jadwal live dari sistem maskapai.",
     statusNote: templateItem?.statusNote || `Offer live ${offer.airlineName} untuk koridor ${routeCode}.`,
     highlights: templateItem?.highlights?.length ? templateItem.highlights : offer.highlights,
     facts: [

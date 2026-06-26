@@ -684,7 +684,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
         payload.message ||
           (segments.length
             ? "Seat map tersedia."
-            : "Dharmawisata membalas SUCCESS, tetapi tidak mengirim layout kursi untuk penerbangan ini. Booking tetap bisa dilanjutkan tanpa memilih kursi."),
+            : "Maskapai belum menyediakan layout kursi untuk penerbangan ini. Booking tetap bisa dilanjutkan tanpa memilih kursi."),
       )
     } catch {
       setSeatSegments([])
@@ -1089,7 +1089,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
               Tambah Penumpang
             </button>
             <p className="mt-4 rounded-lg bg-orange-50 px-4 py-3 text-xs leading-5 text-orange-700">
-              Tambahan penumpang akan ikut masuk request booking. Admin tetap melakukan recheck fare dan hold supplier sebelum payment Midtrans dibuka.
+              Tambahan penumpang akan ikut masuk request booking. Tim Red Feng tetap melakukan recheck fare dan hold maskapai sebelum payment Midtrans dibuka.
             </p>
           </div>
 
@@ -1222,9 +1222,9 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-neutral-900">Cek seat map supplier</h3>
+                  <h3 className="text-lg font-bold text-neutral-900">Cek pilihan kursi</h3>
                   <p className="mt-2 text-sm leading-6 text-neutral-600">
-                    Seat map akan muncul jika Dharmawisata mengembalikan data kursi untuk maskapai dan rute ini.
+                    Pilihan kursi akan muncul jika maskapai menyediakan data kursi untuk penerbangan ini.
                     Booking tetap bisa dilanjutkan tanpa memilih kursi.
                   </p>
                   <button
@@ -1250,7 +1250,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
             ) : null}
             {selectedSeatCount > 0 ? (
               <p className="mt-3 rounded-lg bg-orange-50 px-4 py-3 text-sm text-orange-700">
-                {selectedSeatCount}/{passengerCount} penumpang sudah memilih kursi. Kursi akan dikirim ke supplier saat booking diajukan.
+                {selectedSeatCount}/{passengerCount} penumpang sudah memilih kursi. Kursi akan ikut diajukan saat booking dibuat.
               </p>
             ) : null}
           </div>
@@ -1420,7 +1420,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
             <div className="mt-5 space-y-4">
               {[
                 ["1", "Request booking", "Customer mengajukan data booking."],
-                ["2", "Recheck fare", "Admin validasi harga ke Dharmawisata."],
+                ["2", "Recheck fare", "Tim Red Feng validasi harga dan ketersediaan kursi."],
                 ["3", "Hold / PNR", "Seat di-hold jika fare valid."],
                 ["4", "Payment Midtrans", "Link payment dibuka setelah hold valid."],
               ].map(([number, title, description], index) => (
@@ -1460,7 +1460,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
             <div className="mt-5 rounded-lg bg-green-50 px-4 py-4 text-sm text-green-700">
               <p className="font-bold">Pembayaran via Midtrans</p>
               <p className="mt-1 text-xs leading-5 text-green-700">
-                Link payment akan dibuka setelah fare dan hold supplier valid.
+                Link payment akan dibuka setelah fare dan hold maskapai valid.
               </p>
             </div>
           </section>

@@ -310,10 +310,10 @@ export async function getDharmawisataFlightSeatMap(
       ok,
       skipped: false,
       message: segments.length > 0
-        ? "Seat map tersedia dari Dharmawisata."
+        ? "Pilihan kursi tersedia."
         : respMessage && respMessage.toUpperCase() !== "SUCCESS"
           ? respMessage
-          : "Dharmawisata membalas SUCCESS, tetapi tidak mengirim layout kursi untuk penerbangan ini. Booking tetap bisa dilanjutkan tanpa memilih kursi.",
+          : "Maskapai belum menyediakan layout kursi untuk penerbangan ini. Booking tetap bisa dilanjutkan tanpa memilih kursi.",
       segments,
       raw: {
         seatMode: "api",

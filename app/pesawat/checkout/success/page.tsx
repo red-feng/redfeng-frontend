@@ -82,7 +82,7 @@ function getPaymentGateCopy(detail: FlightDetailRow | null, booking: BookingRow)
   if (lifecycle === "booking_hold_created") {
     return {
       label: "Payment Midtrans siap",
-      title: "Hold supplier sudah valid.",
+      title: "Hold maskapai sudah valid.",
       body: paymentUntil
         ? `Link pembayaran sudah bisa dibuka dari detail booking. Selesaikan pembayaran maksimal ${paymentUntil}.`
         : holdUntil
@@ -95,7 +95,7 @@ function getPaymentGateCopy(detail: FlightDetailRow | null, booking: BookingRow)
   return {
     label: "Pembayaran belum dibuka",
     title: "Tidak ada pembayaran yang perlu dilakukan sekarang.",
-    body: "Red Feng sedang recheck fare dan mengamankan hold/PNR ke supplier. Link Midtrans baru dibuka setelah harga dan seat valid.",
+    body: "Red Feng sedang recheck fare dan mengamankan hold/PNR ke maskapai. Link Midtrans baru dibuka setelah harga dan seat valid.",
     tone: "border-sky-200 bg-sky-50 text-sky-800",
   }
 }
@@ -225,9 +225,9 @@ export default async function FlightCheckoutSuccessPage({
             <h2 className="text-base font-bold text-slate-950">Langkah berikutnya</h2>
             <div className="mt-4 grid gap-3">
               {[
-                "Red Feng recheck fare dan ketersediaan seat ke supplier.",
+                "Red Feng recheck fare dan ketersediaan seat ke maskapai.",
                 "Jika fare valid, admin/sistem membuat hold/PNR.",
-                "Payment Midtrans dibuka setelah hold supplier valid.",
+                "Payment Midtrans dibuka setelah hold maskapai valid.",
                 "Setelah payment sukses, Red Feng request issue tiket dan mengirim e-ticket.",
               ].map((item, index) => (
                 <div key={item} className="flex gap-3 rounded-[16px] border border-white bg-white p-4">
@@ -288,7 +288,7 @@ export default async function FlightCheckoutSuccessPage({
           </div>
 
           <div className="rounded-[22px] border border-emerald-100 bg-emerald-50 p-5 text-sm leading-6 text-emerald-800">
-            Payment tetap memakai Midtrans, tetapi hanya dibuka setelah hold supplier valid supaya harga dan seat tidak berubah saat customer membayar.
+            Payment tetap memakai Midtrans, tetapi hanya dibuka setelah hold maskapai valid supaya harga dan seat tidak berubah saat customer membayar.
           </div>
         </aside>
       </section>

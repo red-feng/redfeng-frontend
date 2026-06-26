@@ -72,7 +72,7 @@ function buildRequestedRouteFallbackOffer(params: AffiliateFlightSearchParams): 
     routeCode,
     originCode,
     destinationCode,
-    airlineName: "Dharmawisata Partner",
+    airlineName: "Mitra Maskapai",
     cabinClass: params.cabinClass || "Economy",
     segments: [
       {
@@ -80,7 +80,7 @@ function buildRequestedRouteFallbackOffer(params: AffiliateFlightSearchParams): 
         destinationCode,
         departureTime: "09:00",
         arrivalTime: "11:00",
-        marketingAirline: "Dharmawisata Partner",
+        marketingAirline: "Mitra Maskapai",
       },
     ],
     departureTime: "09:00",
@@ -97,7 +97,7 @@ function buildRequestedRouteFallbackOffer(params: AffiliateFlightSearchParams): 
     policy: {
       refundable: true,
       reschedulable: true,
-      baggageSummary: "Follow supplier rules",
+      baggageSummary: "Mengikuti ketentuan maskapai",
     },
     highlights: ["Fallback estimate", "Route requested"],
     sourceItemId: `fallback-${routeCode.toLowerCase()}`,
