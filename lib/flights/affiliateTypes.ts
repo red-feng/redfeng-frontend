@@ -46,6 +46,7 @@ export type AffiliateFlightSupplierMeta = {
   airlineAccessCode?: string
   searchKey?: string
   detailSchedule?: string
+  flightClass?: string
 }
 
 export type AffiliateFlightPrice = {

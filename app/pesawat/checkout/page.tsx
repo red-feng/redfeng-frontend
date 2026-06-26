@@ -43,6 +43,7 @@ export default async function FlightCheckoutPage({
     airlineAccessCode: firstParam(params, "airline_access_code"),
     searchKey: firstParam(params, "search_key"),
     detailSchedule: firstParam(params, "detail_schedule"),
+    supplierFlightClass: firstParam(params, "supplier_flight_class"),
     source: firstParam(params, "source") || "catalog",
   }
 

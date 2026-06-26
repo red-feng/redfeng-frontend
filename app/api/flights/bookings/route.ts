@@ -75,6 +75,16 @@ function normalizeFlightNumber(value: unknown) {
   return /^(?:[A-Z0-9]{2,3}-?)?\d{1,4}[A-Z]?$/.test(normalized) ? normalized : ""
 }
 
+function extractSupplierFlightClass(value: unknown) {
+  const normalized = asString(value).replace(/^live-/, "")
+  if (!normalized.includes("~") || !normalized.includes("|")) return ""
+
+  return normalized
+    .split("~")
+    .map((part) => part.trim())
+    .find((part) => /^[A-Z]{1,2}$/.test(part)) || ""
+}
+
 function normalizePassengerTitle(value: unknown) {
   const normalized = asString(value).toUpperCase()
   return ["MR", "MRS", "MS", "MSTR", "MISS"].includes(normalized) ? normalized : "MR"
@@ -354,6 +364,7 @@ export async function POST(req: Request) {
     const airlineAccessCode = asString(body.airline_access_code || body.fare_reference_id || body.offer_id)
     const searchKey = asString(body.search_key)
     const detailSchedule = asString(body.detail_schedule)
+    const supplierFlightClass = asString(body.supplier_flight_class) || extractSupplierFlightClass(detailSchedule || body.fare_reference_id || body.offer_id)
 
     if (!customerName || !customerEmail || !customerPhone) {
       return NextResponse.json({ error: "Nama, email, dan nomor telepon wajib diisi." }, { status: 400 })
@@ -474,6 +485,7 @@ export async function POST(req: Request) {
       airlineAccessCode: airlineAccessCode || null,
       searchKey: searchKey || null,
       detailSchedule: detailSchedule || null,
+      supplierFlightClass: supplierFlightClass || null,
       supplierCostAmount: subtotalAmount,
       supplierCostCurrency: "IDR",
       passengerManifest: passengerManifest || null,
@@ -618,7 +630,7 @@ export async function POST(req: Request) {
           departureAt,
           arrivalAt,
           returnAt,
-          flightClass: normalizeCabinClass(body.cabin),
+          flightClass: supplierFlightClass || normalizeCabinClass(body.cabin),
           detailSchedule,
           searchKey,
           airlineAccessCode,

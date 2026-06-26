@@ -120,6 +120,7 @@ function buildFlightCheckoutHref(item: FlightItem, state: FlightFilterState, dat
   const airlineAccessCode = supplierMeta?.airlineAccessCode || fareReferenceId
   const searchKey = supplierMeta?.searchKey || supplierMeta?.journeyReference || ""
   const detailSchedule = supplierMeta?.detailSchedule || flightNumber
+  const supplierFlightClass = supplierMeta?.flightClass || ""
 
   params.set("offer_id", item.id)
   params.set("title", item.title)
@@ -143,6 +144,7 @@ function buildFlightCheckoutHref(item: FlightItem, state: FlightFilterState, dat
   params.set("airline_access_code", airlineAccessCode)
   params.set("search_key", searchKey)
   params.set("detail_schedule", detailSchedule)
+  params.set("supplier_flight_class", supplierFlightClass)
   params.set("source", dataSource || "catalog")
 
   return `/pesawat/checkout?${params.toString()}`

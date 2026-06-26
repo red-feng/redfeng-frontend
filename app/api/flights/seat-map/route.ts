@@ -56,6 +56,16 @@ function normalizeAirlineCode(value: unknown, fallbackAirlineName: unknown) {
   return AIRLINE_NAME_CODES[normalizedAirline] || ""
 }
 
+function extractSupplierFlightClass(value: unknown) {
+  const normalized = asString(value).replace(/^live-/, "")
+  if (!normalized.includes("~") || !normalized.includes("|")) return ""
+
+  return normalized
+    .split("~")
+    .map((part) => part.trim())
+    .find((part) => /^[A-Z]{1,2}$/.test(part)) || ""
+}
+
 function normalizePassengerTitle(value: unknown) {
   const normalized = asString(value).toUpperCase()
   return ["MR", "MRS", "MS", "MSTR", "MISS"].includes(normalized) ? normalized : "MR"
@@ -231,7 +241,7 @@ export async function POST(req: Request) {
       tripType: asString(body.trip_type),
       departureAt,
       returnAt,
-      flightClass: asString(body.cabin) || "Economy",
+      flightClass: asString(body.supplier_flight_class) || extractSupplierFlightClass(body.detail_schedule || body.fare_reference_id || body.offer_id) || asString(body.cabin) || "Economy",
       detailSchedule: asString(body.detail_schedule),
       searchKey: asString(body.search_key),
       airlineAccessCode: asString(body.airline_access_code || body.fare_reference_id || body.offer_id),

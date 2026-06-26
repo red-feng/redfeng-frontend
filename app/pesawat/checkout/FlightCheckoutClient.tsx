@@ -28,6 +28,7 @@ export type FlightCheckoutData = {
   airlineAccessCode: string
   searchKey: string
   detailSchedule: string
+  supplierFlightClass: string
   source: string
 }
 
@@ -625,6 +626,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
       airline_access_code: data.airlineAccessCode,
       search_key: data.searchKey,
       detail_schedule: data.detailSchedule,
+      supplier_flight_class: data.supplierFlightClass,
       source: data.source,
       customer_name: contactName,
       customer_email: email,

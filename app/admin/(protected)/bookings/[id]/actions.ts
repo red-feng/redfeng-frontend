@@ -103,6 +103,49 @@ function readNestedString(value: unknown, keys: string[]) {
   return visit(value)
 }
 
+function normalizeDharmawisataReference(value: string | null | undefined) {
+  const normalized = String(value || "").trim()
+  return normalized.replace(/^live-/, "")
+}
+
+function looksLikeDharmawisataJourneyReference(value: string | null | undefined) {
+  const normalized = normalizeDharmawisataReference(value)
+  return normalized.includes("~") && normalized.includes("|")
+}
+
+function resolveDharmawisataScheduleReference(
+  requestPayload: Record<string, unknown>,
+  previousSupplierResponsePayload: Record<string, unknown>,
+  fallbackFlightNumber: string | null | undefined,
+) {
+  const candidates = [
+    readNestedString(requestPayload, ["detailSchedule"]),
+    readNestedString(requestPayload, ["fareReferenceId"]),
+    readNestedString(requestPayload, ["offerId"]),
+    readNestedString(requestPayload, ["journeyReference"]),
+    readNestedString(previousSupplierResponsePayload, ["detailSchedule"]),
+    readNestedString(previousSupplierResponsePayload, ["fareReferenceId"]),
+    readNestedString(previousSupplierResponsePayload, ["offerId"]),
+    readNestedString(previousSupplierResponsePayload, ["journeyReference"]),
+  ].map(normalizeDharmawisataReference)
+
+  return (
+    candidates.find(looksLikeDharmawisataJourneyReference) ||
+    candidates.find(Boolean) ||
+    String(fallbackFlightNumber || "")
+  )
+}
+
+function extractFlightClassFromDharmawisataReference(value: string | null | undefined) {
+  const normalized = normalizeDharmawisataReference(value)
+  if (!looksLikeDharmawisataJourneyReference(normalized)) return ""
+
+  return normalized
+    .split("~")
+    .map((part) => part.trim())
+    .find((part) => /^[A-Z]{1,2}$/.test(part)) || ""
+}
+
 function asJsonRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
 }
@@ -824,10 +867,17 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
     flightDetail.fare_reference_id ||
     null
   const searchKey = readNestedString(requestPayload, ["searchKey"]) || readNestedString(previousSupplierResponsePayload, ["searchKey"])
-  const detailSchedule =
-    readNestedString(requestPayload, ["detailSchedule", "journeyReference"]) ||
-    readNestedString(previousSupplierResponsePayload, ["detailSchedule", "journeyReference"]) ||
-    flightDetail.flight_number
+  const detailSchedule = resolveDharmawisataScheduleReference(
+    requestPayload,
+    previousSupplierResponsePayload,
+    flightDetail.flight_number,
+  )
+  const supplierFlightClass =
+    readNestedString(requestPayload, ["supplierFlightClass"]) ||
+    readNestedString(previousSupplierResponsePayload, ["supplierFlightClass"]) ||
+    extractFlightClassFromDharmawisataReference(detailSchedule) ||
+    flightDetail.cabin_class ||
+    "Economy"
 
   const holdResult = await createDharmawisataFlightBooking({
     bookingId,
@@ -840,7 +890,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
     departureAt: flightDetail.departure_at,
     arrivalAt: flightDetail.arrival_at,
     returnAt: flightDetail.return_at,
-    flightClass: flightDetail.cabin_class || "Economy",
+    flightClass: supplierFlightClass,
     detailSchedule,
     searchKey,
     airlineAccessCode,

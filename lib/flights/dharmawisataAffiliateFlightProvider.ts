@@ -41,6 +41,14 @@ function asStringArray(value: unknown) {
   return Array.isArray(value) ? value.map((item) => asString(item)).filter(Boolean) : []
 }
 
+function withAirlineAccessCode(journey: unknown, airlineAccessCode: string) {
+  if (!isRecord(journey) || !airlineAccessCode || asString(journey.airlineAccessCode)) return journey
+  return {
+    ...journey,
+    airlineAccessCode,
+  }
+}
+
 function getAirlineDisplayName(value: string, fallback = "Mitra Maskapai") {
   const normalized = value.trim().toUpperCase()
   if (!normalized) return fallback
@@ -170,6 +178,7 @@ function mapJourneyToOffer(
   const airlineCode = asString(flightDetail.airlineCode, airlineId)
   const flightNumber = asString(flightDetail.flightNumber)
   const journeyReference = asString(journey.journeyReference, `dharmawisata-journey-${index + 1}`)
+  const flightClass = asString(availableDetail.flightClass)
   const airlineName = getAirlineDisplayName(
     asString(airlineId || segments[0]?.marketingAirline),
   )
@@ -216,7 +225,8 @@ function mapJourneyToOffer(
       fareReferenceId: journeyReference,
       airlineAccessCode: asString(journey.airlineAccessCode),
       searchKey: journeyReference,
-      detailSchedule: flightNumber,
+      detailSchedule: journeyReference,
+      flightClass,
     },
   }
 }
@@ -295,6 +305,7 @@ function mapOffer(offer: unknown, index: number, params: AffiliateFlightSearchPa
       airlineAccessCode: asString(offer.airlineAccessCode),
       searchKey: asString(offer.searchKey ?? offer.journeyReference),
       detailSchedule: asString(offer.detailSchedule ?? offer.flightNumber ?? segments[0]?.flightNumber),
+      flightClass: asString(offer.flightClass),
     },
   }
 }
@@ -423,7 +434,7 @@ export class DharmawisataAffiliateFlightProvider implements AffiliateFlightProvi
 
         if (seenReferences.has(journeyReference)) continue
         seenReferences.add(journeyReference)
-        journeys.push(journey)
+        journeys.push(withAirlineAccessCode(journey, nextAirlineAccessCode || airlineAccessCode))
       }
 
       if (status === "SUCCESS" && totalAirline > 0 && currentAirlineIndex >= totalAirline) {
