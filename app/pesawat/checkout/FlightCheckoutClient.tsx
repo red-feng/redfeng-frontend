@@ -1089,7 +1089,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
               Tambah Penumpang
             </button>
             <p className="mt-4 rounded-lg bg-orange-50 px-4 py-3 text-xs leading-5 text-orange-700">
-              Tambahan penumpang akan ikut masuk request booking. Tim Red Feng tetap melakukan recheck fare dan hold maskapai sebelum payment Midtrans dibuka.
+              Tambahan penumpang akan ikut masuk data pemesanan. Tim Red Feng tetap memastikan harga dan ketersediaan kursi sebelum pembayaran dibuka.
             </p>
           </div>
 
@@ -1394,7 +1394,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                     <dd className="mt-1 font-semibold text-neutral-900">{data.returnDate ? formatReadableDate(data.returnDate) : "-"}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-600">Referensi fare</dt>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-600">Kode penawaran</dt>
                     <dd className="mt-1 break-all font-semibold text-neutral-900">{data.fareReferenceId || data.offerId || "-"}</dd>
                   </div>
                 </dl>
@@ -1419,10 +1419,10 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
             <h2 className="text-xl font-bold text-[#ff4b00]">Status Booking</h2>
             <div className="mt-5 space-y-4">
               {[
-                ["1", "Request booking", "Customer mengajukan data booking."],
-                ["2", "Recheck fare", "Tim Red Feng validasi harga dan ketersediaan kursi."],
-                ["3", "Hold / PNR", "Seat di-hold jika fare valid."],
-                ["4", "Payment Midtrans", "Link payment dibuka setelah hold valid."],
+                ["1", "Ajukan booking", "Data pemesanan dikirim ke Red Feng."],
+                ["2", "Validasi harga", "Tim Red Feng memastikan harga dan ketersediaan kursi."],
+                ["3", "Amankan kursi", "Kode booking maskapai dibuat jika data valid."],
+                ["4", "Pembayaran", "Link pembayaran dibuka setelah kursi berhasil diamankan."],
               ].map(([number, title, description], index) => (
                 <div key={number} className="flex gap-3">
                   <span
@@ -1458,9 +1458,9 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
               <span className="text-2xl font-bold text-[#ff4b00]">{formatIdr(totalEstimate)}</span>
             </div>
             <div className="mt-5 rounded-lg bg-green-50 px-4 py-4 text-sm text-green-700">
-              <p className="font-bold">Pembayaran via Midtrans</p>
+              <p className="font-bold">Pembayaran aman</p>
               <p className="mt-1 text-xs leading-5 text-green-700">
-                Link payment akan dibuka setelah fare dan hold maskapai valid.
+                Link pembayaran akan dibuka setelah harga dan kursi berhasil dipastikan.
               </p>
             </div>
           </section>
@@ -1473,7 +1473,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
               <div>
                 <h2 className="font-bold text-neutral-900">Jaminan Harga</h2>
                 <p className="mt-1 text-sm leading-6 text-neutral-600">
-                  Harga tidak akan berubah setelah admin membuat hold dan Anda memilih metode pembayaran.
+                  Harga tidak akan berubah setelah kursi berhasil diamankan dan Anda memilih metode pembayaran.
                 </p>
               </div>
             </div>

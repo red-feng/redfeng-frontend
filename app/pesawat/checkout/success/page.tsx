@@ -81,12 +81,12 @@ function getPaymentGateCopy(detail: FlightDetailRow | null, booking: BookingRow)
 
   if (lifecycle === "booking_hold_created") {
     return {
-      label: "Payment Midtrans siap",
-      title: "Hold maskapai sudah valid.",
+      label: "Pembayaran siap",
+      title: "Kursi berhasil diamankan.",
       body: paymentUntil
         ? `Link pembayaran sudah bisa dibuka dari detail booking. Selesaikan pembayaran maksimal ${paymentUntil}.`
         : holdUntil
-          ? `Link pembayaran sudah bisa dibuka dari detail booking. Selesaikan sebelum batas hold ${holdUntil}.`
+          ? `Link pembayaran sudah bisa dibuka dari detail booking. Selesaikan sebelum batas pembayaran ${holdUntil}.`
           : "Link pembayaran sudah bisa dibuka dari detail booking.",
       tone: "border-emerald-200 bg-emerald-50 text-emerald-800",
     }
@@ -95,7 +95,7 @@ function getPaymentGateCopy(detail: FlightDetailRow | null, booking: BookingRow)
   return {
     label: "Pembayaran belum dibuka",
     title: "Tidak ada pembayaran yang perlu dilakukan sekarang.",
-    body: "Red Feng sedang recheck fare dan mengamankan hold/PNR ke maskapai. Link Midtrans baru dibuka setelah harga dan seat valid.",
+    body: "Red Feng sedang memastikan harga dan ketersediaan kursi. Link pembayaran baru dibuka setelah semuanya valid.",
     tone: "border-sky-200 bg-sky-50 text-sky-800",
   }
 }
@@ -225,10 +225,10 @@ export default async function FlightCheckoutSuccessPage({
             <h2 className="text-base font-bold text-slate-950">Langkah berikutnya</h2>
             <div className="mt-4 grid gap-3">
               {[
-                "Red Feng recheck fare dan ketersediaan seat ke maskapai.",
-                "Jika fare valid, admin/sistem membuat hold/PNR.",
-                "Payment Midtrans dibuka setelah hold maskapai valid.",
-                "Setelah payment sukses, Red Feng request issue tiket dan mengirim e-ticket.",
+                "Red Feng memastikan harga dan ketersediaan kursi.",
+                "Jika data valid, sistem mengamankan kode booking maskapai.",
+                "Pembayaran dibuka setelah kursi berhasil diamankan.",
+                "Setelah pembayaran sukses, Red Feng menerbitkan tiket dan mengirim e-ticket.",
               ].map((item, index) => (
                 <div key={item} className="flex gap-3 rounded-[16px] border border-white bg-white p-4">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#ff4b00] text-xs font-bold text-white">
@@ -280,7 +280,7 @@ export default async function FlightCheckoutSuccessPage({
               ) : null}
               {flightDetail?.booking_hold_expires_at ? (
                 <p>
-                  <span className="font-semibold text-slate-900">Hold sampai:</span>{" "}
+                  <span className="font-semibold text-slate-900">Batas pembayaran:</span>{" "}
                   {formatDateTime(flightDetail.booking_hold_expires_at)}
                 </p>
               ) : null}
@@ -288,7 +288,7 @@ export default async function FlightCheckoutSuccessPage({
           </div>
 
           <div className="rounded-[22px] border border-emerald-100 bg-emerald-50 p-5 text-sm leading-6 text-emerald-800">
-            Payment tetap memakai Midtrans, tetapi hanya dibuka setelah hold maskapai valid supaya harga dan seat tidak berubah saat customer membayar.
+            Pembayaran diproses aman via Midtrans dan dibuka setelah harga serta kursi dipastikan.
           </div>
         </aside>
       </section>

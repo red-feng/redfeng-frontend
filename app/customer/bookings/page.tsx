@@ -247,10 +247,10 @@ function getCustomerActionHint(
         tone: "border-sky-200 bg-sky-50 text-sky-800",
         text:
           locale === "en"
-            ? "Red Feng is rechecking the fare and securing the airline hold. Payment will open after the hold is confirmed."
+            ? "Red Feng is confirming price and seat availability. Payment will open after everything is valid."
             : locale === "zh"
-              ? "Red Feng 正在复查票价并锁定航空公司预订。确认 hold 后将开放付款。"
-              : "Red Feng sedang recheck fare dan mengunci hold maskapai. Pembayaran akan terbuka setelah hold terkonfirmasi.",
+              ? "Red Feng 正在确认价格和座位。确认完成后将开放付款。"
+              : "Red Feng sedang memastikan harga dan ketersediaan kursi. Pembayaran akan terbuka setelah semuanya valid.",
       }
     }
 

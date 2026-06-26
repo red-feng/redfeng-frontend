@@ -191,10 +191,10 @@ function getFlightPaymentGateNotice(
             : "Pembayaran sudah dibuka.",
       body:
         locale === "en"
-          ? `The airline hold is valid${holdUntil !== "-" ? ` until ${holdUntil}` : ""}. Complete payment before the hold expires.`
+          ? `Your seat is secured${holdUntil !== "-" ? ` until ${holdUntil}` : ""}. Complete payment before the time limit expires.`
           : locale === "zh"
-            ? `航司锁位有效${holdUntil !== "-" ? `至 ${holdUntil}` : ""}。请在锁位到期前完成付款。`
-            : `Hold maskapai valid${holdUntil !== "-" ? ` sampai ${holdUntil}` : ""}. Selesaikan pembayaran sebelum batas hold berakhir.`,
+            ? `座位已确认${holdUntil !== "-" ? `至 ${holdUntil}` : ""}。请在时限前完成付款。`
+            : `Kursi berhasil diamankan${holdUntil !== "-" ? ` sampai ${holdUntil}` : ""}. Selesaikan pembayaran sebelum batas waktu berakhir.`,
     }
   }
 
@@ -203,16 +203,16 @@ function getFlightPaymentGateNotice(
       tone: "border-amber-200 bg-amber-50 text-amber-800",
       title:
         locale === "en"
-          ? "The previous hold has expired."
+          ? "The previous validation has expired."
           : locale === "zh"
-            ? "之前的锁位已过期。"
-            : "Hold sebelumnya sudah lewat.",
+            ? "之前的确认已过期。"
+            : "Validasi sebelumnya sudah lewat.",
       body:
         locale === "en"
-          ? "Red Feng will recheck the fare and secure a fresh hold before reopening payment."
+          ? "Red Feng will recheck price and seat availability before reopening payment."
           : locale === "zh"
-            ? "Red Feng 将重新核验票价并重新锁位后再开放付款。"
-            : "Red Feng akan recheck fare dan membuat hold baru sebelum payment dibuka lagi.",
+            ? "Red Feng 将重新确认价格和座位后再开放付款。"
+            : "Red Feng akan memastikan ulang harga dan kursi sebelum pembayaran dibuka lagi.",
     }
   }
 
@@ -226,10 +226,10 @@ function getFlightPaymentGateNotice(
           : "Pembayaran belum dibuka.",
     body:
       locale === "en"
-        ? "Red Feng is checking fare and seat availability with the airline. The Midtrans button appears after the hold is valid."
+        ? "Red Feng is confirming price and seat availability with the airline. The payment button appears after everything is valid."
         : locale === "zh"
-          ? "Red Feng 正在向航司核验票价和座位。锁位有效后才会显示 Midtrans 按钮。"
-          : "Red Feng sedang cek fare dan ketersediaan seat ke maskapai. Tombol Midtrans akan muncul setelah hold valid.",
+          ? "Red Feng 正在向航司确认价格和座位。确认完成后才会显示付款按钮。"
+          : "Red Feng sedang memastikan harga dan ketersediaan kursi ke maskapai. Tombol pembayaran akan muncul setelah semuanya valid.",
   }
 }
 
@@ -305,7 +305,7 @@ const bookingPageCopy = {
     bookingSuccess: "Booking Berhasil",
     confirmationIntro: "Periksa dulu seluruh data peserta, rincian booking, dan nominal biaya. Jika sudah sesuai, lanjutkan ke pembayaran dari halaman ini.",
     successIntro: "Dana customer masuk ke rekening RedFeng dan tetap ditahan sampai pickup dikonfirmasi merchant dan customer.",
-    checkoutAlert: "Booking sudah dibuat. Lengkapi data peserta, lalu cek detail nominal dan data booking sebelum membuka popup Midtrans.",
+    checkoutAlert: "Booking sudah dibuat. Lengkapi data peserta, lalu cek nominal dan detail booking sebelum membuka halaman pembayaran.",
     participantsIncomplete: "Data peserta belum lengkap. Silakan isi semua data peserta terlebih dahulu sebelum melanjutkan ke pembayaran.",
     bookingCode: "Kode Booking",
     total: "Total",
@@ -375,7 +375,7 @@ const bookingPageCopy = {
     bookingSuccess: "Booking Created",
     confirmationIntro: "Please review all participant data, booking details, and payment amounts. If everything is correct, continue to payment from this page.",
     successIntro: "Customer funds are received by RedFeng and remain held until pickup is confirmed by both merchant and customer.",
-    checkoutAlert: "The booking has been created. Complete participant data, then review the amount and booking details before opening the Midtrans popup.",
+    checkoutAlert: "The booking has been created. Complete participant data, then review the amount and booking details before opening the payment page.",
     participantsIncomplete: "Participant data is incomplete. Please fill in all participant information before continuing to payment.",
     bookingCode: "Booking Code",
     total: "Total",
@@ -445,7 +445,7 @@ const bookingPageCopy = {
     bookingSuccess: "订单已创建",
     confirmationIntro: "请先检查所有参团人资料、订单详情和费用金额。如无误，请在此页面继续付款。",
     successIntro: "客户资金已进入 RedFeng 账户，并将在商家和客户确认接送前保持托管。",
-    checkoutAlert: "订单已创建。请先完善参团人资料，并核对金额和订单详情后再打开 Midtrans 弹窗。",
+    checkoutAlert: "订单已创建。请先完善参团人资料，并核对金额和订单详情后再打开付款页面。",
     participantsIncomplete: "参团人资料尚未完整。请先填写所有参团人信息后再继续付款。",
     bookingCode: "订单编号",
     total: "总额",
@@ -517,7 +517,7 @@ const bookingPageCopyZh = {
   bookingSuccess: "订单已创建",
   confirmationIntro: "请先检查所有参团人资料、订单详情和费用金额。如无误，请在此页面继续付款。",
   successIntro: "客户资金已进入 RedFeng 账户，并会在商家和客户都确认接送前保持托管。",
-  checkoutAlert: "订单已创建。请先完善参团人资料，并核对金额和订单详情后再打开 Midtrans 弹窗。",
+  checkoutAlert: "订单已创建。请先完善参团人资料，并核对金额和订单详情后再打开付款页面。",
   participantsIncomplete: "参团人资料尚未完整。请先填写所有参团人信息后再继续付款。",
   bookingCode: "订单编号",
   total: "总额",
@@ -1000,7 +1000,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                 </span>
               </div>
               <div className="mt-2 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
-                <span>Payment gateway IDR</span>
+                <span>Nominal pembayaran IDR</span>
                 <span className="font-semibold text-slate-700">{formatIdr(amountDueNow)}</span>
               </div>
             </div>
