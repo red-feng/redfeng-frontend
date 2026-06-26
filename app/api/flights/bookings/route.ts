@@ -2,6 +2,10 @@ import { NextResponse } from "next/server"
 import { calculateBookingAmounts, getFinanceSettings } from "@/lib/finance/settings"
 import { getFlightAutomationPolicy } from "@/lib/flights/automationPolicy"
 import { createDharmawisataFlightBooking, type DharmawisataPassenger } from "@/lib/flights/dharmawisataFlightBooking"
+import {
+  findDharmawisataLowFareScheduleForBooking,
+  type DharmawisataFlightScheduleLookupResult,
+} from "@/lib/flights/dharmawisataFlightScheduleLookup"
 import { getFlightPaymentDeadline } from "@/lib/flights/paymentDeadline"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient as createServerClient } from "@/lib/supabase/server"
@@ -28,6 +32,22 @@ function generateBookingCode() {
 
 function asString(value: unknown) {
   return String(value || "").trim()
+}
+
+function summarizeScheduleLookup(result: DharmawisataFlightScheduleLookupResult | null) {
+  if (!result) return null
+
+  return {
+    ok: result.ok,
+    message: result.message,
+    hasDetailSchedule: Boolean(result.detailSchedule),
+    hasSearchKey: Boolean(result.searchKey),
+    hasAirlineAccessCode: Boolean(result.airlineAccessCode),
+    flightClass: result.flightClass,
+    flightNumber: result.flightNumber,
+    departureAt: result.departureAt,
+    arrivalAt: result.arrivalAt,
+  }
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -619,23 +639,58 @@ export async function POST(req: Request) {
       integrationMode: supplier.integration_mode,
     })
     const shouldAutoBookDharmawisata = supplier.supplier_code === "DHARMAWISATA_H2H" && automationPolicy.autoHold
-
-    const bookingApiResult = shouldAutoBookDharmawisata
-      ? await createDharmawisataFlightBooking({
-          bookingId: booking.id,
-          airlineId: airlineCode,
+    const scheduleLookup = shouldAutoBookDharmawisata
+      ? await findDharmawisataLowFareScheduleForBooking({
           airlineCode,
           flightNumber,
           originAirportCode,
           destinationAirportCode,
           tripType: normalizeTripType(body.trip_type),
           departureAt,
-          arrivalAt,
           returnAt,
-          flightClass: supplierFlightClass || normalizeCabinClass(body.cabin),
-          detailSchedule,
-          searchKey,
-          airlineAccessCode,
+          paxAdult: passengerMix.adults,
+          paxChild: passengerMix.children,
+          paxInfant: 0,
+        }).catch<DharmawisataFlightScheduleLookupResult>((error) => ({
+          ok: false,
+          message: error instanceof Error ? error.message : "Schedule lookup gagal sebelum hold.",
+          detailSchedule: null,
+          searchKey: null,
+          airlineAccessCode: null,
+          flightClass: null,
+          flightNumber: null,
+          departureAt: null,
+          arrivalAt: null,
+        }))
+      : null
+    const resolvedDetailSchedule = scheduleLookup?.ok && scheduleLookup.detailSchedule ? scheduleLookup.detailSchedule : detailSchedule
+    const resolvedSearchKey = scheduleLookup?.ok && scheduleLookup.searchKey ? scheduleLookup.searchKey : searchKey
+    const resolvedAirlineAccessCode = scheduleLookup?.ok && scheduleLookup.airlineAccessCode
+      ? scheduleLookup.airlineAccessCode
+      : airlineAccessCode
+    const resolvedSupplierFlightClass = scheduleLookup?.ok && scheduleLookup.flightClass
+      ? scheduleLookup.flightClass
+      : supplierFlightClass
+    const resolvedFlightNumber = scheduleLookup?.ok && scheduleLookup.flightNumber ? scheduleLookup.flightNumber : flightNumber
+    const resolvedDepartureAt = scheduleLookup?.ok && scheduleLookup.departureAt ? scheduleLookup.departureAt : departureAt
+    const resolvedArrivalAt = scheduleLookup?.ok && scheduleLookup.arrivalAt ? scheduleLookup.arrivalAt : arrivalAt
+
+    const bookingApiResult = shouldAutoBookDharmawisata
+      ? await createDharmawisataFlightBooking({
+          bookingId: booking.id,
+          airlineId: airlineCode,
+          airlineCode,
+          flightNumber: resolvedFlightNumber,
+          originAirportCode,
+          destinationAirportCode,
+          tripType: normalizeTripType(body.trip_type),
+          departureAt: resolvedDepartureAt,
+          arrivalAt: resolvedArrivalAt,
+          returnAt,
+          flightClass: resolvedSupplierFlightClass || normalizeCabinClass(body.cabin),
+          detailSchedule: resolvedDetailSchedule,
+          searchKey: resolvedSearchKey,
+          airlineAccessCode: resolvedAirlineAccessCode,
           contactTitle,
           contactFirstName: contactNameParts.firstName,
           contactLastName: contactNameParts.lastName,
@@ -664,6 +719,7 @@ export async function POST(req: Request) {
             supplierCode: supplier.supplier_code,
             integrationMode: supplier.integration_mode,
             automationPolicy,
+            scheduleLookup: summarizeScheduleLookup(scheduleLookup),
           },
         }
 
@@ -726,6 +782,7 @@ export async function POST(req: Request) {
           referenceNo: bookingApiResult.referenceNo,
           bookingCodeAirline: bookingApiResult.bookingCodeAirline,
           timeLimit: bookingApiResult.timeLimit,
+          scheduleLookup: summarizeScheduleLookup(scheduleLookup),
         },
       })
     } else if (!bookingApiResult.skipped) {
@@ -750,6 +807,7 @@ export async function POST(req: Request) {
           productType: "flight",
           lifecycleStatus: "fare_recheck_required",
           message: bookingApiResult.message,
+          scheduleLookup: summarizeScheduleLookup(scheduleLookup),
         },
       })
     } else {
