@@ -9,6 +9,7 @@ import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { formatBookingCode } from "@/lib/merchant-code"
 import { issueDharmawisataFlightTicket } from "@/lib/flights/dharmawisataTicketIssue"
 import { createDharmawisataFlightBooking, type DharmawisataPassenger } from "@/lib/flights/dharmawisataFlightBooking"
+import { findDharmawisataLowFareScheduleForBooking } from "@/lib/flights/dharmawisataFlightScheduleLookup"
 import { autoIssueFlightTicketAfterPayment } from "@/lib/flights/autoIssue"
 import { sendFlightTicketIssuedEmail } from "@/lib/flights/flightTicketEmail"
 import { getFlightPaymentDeadline } from "@/lib/flights/paymentDeadline"
@@ -144,6 +145,24 @@ function extractFlightClassFromDharmawisataReference(value: string | null | unde
     .split("~")
     .map((part) => part.trim())
     .find((part) => /^[A-Z]{1,2}$/.test(part)) || ""
+}
+
+function summarizeDharmawisataScheduleLookup(
+  lookup: Awaited<ReturnType<typeof findDharmawisataLowFareScheduleForBooking>> | null,
+) {
+  if (!lookup) return null
+
+  return {
+    ok: lookup.ok,
+    message: lookup.message,
+    hasDetailSchedule: Boolean(lookup.detailSchedule),
+    hasSearchKey: Boolean(lookup.searchKey),
+    hasAirlineAccessCode: Boolean(lookup.airlineAccessCode),
+    flightClass: lookup.flightClass,
+    flightNumber: lookup.flightNumber,
+    departureAt: lookup.departureAt,
+    arrivalAt: lookup.arrivalAt,
+  }
 }
 
 function asJsonRecord(value: unknown): Record<string, unknown> {
@@ -866,34 +885,71 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
     readNestedString(previousSupplierResponsePayload, ["airlineAccessCode"]) ||
     flightDetail.fare_reference_id ||
     null
-  const searchKey = readNestedString(requestPayload, ["searchKey"]) || readNestedString(previousSupplierResponsePayload, ["searchKey"])
-  const detailSchedule = resolveDharmawisataScheduleReference(
+  const storedSearchKey = readNestedString(requestPayload, ["searchKey"]) || readNestedString(previousSupplierResponsePayload, ["searchKey"])
+  const storedDetailSchedule = resolveDharmawisataScheduleReference(
     requestPayload,
     previousSupplierResponsePayload,
     flightDetail.flight_number,
   )
-  const supplierFlightClass =
+  const storedSupplierFlightClass =
     readNestedString(requestPayload, ["supplierFlightClass"]) ||
     readNestedString(previousSupplierResponsePayload, ["supplierFlightClass"]) ||
-    extractFlightClassFromDharmawisataReference(detailSchedule) ||
+    extractFlightClassFromDharmawisataReference(storedDetailSchedule) ||
     flightDetail.cabin_class ||
     "Economy"
+  let scheduleLookup: Awaited<ReturnType<typeof findDharmawisataLowFareScheduleForBooking>> | null = null
+
+  try {
+    scheduleLookup = await findDharmawisataLowFareScheduleForBooking({
+      airlineCode: flightDetail.airline_code,
+      flightNumber: flightDetail.flight_number,
+      originAirportCode: flightDetail.origin_airport_code,
+      destinationAirportCode: flightDetail.destination_airport_code,
+      tripType: flightDetail.trip_type,
+      departureAt: flightDetail.departure_at,
+      returnAt: flightDetail.return_at,
+      paxAdult,
+      paxChild,
+      paxInfant: 0,
+    })
+  } catch (error) {
+    scheduleLookup = {
+      ok: false,
+      message: error instanceof Error ? error.message : "LowFareSchedule lookup gagal.",
+      detailSchedule: null,
+      searchKey: null,
+      airlineAccessCode: null,
+      flightClass: null,
+      flightNumber: null,
+      departureAt: null,
+      arrivalAt: null,
+    }
+  }
+
+  const detailSchedule = scheduleLookup.ok && scheduleLookup.detailSchedule ? scheduleLookup.detailSchedule : storedDetailSchedule
+  const searchKey = scheduleLookup.ok && scheduleLookup.searchKey ? scheduleLookup.searchKey : storedSearchKey
+  const resolvedAirlineAccessCode =
+    scheduleLookup.ok && scheduleLookup.airlineAccessCode ? scheduleLookup.airlineAccessCode : airlineAccessCode
+  const supplierFlightClass = scheduleLookup.ok && scheduleLookup.flightClass ? scheduleLookup.flightClass : storedSupplierFlightClass
+  const resolvedFlightNumber = scheduleLookup.ok && scheduleLookup.flightNumber ? scheduleLookup.flightNumber : flightDetail.flight_number
+  const resolvedDepartureAt = scheduleLookup.ok && scheduleLookup.departureAt ? scheduleLookup.departureAt : flightDetail.departure_at
+  const resolvedArrivalAt = scheduleLookup.ok && scheduleLookup.arrivalAt ? scheduleLookup.arrivalAt : flightDetail.arrival_at
 
   const holdResult = await createDharmawisataFlightBooking({
     bookingId,
     airlineId: flightDetail.airline_code,
     airlineCode: flightDetail.airline_code,
-    flightNumber: flightDetail.flight_number,
+    flightNumber: resolvedFlightNumber,
     originAirportCode: flightDetail.origin_airport_code,
     destinationAirportCode: flightDetail.destination_airport_code,
     tripType: flightDetail.trip_type,
-    departureAt: flightDetail.departure_at,
-    arrivalAt: flightDetail.arrival_at,
+    departureAt: resolvedDepartureAt,
+    arrivalAt: resolvedArrivalAt,
     returnAt: flightDetail.return_at,
     flightClass: supplierFlightClass,
     detailSchedule,
     searchKey,
-    airlineAccessCode,
+    airlineAccessCode: resolvedAirlineAccessCode,
     contactTitle: "MR",
     contactFirstName: contactName.firstName,
     contactLastName: contactName.lastName,
@@ -916,6 +972,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
         supplier_status: holdResult.skipped ? supplierOrder.supplier_status || "pending_submission" : "failed",
         response_payload: {
           ...previousSupplierResponsePayload,
+          dharmawisataScheduleLookup: summarizeDharmawisataScheduleLookup(scheduleLookup),
           dharmawisataHoldAttempt: holdResult.raw,
         },
         last_error: holdResult.message,
@@ -935,6 +992,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
         mode: holdResult.mode,
         skipped: holdResult.skipped,
         message: holdResult.message,
+        scheduleLookup: summarizeDharmawisataScheduleLookup(scheduleLookup),
         raw: holdResult.raw,
       },
     })
@@ -951,6 +1009,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
         mode: holdResult.mode,
         skipped: holdResult.skipped,
         message: holdResult.message,
+        scheduleLookup: summarizeDharmawisataScheduleLookup(scheduleLookup),
       },
     })
 
@@ -972,6 +1031,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
       supplier_status: "confirmed",
       response_payload: {
         ...previousSupplierResponsePayload,
+        dharmawisataScheduleLookup: summarizeDharmawisataScheduleLookup(scheduleLookup),
         dharmawisataHold: holdResult.raw,
       },
       last_error: null,
@@ -1005,7 +1065,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
       lifecycle_status: "booking_hold_created",
       pnr_code: holdResult.bookingCodeAirline || flightDetail.pnr_code || null,
       supplier_confirmation_code: holdResult.referenceNo || holdResult.bookingCode || null,
-      fare_reference_id: holdResult.airlineAccessCode || airlineAccessCode || flightDetail.fare_reference_id || null,
+      fare_reference_id: holdResult.airlineAccessCode || resolvedAirlineAccessCode || flightDetail.fare_reference_id || null,
       fare_rechecked_at: now,
       booking_hold_expires_at: holdExpiresAt,
       supplier_raw_reference: holdResult.raw,
@@ -1032,6 +1092,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
       referenceNo: holdResult.referenceNo,
       bookingCodeAirline: holdResult.bookingCodeAirline,
       timeLimit: holdResult.timeLimit,
+      scheduleLookup: summarizeDharmawisataScheduleLookup(scheduleLookup),
     },
   })
 
@@ -1050,6 +1111,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
       referenceNo: holdResult.referenceNo,
       bookingCodeAirline: holdResult.bookingCodeAirline,
       timeLimit: holdResult.timeLimit,
+      scheduleLookup: summarizeDharmawisataScheduleLookup(scheduleLookup),
     },
   })
 
