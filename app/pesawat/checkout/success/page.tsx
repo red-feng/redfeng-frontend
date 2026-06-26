@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import BookingPaymentButton from "@/app/components/BookingPaymentButton"
 import FlightPaymentCountdown from "@/app/components/FlightPaymentCountdown"
 import SimplePublicLogoHeader from "@/app/components/SimplePublicLogoHeader"
 import { getCustomerFlightStatus } from "@/lib/flights/customerFlightStatus"
@@ -18,6 +19,7 @@ type BookingRow = {
   customer_email: string | null
   user_id: string | null
   total_amount: number | null
+  payment_status: string | null
   created_at: string | null
   expiry_time: string | null
 }
@@ -56,6 +58,25 @@ function formatDateTime(value: string | null) {
     hour: "2-digit",
     minute: "2-digit",
   })
+}
+
+function normalizeStatus(value: string | null | undefined) {
+  return String(value || "").trim().toLowerCase()
+}
+
+function isExpiredDateTime(value: string | null | undefined) {
+  if (!value) return false
+  const parsed = new Date(value)
+  return !Number.isNaN(parsed.getTime()) && parsed.getTime() <= Date.now()
+}
+
+function canOpenFlightPayment(detail: FlightDetailRow | null, booking: BookingRow) {
+  return (
+    normalizeStatus(detail?.lifecycle_status) === "booking_hold_created" &&
+    ["pending", "unpaid", ""].includes(normalizeStatus(booking.payment_status)) &&
+    !isExpiredDateTime(detail?.booking_hold_expires_at) &&
+    !isExpiredDateTime(booking.expiry_time)
+  )
 }
 
 function getSuccessCopy(detail: FlightDetailRow | null) {
@@ -163,7 +184,7 @@ export default async function FlightCheckoutSuccessPage({
   const adminSupabase = createAdminClient()
   const { data: booking } = await adminSupabase
     .from("bookings")
-    .select("id, booking_code, customer_name, customer_email, user_id, total_amount, created_at, expiry_time")
+    .select("id, booking_code, customer_name, customer_email, user_id, total_amount, payment_status, created_at, expiry_time")
     .eq("id", bookingId)
     .maybeSingle<BookingRow>()
 
@@ -179,6 +200,7 @@ export default async function FlightCheckoutSuccessPage({
 
   const copy = getSuccessCopy(flightDetail || null)
   const paymentGateCopy = getPaymentGateCopy(flightDetail || null, booking)
+  const paymentReady = canOpenFlightPayment(flightDetail || null, booking)
   const route = `${flightDetail?.origin_airport_code || "-"} -> ${flightDetail?.destination_airport_code || "-"}`
 
   return (
@@ -201,7 +223,7 @@ export default async function FlightCheckoutSuccessPage({
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em]">{paymentGateCopy.label}</p>
             <h2 className="mt-2 text-lg font-bold">{paymentGateCopy.title}</h2>
             <p className="mt-2 text-sm leading-7">{paymentGateCopy.body}</p>
-            {flightDetail?.lifecycle_status === "booking_hold_created" ? (
+            {paymentReady ? (
               <FlightPaymentCountdown deadline={booking.expiry_time} refreshOnExpire className="mt-4" />
             ) : null}
           </div>
@@ -241,9 +263,20 @@ export default async function FlightCheckoutSuccessPage({
           </div>
 
           <div className="mt-7 flex flex-wrap gap-3">
+            {paymentReady ? (
+              <BookingPaymentButton
+                bookingId={booking.id}
+                label="Bayar sekarang"
+                className="inline-flex items-center justify-center rounded-[16px] bg-[#ff4b00] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(255,75,0,0.2)] transition hover:bg-[#e64400]"
+              />
+            ) : null}
             <Link
               href={`/booking/${booking.id}`}
-              className="inline-flex items-center justify-center rounded-[16px] bg-[#ff4b00] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(255,75,0,0.2)] transition hover:bg-[#e64400]"
+              className={`inline-flex items-center justify-center rounded-[16px] px-5 py-3 text-sm font-bold transition ${
+                paymentReady
+                  ? "border border-orange-200 bg-white text-[#ff4b00] hover:bg-orange-50"
+                  : "bg-[#ff4b00] text-white shadow-[0_10px_24px_rgba(255,75,0,0.2)] hover:bg-[#e64400]"
+              }`}
             >
               Lihat status booking
             </Link>
