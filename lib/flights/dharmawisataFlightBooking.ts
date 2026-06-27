@@ -112,6 +112,20 @@ function normalizeDharmawisataTripType(value: string | null | undefined) {
   return String(value || "").toLowerCase() === "round_trip" ? "RoundTrip" : "OneWay"
 }
 
+function dateOnly(value: string | null | undefined) {
+  const normalized = normalizeText(value)
+  const direct = normalized.match(/^(\d{4}-\d{2}-\d{2})/)
+  if (direct) return direct[1] || ""
+
+  const parsed = new Date(normalized)
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10)
+}
+
+function dharmawisataCalendarDateTime(value: string | null | undefined, fallback = "") {
+  const date = dateOnly(value)
+  return date ? `${date}T00:00:00` : fallback
+}
+
 function passengerType(value: DharmawisataPassenger["type"]) {
   if (value === "Child") return 1
   if (value === "Infant") return 2
@@ -217,8 +231,10 @@ function buildBookingPayload(input: DharmawisataFlightBookingInput, accessToken:
     origin: input.originAirportCode || "",
     destination: input.destinationAirportCode || "",
     tripType: normalizeDharmawisataTripType(input.tripType),
-    departDate: input.departureAt || "",
-    returnDate: isRoundTrip ? input.returnAt || "" : "0001-01-01T00:00:00",
+    departDate: dharmawisataCalendarDateTime(input.departureAt),
+    returnDate: isRoundTrip
+      ? dharmawisataCalendarDateTime(input.returnAt)
+      : "0001-01-01T00:00:00",
     paxAdult: input.paxAdult,
     paxChild: input.paxChild || 0,
     paxInfant: input.paxInfant || 0,
