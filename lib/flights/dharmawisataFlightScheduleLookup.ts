@@ -66,6 +66,11 @@ function dateOnly(value: string | null | undefined) {
   return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10)
 }
 
+function lowFareDateTime(value: string | null | undefined, fallback = "") {
+  const date = dateOnly(value)
+  return date ? `${date}T00:00:00` : fallback
+}
+
 function minutesOfDay(value: string | null | undefined) {
   const normalized = String(value || "").trim()
   const embeddedTimeMatch = normalized.match(/(?:T|\s)(\d{1,2}):(\d{2})(?::\d{2})?/)
@@ -207,8 +212,10 @@ export async function findDharmawisataLowFareScheduleForBooking(
         tripType: normalizeTripType(input.tripType),
         origin: input.originAirportCode || "",
         destination: input.destinationAirportCode || "",
-        departDate: input.departureAt || "",
-        returnDate: normalizeTripType(input.tripType) === "RoundTrip" ? input.returnAt || "" : "0001-01-01T00:00:00",
+        departDate: lowFareDateTime(input.departureAt),
+        returnDate: normalizeTripType(input.tripType) === "RoundTrip"
+          ? lowFareDateTime(input.returnAt)
+          : "0001-01-01T00:00:00",
         paxAdult: input.paxAdult,
         paxChild: input.paxChild || 0,
         paxInfant: input.paxInfant || 0,
