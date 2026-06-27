@@ -657,6 +657,7 @@ export async function POST(req: Request) {
           detailSchedule: null,
           searchKey: null,
           airlineAccessCode: null,
+          scheduleAccessToken: null,
           flightClass: null,
           flightNumber: null,
           departureAt: null,
@@ -678,6 +679,7 @@ export async function POST(req: Request) {
     const bookingApiResult = shouldAutoBookDharmawisata
       ? await createDharmawisataFlightBooking({
           bookingId: booking.id,
+          accessToken: scheduleLookup?.ok ? scheduleLookup.scheduleAccessToken : null,
           airlineId: airlineCode,
           airlineCode,
           flightNumber: resolvedFlightNumber,

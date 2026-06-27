@@ -31,6 +31,7 @@ export type DharmawisataPassengerAddOn = {
 
 export type DharmawisataFlightBookingInput = {
   bookingId: string
+  accessToken?: string | null
   airlineId?: string | null
   airlineCode?: string | null
   flightNumber?: string | null
@@ -381,7 +382,7 @@ export async function createDharmawisataFlightBooking(
   }
 
   try {
-    const accessTokenOverride = getDharmawisataAccessTokenOverride()
+    const accessTokenOverride = normalizeText(input.accessToken) || getDharmawisataAccessTokenOverride()
     const auth = accessTokenOverride ? { accessToken: accessTokenOverride } : await dharmawisataLogin({ language: 1 })
     const accessToken = normalizeText(auth.accessToken)
 

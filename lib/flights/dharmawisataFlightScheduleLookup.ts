@@ -28,6 +28,7 @@ export type DharmawisataFlightScheduleLookupResult = {
   detailSchedule: string | null
   searchKey: string | null
   airlineAccessCode: string | null
+  scheduleAccessToken?: string | null
   flightClass: string | null
   flightNumber: string | null
   departureAt: string | null
@@ -142,6 +143,7 @@ function matchesSchedule(journey: unknown, input: DharmawisataFlightScheduleLook
 function mapJourney(
   journey: unknown,
   airlineAccessCode: string,
+  scheduleAccessToken: string,
 ): DharmawisataFlightScheduleLookupResult {
   const record = isRecord(journey) ? journey : {}
   const segment = firstRecord(record.segment)
@@ -155,6 +157,7 @@ function mapJourney(
     detailSchedule: journeyReference || null,
     searchKey: journeyReference || null,
     airlineAccessCode: airlineAccessCode || null,
+    scheduleAccessToken: scheduleAccessToken || null,
     flightClass: asString(availableDetail.flightClass) || null,
     flightNumber: asString(flightDetail.flightNumber) || null,
     departureAt: asString(record.jiDepartTime || flightDetail.fdDepartTime) || null,
@@ -239,7 +242,7 @@ export async function findDharmawisataLowFareScheduleForBooking(
     lastMessage = message || status || lastMessage
 
     const match = extractJourneys(payload).find((journey) => matchesSchedule(journey, input))
-    if (match) return mapJourney(match, nextAirlineAccessCode || airlineAccessCode)
+    if (match) return mapJourney(match, nextAirlineAccessCode || airlineAccessCode, accessToken)
 
     if (status === "SUCCESS" && totalAirline > 0 && airlineIndex >= totalAirline) break
     if (!nextAirlineAccessCode || totalAirline === 0) break

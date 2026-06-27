@@ -972,6 +972,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
       detailSchedule: null,
       searchKey: null,
       airlineAccessCode: null,
+      scheduleAccessToken: null,
       flightClass: null,
       flightNumber: null,
       departureAt: null,
@@ -990,6 +991,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
 
   const holdResult = await createDharmawisataFlightBooking({
     bookingId,
+    accessToken: scheduleLookup.ok ? scheduleLookup.scheduleAccessToken : null,
     airlineId: flightDetail.airline_code,
     airlineCode: flightDetail.airline_code,
     flightNumber: resolvedFlightNumber,
