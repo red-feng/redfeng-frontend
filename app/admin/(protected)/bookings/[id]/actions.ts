@@ -961,6 +961,8 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
       tripType: flightDetail.trip_type,
       departureAt: lookupDepartureAt,
       returnAt: flightDetail.return_at,
+      airlineAccessCode,
+      flightClass: storedSupplierFlightClass,
       paxAdult,
       paxChild,
       paxInfant: 0,

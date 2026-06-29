@@ -648,6 +648,8 @@ export async function POST(req: Request) {
           tripType: normalizeTripType(body.trip_type),
           departureAt,
           returnAt,
+          airlineAccessCode,
+          flightClass: supplierFlightClass || normalizeCabinClass(body.cabin),
           paxAdult: passengerMix.adults,
           paxChild: passengerMix.children,
           paxInfant: 0,
