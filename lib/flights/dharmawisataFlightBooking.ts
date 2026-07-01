@@ -6,6 +6,7 @@ import {
   getDharmawisataCredentials,
   isDharmawisataConfigured,
 } from "@/lib/dharmawisata/client"
+import type { DharmawisataFlightScheduleSegment } from "@/lib/flights/dharmawisataFlightScheduleLookup"
 
 type JsonRecord = Record<string, unknown>
 
@@ -45,6 +46,7 @@ export type DharmawisataFlightBookingInput = {
   detailSchedule?: string | null
   searchKey?: string | null
   airlineAccessCode?: string | null
+  scheduleSegments?: DharmawisataFlightScheduleSegment[] | null
   contactTitle?: string | null
   contactFirstName?: string | null
   contactLastName?: string | null
@@ -195,6 +197,29 @@ function buildSchedule(input: DharmawisataFlightBookingInput) {
   }
 }
 
+function buildScheduleFromSegment(segment: DharmawisataFlightScheduleSegment) {
+  return {
+    airlineCode: segment.airlineCode,
+    flightNumber: segment.flightNumber,
+    schOrigin: segment.originAirportCode,
+    schDestination: segment.destinationAirportCode,
+    detailSchedule: segment.detailSchedule,
+    schDepartTime: segment.departureAt,
+    schArrivalTime: segment.arrivalAt,
+    flightClass: segment.flightClass || "Economy",
+    garudaNumber: "",
+    garudaAvailability: "",
+  }
+}
+
+function buildSchedules(input: DharmawisataFlightBookingInput) {
+  const segments = Array.isArray(input.scheduleSegments)
+    ? input.scheduleSegments.filter((segment) => normalizeText(segment.flightNumber) && normalizeText(segment.detailSchedule))
+    : []
+
+  return segments.length > 0 ? segments.map(buildScheduleFromSegment) : [buildSchedule(input)]
+}
+
 function getMissingRequiredFields(input: DharmawisataFlightBookingInput) {
   const required: Array<[string, unknown]> = [
     ["airlineID", input.airlineId || input.airlineCode],
@@ -239,7 +264,7 @@ function buildBookingPayload(input: DharmawisataFlightBookingInput, accessToken:
     paxAdult: input.paxAdult,
     paxChild: input.paxChild || 0,
     paxInfant: input.paxInfant || 0,
-    schDeparts: [buildSchedule(input)],
+    schDeparts: buildSchedules(input),
     schReturns: [],
     contactFirstName: input.contactFirstName || "",
     contactLastName: input.contactLastName || "",
@@ -255,6 +280,127 @@ function buildBookingPayload(input: DharmawisataFlightBookingInput, accessToken:
     airlineAccessCode: input.airlineAccessCode || "",
     userID: credentials.userId,
     accessToken,
+  }
+}
+
+function buildFlightFlowBase(input: DharmawisataFlightBookingInput, accessToken: string) {
+  const credentials = getDharmawisataCredentials()
+  const isRoundTrip = normalizeDharmawisataTripType(input.tripType) === "RoundTrip"
+
+  return {
+    airlineID: input.airlineId || input.airlineCode || "",
+    origin: input.originAirportCode || "",
+    destination: input.destinationAirportCode || "",
+    tripType: normalizeDharmawisataTripType(input.tripType),
+    departDate: dharmawisataCalendarDateTime(input.departureAt),
+    returnDate: isRoundTrip
+      ? dharmawisataCalendarDateTime(input.returnAt)
+      : "0001-01-01T00:00:00",
+    paxAdult: input.paxAdult,
+    paxChild: input.paxChild || 0,
+    paxInfant: input.paxInfant || 0,
+    userID: credentials.userId,
+    accessToken,
+  }
+}
+
+function buildAddOnFlowPayload(input: DharmawisataFlightBookingInput, accessToken: string) {
+  return {
+    ...buildFlightFlowBase(input, accessToken),
+    schDepart: input.detailSchedule || "",
+    schReturn: "",
+    departureAirlineSegmentCode: null,
+    departureFareBasisCode: null,
+    returnAirlineSegmentCode: null,
+    returnFareBasisCode: null,
+    contactFirstName: input.contactFirstName || "",
+    contactLastName: input.contactLastName || "",
+    contactTitle: input.contactTitle || "MR",
+    contactCountryCodePhone: input.contactCountryCodePhone || "",
+    contactAreaCodePhone: input.contactAreaCodePhone || "",
+    contactRemainingPhoneNo: input.contactRemainingPhoneNo || "",
+    contactEmail: input.contactEmail || "",
+    paxDetails: buildPassengerPayload(input.passengers, input.contactEmail),
+    insurance: false,
+  }
+}
+
+function responseStatus(raw: JsonRecord) {
+  return normalizeText(raw.status).toUpperCase()
+}
+
+function responseStepSummary(endpoint: string, raw: JsonRecord) {
+  const status = normalizeText(raw.status) || "SUCCESS"
+  const message = normalizeText(raw.respMessage || raw.message) || status
+
+  return {
+    endpoint,
+    ok: !responseStatus(raw) || responseStatus(raw) === "SUCCESS",
+    status,
+    message,
+  }
+}
+
+async function runPreBookingStep(endpoint: string, path: string, body: JsonRecord) {
+  const response = await dharmawisataJsonFetch({
+    path,
+    method: "POST",
+    body,
+  })
+  const raw = asRecord(response) || { response }
+  return responseStepSummary(endpoint, raw)
+}
+
+async function runDharmawisataPreBookingFlow(input: DharmawisataFlightBookingInput, accessToken: string) {
+  const pricePath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_PRICE_PATH") || "/Airline/Price"
+  const baggageAndMealPath =
+    getDharmawisataConfiguredPath("DHARMAWISATA_H2H_BAGGAGE_AND_MEAL_PATH") || "/Airline/BaggageAndMeal"
+  const seatPath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_SEAT_PATH") || "/Airline/Seat"
+  const steps = []
+
+  const priceStep = await runPreBookingStep("Airline/Price", pricePath, {
+    ...buildFlightFlowBase(input, accessToken),
+    airlineAccessCode: input.airlineAccessCode || "",
+    journeyDepartReference: input.detailSchedule || "",
+    journeyReturnReference: "",
+  })
+  steps.push(priceStep)
+
+  if (!priceStep.ok) {
+    return {
+      ok: false,
+      message: `Price Dharmawisata gagal sebelum hold: ${priceStep.message}`,
+      steps,
+    }
+  }
+
+  const addOnPayload = buildAddOnFlowPayload(input, accessToken)
+  const baggageStep = await runPreBookingStep("Airline/BaggageAndMeal", baggageAndMealPath, addOnPayload)
+  steps.push(baggageStep)
+
+  if (!baggageStep.ok) {
+    return {
+      ok: false,
+      message: `Baggage/Meal Dharmawisata gagal sebelum hold: ${baggageStep.message}`,
+      steps,
+    }
+  }
+
+  const seatStep = await runPreBookingStep("Airline/Seat", seatPath, addOnPayload)
+  steps.push(seatStep)
+
+  if (!seatStep.ok) {
+    return {
+      ok: false,
+      message: `Seat Dharmawisata gagal sebelum hold: ${seatStep.message}`,
+      steps,
+    }
+  }
+
+  return {
+    ok: true,
+    message: "Pre-booking flow Dharmawisata berhasil.",
+    steps,
   }
 }
 
@@ -406,6 +552,27 @@ export async function createDharmawisataFlightBooking(
       }
     }
 
+    const preBookingFlow = await runDharmawisataPreBookingFlow(input, accessToken)
+
+    if (!preBookingFlow.ok) {
+      return {
+        ok: false,
+        skipped: false,
+        mode: "api",
+        message: preBookingFlow.message,
+        bookingCode: null,
+        bookingDate: null,
+        timeLimit: null,
+        referenceNo: null,
+        bookingCodeAirline: null,
+        airlineAccessCode: input.airlineAccessCode || null,
+        raw: {
+          bookingMode: "api",
+          preBookingFlow,
+        },
+      }
+    }
+
     const payload = buildBookingPayload(input, accessToken)
     const rawResponse = await dharmawisataJsonFetch({
       path: bookingPath,
@@ -445,6 +612,7 @@ export async function createDharmawisataFlightBooking(
       airlineAccessCode: pickString(raw, ["airlineAccessCode"]) || input.airlineAccessCode || null,
       raw: {
         bookingMode: "api",
+        preBookingFlow,
         request: summarizeBookingRequest(payload, input.passengers.length),
         response: rawWithDetail,
       },

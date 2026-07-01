@@ -162,6 +162,7 @@ function summarizeDharmawisataScheduleLookup(
     flightNumber: lookup.flightNumber,
     departureAt: lookup.departureAt,
     arrivalAt: lookup.arrivalAt,
+    segmentCount: lookup.segments.length,
   }
 }
 
@@ -979,6 +980,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
       flightNumber: null,
       departureAt: null,
       arrivalAt: null,
+      segments: [],
     }
   }
 
@@ -1007,6 +1009,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
     detailSchedule,
     searchKey,
     airlineAccessCode: resolvedAirlineAccessCode,
+    scheduleSegments: scheduleLookup.ok ? scheduleLookup.segments : null,
     contactTitle: "MR",
     contactFirstName: contactName.firstName,
     contactLastName: contactName.lastName,

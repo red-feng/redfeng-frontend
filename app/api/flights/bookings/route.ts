@@ -47,6 +47,7 @@ function summarizeScheduleLookup(result: DharmawisataFlightScheduleLookupResult 
     flightNumber: result.flightNumber,
     departureAt: result.departureAt,
     arrivalAt: result.arrivalAt,
+    segmentCount: result.segments.length,
   }
 }
 
@@ -664,6 +665,7 @@ export async function POST(req: Request) {
           flightNumber: null,
           departureAt: null,
           arrivalAt: null,
+          segments: [],
         }))
       : null
     const resolvedDetailSchedule = scheduleLookup?.ok && scheduleLookup.detailSchedule ? scheduleLookup.detailSchedule : detailSchedule
@@ -695,6 +697,7 @@ export async function POST(req: Request) {
           detailSchedule: resolvedDetailSchedule,
           searchKey: resolvedSearchKey,
           airlineAccessCode: resolvedAirlineAccessCode,
+          scheduleSegments: scheduleLookup?.ok ? scheduleLookup.segments : null,
           contactTitle,
           contactFirstName: contactNameParts.firstName,
           contactLastName: contactNameParts.lastName,

@@ -25,6 +25,17 @@ export type DharmawisataFlightScheduleLookupInput = {
   paxInfant?: number
 }
 
+export type DharmawisataFlightScheduleSegment = {
+  airlineCode: string
+  flightNumber: string
+  originAirportCode: string
+  destinationAirportCode: string
+  departureAt: string
+  arrivalAt: string
+  flightClass: string
+  detailSchedule: string
+}
+
 export type DharmawisataFlightScheduleLookupResult = {
   ok: boolean
   message: string
@@ -36,6 +47,7 @@ export type DharmawisataFlightScheduleLookupResult = {
   flightNumber: string | null
   departureAt: string | null
   arrivalAt: string | null
+  segments: DharmawisataFlightScheduleSegment[]
 }
 
 function isRecord(value: unknown): value is JsonRecord {
@@ -166,6 +178,33 @@ function mapJourney(
   const flightDetail = firstRecord(segment.flightDetail)
   const availableDetail = matchingRecord(segment.availableDetail, expectedFlightClass)
   const journeyReference = asString(record.journeyReference)
+  const journeyFlightClass = asString(availableDetail.flightClass)
+  const rawSegments = Array.isArray(record.segment) ? record.segment : []
+  const segments = rawSegments.flatMap((rawSegment) => {
+    const source = isRecord(rawSegment) ? rawSegment : {}
+    const sourceAvailableDetail = matchingRecord(source.availableDetail, expectedFlightClass)
+    const sourceFlightClass = asString(sourceAvailableDetail.flightClass) || journeyFlightClass
+    const rawFlightDetails = Array.isArray(source.flightDetail) ? source.flightDetail : []
+
+    return rawFlightDetails
+      .map((rawFlightDetail) => {
+        const detail = isRecord(rawFlightDetail) ? rawFlightDetail : {}
+        const segmentFlightNumber = asString(detail.flightNumber)
+        if (!segmentFlightNumber) return null
+
+        return {
+          airlineCode: asString(detail.airlineCode || record.airlineID),
+          flightNumber: segmentFlightNumber,
+          originAirportCode: asString(detail.fdOrigin || record.jiOrigin),
+          destinationAirportCode: asString(detail.fdDestination || record.jiDestination),
+          departureAt: asString(detail.fdDepartTime || record.jiDepartTime),
+          arrivalAt: asString(detail.fdArrivalTime || record.jiArrivalTime),
+          flightClass: sourceFlightClass,
+          detailSchedule: journeyReference,
+        }
+      })
+      .filter((item): item is DharmawisataFlightScheduleSegment => Boolean(item))
+  })
 
   return {
     ok: Boolean(journeyReference),
@@ -174,10 +213,11 @@ function mapJourney(
     searchKey: journeyReference || null,
     airlineAccessCode: airlineAccessCode || null,
     scheduleAccessToken: scheduleAccessToken || null,
-    flightClass: asString(availableDetail.flightClass) || null,
+    flightClass: journeyFlightClass || null,
     flightNumber: asString(flightDetail.flightNumber) || null,
     departureAt: asString(record.jiDepartTime || flightDetail.fdDepartTime) || null,
     arrivalAt: asString(record.jiArrivalTime || flightDetail.fdArrivalTime) || null,
+    segments,
   }
 }
 
@@ -198,6 +238,7 @@ export async function findDharmawisataLowFareScheduleForBooking(
       flightNumber: null,
       departureAt: null,
       arrivalAt: null,
+      segments: [],
     }
   }
 
@@ -217,6 +258,7 @@ export async function findDharmawisataLowFareScheduleForBooking(
       flightNumber: null,
       departureAt: null,
       arrivalAt: null,
+      segments: [],
     }
   }
 
@@ -272,6 +314,7 @@ export async function findDharmawisataLowFareScheduleForBooking(
       flightNumber: null,
       departureAt: null,
       arrivalAt: null,
+      segments: [],
     }
   }
 
@@ -338,5 +381,6 @@ export async function findDharmawisataLowFareScheduleForBooking(
     flightNumber: null,
     departureAt: null,
     arrivalAt: null,
+    segments: [],
   }
 }
