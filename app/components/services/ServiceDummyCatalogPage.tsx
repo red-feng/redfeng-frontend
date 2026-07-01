@@ -6,7 +6,12 @@ import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
 import FlightCatalogInteractiveClient from "@/app/components/services/FlightCatalogInteractiveClient"
-import { isFlightTripMode, normalizeFlightLocationLabel, type FlightTripMode } from "@/app/components/flights/flightSearchParams"
+import {
+  getDefaultFlightSearchDates,
+  isFlightTripMode,
+  normalizeFlightLocationLabel,
+  type FlightTripMode,
+} from "@/app/components/flights/flightSearchParams"
 import {
   getServiceAvailabilityLabel,
   getServiceAvailabilityTone,
@@ -261,14 +266,15 @@ export default async function ServiceDummyCatalogPage({
   const keyword = slug === "hotel" ? hotelDestination : firstQueryValue(resolvedSearchParams.q)
   const selectedRegion = firstQueryValue(resolvedSearchParams.region)
   const selectedGroup = firstQueryValue(resolvedSearchParams.group)
+  const defaultFlightDates = getDefaultFlightSearchDates()
   const flightTrip = firstQueryValue(resolvedSearchParams.trip) || "one_way"
   const rawFlightFrom = firstQueryValue(resolvedSearchParams.from)
   const rawFlightTo = firstQueryValue(resolvedSearchParams.to)
   const flightFrom = normalizeFlightLocationLabel(rawFlightFrom || "SUB Surabaya")
   const flightVia = normalizeFlightLocationLabel(firstQueryValue(resolvedSearchParams.via) || "Singapore")
   const flightTo = normalizeFlightLocationLabel(rawFlightTo || "CGK Jakarta")
-  const flightDepart = firstQueryValue(resolvedSearchParams.depart) || "2026-06-24"
-  const flightReturn = firstQueryValue(resolvedSearchParams.return) || "2026-06-27"
+  const flightDepart = firstQueryValue(resolvedSearchParams.depart) || defaultFlightDates.depart
+  const flightReturn = firstQueryValue(resolvedSearchParams.return) || defaultFlightDates.returnDate
   const flightPassengers = firstQueryValue(resolvedSearchParams.passengers) || "1 Dewasa"
   const flightCabin = firstQueryValue(resolvedSearchParams.cabin) || "Economy"
   const flightSort = firstQueryValue(resolvedSearchParams.sort) || "best"

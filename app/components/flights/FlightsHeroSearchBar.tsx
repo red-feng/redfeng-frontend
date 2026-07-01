@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import type { Locale } from "@/lib/i18n"
 import {
   CalendarIcon,
@@ -10,6 +10,11 @@ import {
   SearchIcon,
   UsersIcon,
 } from "@/app/components/flights/FlightSearchHomepageBaseline"
+import {
+  formatFlightDateDisplay,
+  formatFlightWeekdayDisplay,
+  getDefaultFlightSearchDates,
+} from "@/app/components/flights/flightSearchParams"
 import { buildSupplierAirportSearchValue } from "@/lib/flights/dharmawisataSupplierCatalog"
 
 export default function FlightsHeroSearchBar({
@@ -20,6 +25,11 @@ export default function FlightsHeroSearchBar({
   buttonLabel: string
 }) {
   const [tripType, setTripType] = useState<"round_trip" | "one_way" | "multi_city">("one_way")
+  const defaultDates = useMemo(() => getDefaultFlightSearchDates(), [])
+  const departValue = formatFlightDateDisplay(defaultDates.depart, locale)
+  const departSub = formatFlightWeekdayDisplay(defaultDates.depart, locale)
+  const returnValue = formatFlightDateDisplay(defaultDates.returnDate, locale)
+  const returnSub = formatFlightWeekdayDisplay(defaultDates.returnDate, locale)
   const copy = {
     id: {
       roundTrip: "Pulang Pergi",
@@ -97,8 +107,8 @@ export default function FlightsHeroSearchBar({
       <input type="hidden" name="from" value={copy.fromValue} />
       <input type="hidden" name="to" value={copy.toValue} />
       <input type="hidden" name="trip" value={tripType} />
-      <input type="hidden" name="depart" value="2026-06-24" />
-      <input type="hidden" name="return" value={tripType === "one_way" ? "" : "2026-06-27"} />
+      <input type="hidden" name="depart" value={defaultDates.depart} />
+      <input type="hidden" name="return" value={tripType === "one_way" ? "" : defaultDates.returnDate} />
       <input type="hidden" name="passengers" value={copy.passengersValue.split(",")[0] || copy.passengersValue} />
       <input type="hidden" name="cabin" value={locale === "en" ? "Economy" : locale === "zh" ? "经济舱" : "Economy"} />
       <input type="hidden" name="group" value={tripGroupValue} />
@@ -122,12 +132,12 @@ export default function FlightsHeroSearchBar({
       <div className="grid gap-2.5 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,0.92fr)_minmax(0,0.92fr)_minmax(0,1fr)_56px]">
         <FlightSearchStaticField icon={<PlaneIcon />} label={copy.from} value={copy.fromValue} sublabel={copy.fromSub} />
         <FlightSearchStaticField icon={<PlaneIcon />} label={copy.to} value={copy.toValue} sublabel={copy.toSub} withLeftBorder />
-        <FlightSearchStaticField icon={<CalendarIcon />} label={copy.depart} value={copy.departValue} sublabel={copy.departSub} withLeftBorder />
+        <FlightSearchStaticField icon={<CalendarIcon />} label={copy.depart} value={departValue} sublabel={departSub} withLeftBorder />
         <FlightSearchStaticField
           icon={<CalendarIcon />}
           label={tripType === "one_way" ? copy.depart : copy.return}
-          value={tripType === "one_way" ? copy.departValue : copy.returnValue}
-          sublabel={tripType === "one_way" ? copy.departSub : copy.returnSub}
+          value={tripType === "one_way" ? departValue : returnValue}
+          sublabel={tripType === "one_way" ? departSub : returnSub}
           withLeftBorder
         />
         <FlightSearchStaticField icon={<UsersIcon />} label={copy.passengers} value={copy.passengersValue} sublabel={copy.passengersSub} withLeftBorder />

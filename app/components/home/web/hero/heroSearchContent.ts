@@ -1,5 +1,10 @@
 import type { HeroTabKey } from "@/app/components/home/shared/homeContent"
 import type { HeroSearchProviderKey } from "@/app/components/home/web/hero/heroSearchProviders"
+import {
+  formatFlightDateDisplay,
+  formatFlightWeekdayDisplay,
+  getDefaultFlightSearchDates,
+} from "@/app/components/flights/flightSearchParams"
 
 const serviceHref = {
   flight: "/pesawat",
@@ -10,6 +15,12 @@ const serviceHref = {
   cruise: "/kapal-pesiar/catalog",
   activity: "/aktivitas/catalog",
 } as const
+
+const defaultFlightDates = getDefaultFlightSearchDates()
+const defaultFlightDepartValue = formatFlightDateDisplay(defaultFlightDates.depart, "id")
+const defaultFlightDepartSub = formatFlightWeekdayDisplay(defaultFlightDates.depart, "id")
+const defaultFlightReturnValue = formatFlightDateDisplay(defaultFlightDates.returnDate, "id")
+const defaultFlightReturnSub = formatFlightWeekdayDisplay(defaultFlightDates.returnDate, "id")
 
 export type HeroSearchFieldData = {
   label: string
@@ -81,7 +92,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         desktopFields: [
           { label: "Dari", value: "CGK   Jakarta", sublabel: "Soekarno Hatta" },
           { label: "Ke", value: "SUB   Surabaya", sublabel: "Juanda" },
-          { label: "Tanggal Pergi", value: "24 Juni 2026", sublabel: "Rabu" },
+          { label: "Tanggal Pergi", value: defaultFlightDepartValue, sublabel: defaultFlightDepartSub },
           { label: "Penumpang", value: "1 Dewasa", sublabel: "Total penumpang", withChevron: true, passengerState: { adults: 1, children: 0, infants: 0, cabin: "Ekonomi" }, cabinOptions: ["Ekonomi", "Premium Economy", "Business", "First Class"] },
           { label: "Kelas Kabin", value: "Ekonomi", sublabel: "Pilihan kabin", withChevron: true },
         ],
@@ -89,7 +100,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         mobileFields: [
           { label: "Dari", value: "Jakarta (CGK)", sublabel: "Soekarno Hatta", withSwap: true },
           { label: "Ke", value: "Surabaya (SUB)", sublabel: "Juanda" },
-          { label: "Berangkat", value: "24 Juni 2026", sublabel: "Rabu" },
+          { label: "Berangkat", value: defaultFlightDepartValue, sublabel: defaultFlightDepartSub },
           { label: "Penumpang", value: "1 Dewasa", sublabel: "Total penumpang", withChevron: true, passengerState: { adults: 1, children: 0, infants: 0, cabin: "Ekonomi" }, cabinOptions: ["Ekonomi", "Premium Economy", "Business", "First Class"] },
           { label: "Kelas Kabin", value: "Ekonomi", sublabel: "Pilihan kabin", withChevron: true },
         ],
@@ -102,8 +113,8 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         desktopFields: [
           { label: "Dari", value: "CGK   Jakarta", sublabel: "Soekarno Hatta" },
           { label: "Ke", value: "SUB   Surabaya", sublabel: "Juanda" },
-          { label: "Berangkat", value: "24 Juni 2026", sublabel: "Rabu" },
-          { label: "Pulang", value: "26 Juni 2026", sublabel: "Jumat" },
+          { label: "Berangkat", value: defaultFlightDepartValue, sublabel: defaultFlightDepartSub },
+          { label: "Pulang", value: defaultFlightReturnValue, sublabel: defaultFlightReturnSub },
           { label: "Penumpang", value: "1 Dewasa", sublabel: "Total penumpang", withChevron: true, passengerState: { adults: 1, children: 0, infants: 0, cabin: "Ekonomi" }, cabinOptions: ["Ekonomi", "Premium Economy", "Business", "First Class"] },
           { label: "Kelas Kabin", value: "Ekonomi", sublabel: "Pilihan kabin", withChevron: true },
         ],
@@ -111,8 +122,8 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         mobileFields: [
           { label: "Dari", value: "Jakarta (CGK)", sublabel: "Soekarno Hatta", withSwap: true },
           { label: "Ke", value: "Surabaya (SUB)", sublabel: "Juanda" },
-          { label: "Berangkat", value: "24 Juni 2026", sublabel: "Rabu" },
-          { label: "Pulang", value: "26 Juni 2026", sublabel: "Jumat" },
+          { label: "Berangkat", value: defaultFlightDepartValue, sublabel: defaultFlightDepartSub },
+          { label: "Pulang", value: defaultFlightReturnValue, sublabel: defaultFlightReturnSub },
           { label: "Penumpang", value: "1 Dewasa", sublabel: "Total penumpang", withChevron: true, passengerState: { adults: 1, children: 0, infants: 0, cabin: "Ekonomi" }, cabinOptions: ["Ekonomi", "Premium Economy", "Business", "First Class"] },
           { label: "Kelas Kabin", value: "Ekonomi", sublabel: "Pilihan kabin", withChevron: true },
         ],
@@ -125,14 +136,14 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
           { label: "Kota Asal", value: "Jakarta", sublabel: "CGK" },
           { label: "Transit", value: "Singapore", sublabel: "SIN" },
           { label: "Kota Tujuan", value: "Tokyo", sublabel: "HND" },
-          { label: "Berangkat", value: "4 Juni 2026", sublabel: "Kamis" },
+          { label: "Berangkat", value: defaultFlightDepartValue, sublabel: defaultFlightDepartSub },
           { label: "Penumpang", value: "2 Dewasa", sublabel: "Total penumpang", withChevron: true, passengerState: { adults: 2, children: 0, infants: 0, cabin: "Ekonomi" }, cabinOptions: ["Ekonomi", "Premium Economy", "Business", "First Class"] },
           { label: "Kelas Kabin", value: "Ekonomi", sublabel: "Pilihan kabin", withChevron: true },
         ],
         mobilePrimaryCount: 1,
         mobileFields: [
           { label: "Rute", value: "Jakarta - Singapore - Tokyo", sublabel: "3 kota" },
-          { label: "Berangkat", value: "4 Juni 2026", sublabel: "Kamis" },
+          { label: "Berangkat", value: defaultFlightDepartValue, sublabel: defaultFlightDepartSub },
           { label: "Penumpang", value: "2 Dewasa", sublabel: "Total penumpang", withChevron: true, passengerState: { adults: 2, children: 0, infants: 0, cabin: "Ekonomi" }, cabinOptions: ["Ekonomi", "Premium Economy", "Business", "First Class"] },
           { label: "Kelas Kabin", value: "Ekonomi", sublabel: "Pilihan kabin", withChevron: true },
         ],
