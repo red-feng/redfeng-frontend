@@ -14,6 +14,13 @@ import {
   getDharmawisataConfiguredPath,
   isDharmawisataConfigured,
 } from "@/lib/dharmawisata/client"
+import { createAdminClient } from "@/lib/supabase/admin"
+import {
+  calculateFlightFareForCustomer,
+  defaultFinanceSettings,
+  getFinanceSettings,
+  type FinanceSettings,
+} from "@/lib/finance/settings"
 
 type UnknownRecord = Record<string, unknown>
 
@@ -145,6 +152,7 @@ function mapJourneyToOffer(
   journey: unknown,
   index: number,
   params: AffiliateFlightSearchParams,
+  financeSettings: FinanceSettings,
 ): AffiliateFlightOffer | null {
   if (!isRecord(journey)) return null
 
@@ -173,7 +181,8 @@ function mapJourneyToOffer(
   const flightDetail = Array.isArray(primarySegment.flightDetail) && primarySegment.flightDetail.length > 0 && isRecord(primarySegment.flightDetail[0])
     ? primarySegment.flightDetail[0]
     : {}
-  const totalPrice = asNumber(journey.sumPrice ?? availableDetail.price)
+  const supplierFareAmount = asNumber(journey.sumPrice ?? availableDetail.price)
+  const flightPricing = calculateFlightFareForCustomer(supplierFareAmount, financeSettings)
   const airlineId = asString(journey.airlineID)
   const airlineCode = asString(flightDetail.airlineCode, airlineId)
   const flightNumber = asString(flightDetail.flightNumber)
@@ -206,8 +215,8 @@ function mapJourneyToOffer(
     maxPassengers: Math.max(1, params.passengers.adults + params.passengers.children + params.passengers.infants),
     price: {
       currency: "IDR",
-      total: totalPrice,
-      display: `IDR ${new Intl.NumberFormat("id-ID").format(totalPrice)}`,
+      total: flightPricing.customerFareAmount,
+      display: `IDR ${new Intl.NumberFormat("id-ID").format(flightPricing.customerFareAmount)}`,
     },
     policy: {
       refundable: false,
@@ -227,11 +236,19 @@ function mapJourneyToOffer(
       searchKey: journeyReference,
       detailSchedule: journeyReference,
       flightClass,
+      supplierFareAmount: flightPricing.supplierFareAmount,
+      redfengMarkupAmount: flightPricing.markupAmount,
+      customerFareAmount: flightPricing.customerFareAmount,
     },
   }
 }
 
-function mapOffer(offer: unknown, index: number, params: AffiliateFlightSearchParams): AffiliateFlightOffer | null {
+function mapOffer(
+  offer: unknown,
+  index: number,
+  params: AffiliateFlightSearchParams,
+  financeSettings: FinanceSettings,
+): AffiliateFlightOffer | null {
   if (!isRecord(offer)) return null
 
   const originCode = asString(offer.originCode ?? offer.origin, params.originCode)
@@ -248,16 +265,14 @@ function mapOffer(offer: unknown, index: number, params: AffiliateFlightSearchPa
     marketingAirline: airlineName,
   }]
 
-  const totalPrice = asNumber(
+  const supplierFareAmount = asNumber(
     offer.totalPrice ??
       offer.priceTotal ??
       (isRecord(offer.price) ? offer.price.total ?? offer.price.amount : offer.price),
   )
+  const flightPricing = calculateFlightFareForCustomer(supplierFareAmount, financeSettings)
   const currency = isRecord(offer.price) ? asString(offer.price.currency, "IDR") : asString(offer.currency, "IDR")
-  const displayPrice =
-    (isRecord(offer.price) && asString(offer.price.display)) ||
-    asString(offer.displayPrice) ||
-    `${currency} ${new Intl.NumberFormat("id-ID").format(totalPrice)}`
+  const displayPrice = `${currency} ${new Intl.NumberFormat("id-ID").format(flightPricing.customerFareAmount)}`
 
   return {
     offerId: asString(offer.offerId ?? offer.id, `dharmawisata-offer-${index + 1}`),
@@ -282,7 +297,7 @@ function mapOffer(offer: unknown, index: number, params: AffiliateFlightSearchPa
     maxPassengers: asNumber(offer.maxPassengers, Math.max(1, params.passengers.adults + params.passengers.children + params.passengers.infants)),
     price: {
       currency,
-      total: totalPrice,
+      total: flightPricing.customerFareAmount,
       display: displayPrice,
     },
     policy: {
@@ -306,6 +321,9 @@ function mapOffer(offer: unknown, index: number, params: AffiliateFlightSearchPa
       searchKey: asString(offer.searchKey ?? offer.journeyReference),
       detailSchedule: asString(offer.detailSchedule ?? offer.flightNumber ?? segments[0]?.flightNumber),
       flightClass: asString(offer.flightClass),
+      supplierFareAmount: flightPricing.supplierFareAmount,
+      redfengMarkupAmount: flightPricing.markupAmount,
+      customerFareAmount: flightPricing.customerFareAmount,
     },
   }
 }
@@ -363,6 +381,16 @@ function logDharmawisataEvent(
   }
 
   console.info(payload)
+}
+
+async function resolveFinanceSettingsForFlightPricing() {
+  try {
+    return await getFinanceSettings(
+      createAdminClient() as unknown as Parameters<typeof getFinanceSettings>[0],
+    )
+  } catch {
+    return defaultFinanceSettings
+  }
 }
 
 export class DharmawisataAffiliateFlightProvider implements AffiliateFlightProvider {
@@ -489,6 +517,7 @@ export class DharmawisataAffiliateFlightProvider implements AffiliateFlightProvi
     try {
       const credentials = getDharmawisataCredentials()
       const accessToken = await this.resolveAccessToken()
+      const financeSettings = await resolveFinanceSettingsForFlightPricing()
       const { journeys, fallbackFailureMessage } = await this.collectLowFareJourneys(
         params,
         credentials.userId,
@@ -497,8 +526,8 @@ export class DharmawisataAffiliateFlightProvider implements AffiliateFlightProvi
       const offers = journeys
         .map((offer, index) =>
           isRecord(offer) && ("jiOrigin" in offer || "journeyReference" in offer)
-            ? mapJourneyToOffer(offer, index, params)
-            : mapOffer(offer, index, params),
+            ? mapJourneyToOffer(offer, index, params, financeSettings)
+            : mapOffer(offer, index, params, financeSettings),
         )
         .filter((offer): offer is AffiliateFlightOffer => Boolean(offer))
 

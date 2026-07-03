@@ -121,6 +121,8 @@ function buildFlightCheckoutHref(item: FlightItem, state: FlightFilterState, dat
   const searchKey = supplierMeta?.searchKey || supplierMeta?.journeyReference || ""
   const detailSchedule = supplierMeta?.detailSchedule || flightNumber
   const supplierFlightClass = supplierMeta?.flightClass || ""
+  const supplierFareAmount = Math.max(Math.round(Number(supplierMeta?.supplierFareAmount || 0)), 0)
+  const redfengMarkupAmount = Math.max(Math.round(Number(supplierMeta?.redfengMarkupAmount || 0)), 0)
 
   params.set("offer_id", item.id)
   params.set("title", item.title)
@@ -145,6 +147,8 @@ function buildFlightCheckoutHref(item: FlightItem, state: FlightFilterState, dat
   params.set("search_key", searchKey)
   params.set("detail_schedule", detailSchedule)
   params.set("supplier_flight_class", supplierFlightClass)
+  if (supplierFareAmount > 0) params.set("supplier_price", String(supplierFareAmount))
+  if (redfengMarkupAmount > 0) params.set("redfeng_markup_amount", String(redfengMarkupAmount))
   params.set("source", dataSource || "catalog")
 
   return `/pesawat/checkout?${params.toString()}`

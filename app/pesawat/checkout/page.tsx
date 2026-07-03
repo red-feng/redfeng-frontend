@@ -39,6 +39,8 @@ export default async function FlightCheckoutPage({
     tripType: firstParam(params, "trip_type") || "one_way",
     passengers: firstParam(params, "passengers") || "1",
     price: numberParam(params, "price"),
+    supplierPrice: numberParam(params, "supplier_price"),
+    redfengMarkupAmount: numberParam(params, "redfeng_markup_amount"),
     fareReferenceId: firstParam(params, "fare_reference_id"),
     airlineAccessCode: firstParam(params, "airline_access_code"),
     searchKey: firstParam(params, "search_key"),

@@ -44,6 +44,11 @@ export default async function FinanceSettingsPage({
   const settings = await getFinanceSettings(
     adminSupabase as unknown as Parameters<typeof getFinanceSettings>[0],
   )
+  const flightPricing = settings.flightPricing || {
+    markupFlatAmount: 20000,
+    markupPercent: 0,
+    minimumMarginAmount: 15000,
+  }
   const bankFeePreview = merchantTransferBanks.slice(1, 5).map((bank) => ({
     label: bank.label,
     value: settings.merchantTransferFeeRules[bank.key] ?? settings.merchantTransferFee,
@@ -155,6 +160,50 @@ export default async function FinanceSettingsPage({
                 className="w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
               />
             </div>
+            <div className="rounded-[20px] border border-[#f3dbc3] bg-[#fffaf4] p-4 sm:rounded-[24px] sm:p-5">
+              <p className="text-sm font-semibold text-slate-900">Aturan profit pesawat</p>
+              <p className="mt-1 text-xs leading-6 text-slate-500">
+                Harga katalog pesawat memakai harga supplier ditambah markup ini. Customer hanya melihat harga final Red Feng.
+              </p>
+              <div className="mt-4 grid gap-4 md:grid-cols-3">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Markup flat per pax (Rp)</label>
+                  <input
+                    name="flight_markup_flat_amount"
+                    type="number"
+                    min="0"
+                    step="1"
+                    defaultValue={flightPricing.markupFlatAmount}
+                    disabled={!canEditSettings}
+                    className="w-full rounded-[20px] border border-[#e6d8c2] bg-white px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Markup tambahan (%)</label>
+                  <input
+                    name="flight_markup_percent"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    defaultValue={flightPricing.markupPercent}
+                    disabled={!canEditSettings}
+                    className="w-full rounded-[20px] border border-[#e6d8c2] bg-white px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Margin minimum per pax (Rp)</label>
+                  <input
+                    name="flight_minimum_margin_amount"
+                    type="number"
+                    min="0"
+                    step="1"
+                    defaultValue={flightPricing.minimumMarginAmount}
+                    disabled={!canEditSettings}
+                    className="w-full rounded-[20px] border border-[#e6d8c2] bg-white px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+              </div>
+            </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Pajak customer (%)</label>
               <input
@@ -213,6 +262,9 @@ export default async function FinanceSettingsPage({
                 <p>Admin fee customer bank transfer: {settings.customerAdminFeeRules.bank_transfer}%</p>
                 <p>Admin fee customer QRIS: {settings.customerAdminFeeRules.qris}%</p>
                 <p>Admin fee customer kartu kredit: {settings.customerAdminFeeRules.credit_card}%</p>
+                <p>Markup pesawat flat: Rp {flightPricing.markupFlatAmount.toLocaleString("id-ID")} / pax</p>
+                <p>Markup pesawat tambahan: {flightPricing.markupPercent}%</p>
+                <p>Margin minimum pesawat: Rp {flightPricing.minimumMarginAmount.toLocaleString("id-ID")} / pax</p>
                 <p>Pajak customer: {settings.customerTaxPercent}%</p>
                 <p>Biaya transfer merchant default: Rp {settings.merchantTransferFee.toLocaleString("id-ID")}</p>
                 <p>Transfer bank BCA: Rp {(settings.merchantTransferFeeRules.bca ?? settings.merchantTransferFee).toLocaleString("id-ID")}</p>

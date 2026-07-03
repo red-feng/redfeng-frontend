@@ -369,6 +369,8 @@ export async function POST(req: Request) {
     const passengerMix = parsePassengerMix(body.passengers)
     const passengerCount = passengerMix.adults + passengerMix.children
     const fareAmount = asMoney(body.price)
+    const supplierFareAmountFromCatalog = asMoney(body.supplier_price)
+    const redfengMarkupAmountFromCatalog = asMoney(body.redfeng_markup_amount)
     const passengerDetails = parsePassengerDetails(body.passenger_details, passengerMix.adults)
     const seatAddOns = parseSeatAddOns(body.selected_seats, passengerDetails, originAirportCode, destinationAirportCode)
     const selectedSeatDetails = Object.entries(seatAddOns).flatMap(([passengerIndex, addOns]) =>
@@ -445,6 +447,14 @@ export async function POST(req: Request) {
 
     const settings = await getFinanceSettings(supabase as unknown as Parameters<typeof getFinanceSettings>[0])
     const subtotalAmount = fareAmount * passengerCount
+    const supplierFareAmount =
+      supplierFareAmountFromCatalog > 0
+        ? supplierFareAmountFromCatalog
+        : redfengMarkupAmountFromCatalog > 0
+          ? Math.max(fareAmount - redfengMarkupAmountFromCatalog, 0)
+          : fareAmount
+    const supplierSubtotalAmount = Math.max(Math.round(supplierFareAmount * passengerCount), 0)
+    const recordedSpreadAmount = Math.max(Math.round(subtotalAmount - supplierSubtotalAmount), 0)
     const priceBreakdown = calculateBookingAmounts(subtotalAmount, "bank_transfer", settings)
     const bookingCode = generateBookingCode()
     const expiry = new Date()
@@ -472,6 +482,11 @@ export async function POST(req: Request) {
         subtotal_amount: priceBreakdown.subtotalAmount,
         customer_admin_fee_amount: priceBreakdown.customerAdminFeeAmount,
         customer_tax_amount: priceBreakdown.customerTaxAmount,
+        redfeng_profit_source: "non_package_spread",
+        supplier_net_cost_amount: supplierSubtotalAmount,
+        redfeng_spread_amount: recordedSpreadAmount,
+        redfeng_recorded_profit_amount: recordedSpreadAmount,
+        profit_recorded_at: new Date().toISOString(),
         customer_admin_fee_percent: priceBreakdown.customerAdminFeePercent,
         customer_tax_percent: priceBreakdown.customerTaxPercent,
         total_amount: priceBreakdown.totalAmount,
@@ -509,7 +524,10 @@ export async function POST(req: Request) {
       searchKey: searchKey || null,
       detailSchedule: detailSchedule || null,
       supplierFlightClass: supplierFlightClass || null,
-      supplierCostAmount: subtotalAmount,
+      supplierFareAmount,
+      customerFareAmount: fareAmount,
+      redfengMarkupAmount: recordedSpreadAmount,
+      supplierCostAmount: supplierSubtotalAmount,
       supplierCostCurrency: "IDR",
       passengerManifest: passengerManifest || null,
       passengerDetails: passengerDetails.map((passenger) => ({

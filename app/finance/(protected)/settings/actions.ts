@@ -47,6 +47,9 @@ export async function saveFinanceSettings(formData: FormData) {
   const creditCardFeePercent = Number(formData.get("customer_admin_fee_credit_card_percent") || 0)
   const customerTaxPercent = Number(formData.get("customer_tax_percent") || 0)
   const merchantTransferFee = Number(formData.get("merchant_transfer_fee") || 0)
+  const flightMarkupFlatAmount = Number(formData.get("flight_markup_flat_amount") || 0)
+  const flightMarkupPercent = Number(formData.get("flight_markup_percent") || 0)
+  const flightMinimumMarginAmount = Number(formData.get("flight_minimum_margin_amount") || 0)
   const merchantTransferFeeRules = Object.fromEntries(
     merchantTransferBanks.map((bankKey) => [
       bankKey,
@@ -57,6 +60,9 @@ export async function saveFinanceSettings(formData: FormData) {
     bank_transfer: bankTransferFeePercent,
     qris: qrisFeePercent,
     credit_card: creditCardFeePercent,
+    flight_markup_flat_amount: Math.max(Math.round(flightMarkupFlatAmount), 0),
+    flight_markup_percent: Math.max(flightMarkupPercent, 0),
+    flight_minimum_margin_amount: Math.max(Math.round(flightMinimumMarginAmount), 0),
   }
 
   const adminSupabase = createAdminClient()

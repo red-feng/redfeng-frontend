@@ -25,10 +25,23 @@ export type FinanceSettings = {
   merchantTransferFee: number
   customerAdminFeeRules: Record<FinancePaymentMethod, number>
   merchantTransferFeeRules: Record<string, number>
+  flightPricing?: FlightPricingSettings
 }
 
 export type FinancePaymentMethod = "bank_transfer" | "qris" | "credit_card"
 export const activeCustomerPaymentMethods: FinancePaymentMethod[] = ["bank_transfer"]
+
+export type FlightPricingSettings = {
+  markupFlatAmount: number
+  markupPercent: number
+  minimumMarginAmount: number
+}
+
+export type FlightPriceBreakdown = {
+  supplierFareAmount: number
+  markupAmount: number
+  customerFareAmount: number
+}
 
 export type MerchantPayoutBreakdown = {
   grossAmount: number
@@ -62,6 +75,11 @@ export const defaultFinanceSettings: FinanceSettings = {
     bank_transfer: 3,
     qris: 1.5,
     credit_card: 3.5,
+  },
+  flightPricing: {
+    markupFlatAmount: 20000,
+    markupPercent: 0,
+    minimumMarginAmount: 15000,
   },
   merchantTransferFeeRules: {
     default: 6500,
@@ -130,6 +148,36 @@ function resolveNumericRules<T extends string>(
   return result
 }
 
+function resolveFlightPricingRules(source: Record<string, unknown> | null): FlightPricingSettings {
+  return {
+    markupFlatAmount: Math.max(
+      Math.round(
+        toNumber(
+          source?.flight_markup_flat_amount as number | string | null | undefined,
+          defaultFinanceSettings.flightPricing?.markupFlatAmount ?? 20000,
+        ),
+      ),
+      0,
+    ),
+    markupPercent: Math.max(
+      toNumber(
+        source?.flight_markup_percent as number | string | null | undefined,
+        defaultFinanceSettings.flightPricing?.markupPercent ?? 0,
+      ),
+      0,
+    ),
+    minimumMarginAmount: Math.max(
+      Math.round(
+        toNumber(
+          source?.flight_minimum_margin_amount as number | string | null | undefined,
+          defaultFinanceSettings.flightPricing?.minimumMarginAmount ?? 15000,
+        ),
+      ),
+      0,
+    ),
+  }
+}
+
 export async function getFinanceSettings(adminSupabase: FinanceSettingsQuery) {
   try {
     const { data, error } = await adminSupabase
@@ -144,6 +192,8 @@ export async function getFinanceSettings(adminSupabase: FinanceSettingsQuery) {
       return defaultFinanceSettings
     }
 
+    const customerAdminFeeRuleSource = parseJsonObject(data.customer_admin_fee_rules)
+
     return {
       redfengCommissionPercent: toNumber(
         data.redfeng_commission_percent,
@@ -156,9 +206,10 @@ export async function getFinanceSettings(adminSupabase: FinanceSettingsQuery) {
       customerTaxPercent: toNumber(data.customer_tax_percent, defaultFinanceSettings.customerTaxPercent),
       merchantTransferFee: toNumber(data.merchant_transfer_fee, defaultFinanceSettings.merchantTransferFee),
       customerAdminFeeRules: resolveNumericRules(
-        parseJsonObject(data.customer_admin_fee_rules),
+        customerAdminFeeRuleSource,
         defaultFinanceSettings.customerAdminFeeRules,
       ),
+      flightPricing: resolveFlightPricingRules(customerAdminFeeRuleSource),
       merchantTransferFeeRules: {
         ...defaultFinanceSettings.merchantTransferFeeRules,
         ...Object.fromEntries(
@@ -172,6 +223,30 @@ export async function getFinanceSettings(adminSupabase: FinanceSettingsQuery) {
     }
   } catch {
     return defaultFinanceSettings
+  }
+}
+
+export function calculateFlightFareForCustomer(
+  supplierFareAmount: number,
+  settings: FinanceSettings,
+): FlightPriceBreakdown {
+  const normalizedSupplierFareAmount = Math.max(Math.round(Number(supplierFareAmount || 0)), 0)
+  const flightPricing = settings.flightPricing || defaultFinanceSettings.flightPricing || {
+    markupFlatAmount: 20000,
+    markupPercent: 0,
+    minimumMarginAmount: 15000,
+  }
+  const percentMarkup = Math.round(
+    normalizedSupplierFareAmount * (flightPricing.markupPercent / 100),
+  )
+  const configuredMarkup = flightPricing.markupFlatAmount + percentMarkup
+  const markupAmount = Math.max(configuredMarkup, flightPricing.minimumMarginAmount, 0)
+  const customerFareAmount = normalizedSupplierFareAmount + markupAmount
+
+  return {
+    supplierFareAmount: normalizedSupplierFareAmount,
+    markupAmount,
+    customerFareAmount,
   }
 }
 

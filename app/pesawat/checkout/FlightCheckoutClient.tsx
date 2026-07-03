@@ -24,6 +24,8 @@ export type FlightCheckoutData = {
   tripType: string
   passengers: string
   price: number
+  supplierPrice: number
+  redfengMarkupAmount: number
   fareReferenceId: string
   airlineAccessCode: string
   searchKey: string
@@ -622,6 +624,8 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
       trip_type: data.tripType,
       passengers: passengerSummary,
       price: data.price,
+      supplier_price: data.supplierPrice,
+      redfeng_markup_amount: data.redfengMarkupAmount,
       fare_reference_id: data.fareReferenceId,
       airline_access_code: data.airlineAccessCode,
       search_key: data.searchKey,
