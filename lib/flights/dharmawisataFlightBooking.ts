@@ -360,7 +360,10 @@ async function runDharmawisataPreBookingFlow(input: DharmawisataFlightBookingInp
 
   const priceStep = await runPreBookingStep("Airline/Price", pricePath, {
     ...buildFlightFlowBase(input, accessToken),
+    schDeparts: buildSchedules(input),
+    schReturns: [],
     airlineAccessCode: input.airlineAccessCode || "",
+    searchKey: input.searchKey || "",
     journeyDepartReference: input.detailSchedule || "",
     journeyReturnReference: "",
   })
