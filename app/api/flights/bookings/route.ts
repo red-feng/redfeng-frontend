@@ -285,6 +285,8 @@ function buildDharmawisataPassengers(
     full_name?: string
     birth_date?: string
     gender?: string
+    identity_number?: string
+    identity_type?: string
   }> = passengerDetails.length > 0
     ? passengerDetails
     : [
@@ -302,6 +304,8 @@ function buildDharmawisataPassengers(
     title: normalizePassengerTitle(passenger.title),
     firstName: passenger.first_name || splitPersonName(passenger.full_name || fallbackName).firstName,
     lastName: passenger.last_name || splitPersonName(passenger.full_name || fallbackName).lastName,
+    identityNumber: passenger.identity_number || null,
+    identityType: passenger.identity_type || null,
     birthDate: passenger.birth_date || null,
     gender: passenger.gender || null,
     email: fallbackEmail,

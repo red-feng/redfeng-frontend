@@ -197,8 +197,8 @@ function mapJourney(
           flightNumber: segmentFlightNumber,
           originAirportCode: asString(detail.fdOrigin || record.jiOrigin),
           destinationAirportCode: asString(detail.fdDestination || record.jiDestination),
-          departureAt: asString(detail.fdDepartTime || record.jiDepartTime),
-          arrivalAt: asString(detail.fdArrivalTime || record.jiArrivalTime),
+          departureAt: asString(record.jiDepartTime || detail.fdDepartTime),
+          arrivalAt: asString(record.jiArrivalTime || detail.fdArrivalTime),
           flightClass: sourceFlightClass,
           detailSchedule: journeyReference,
         }

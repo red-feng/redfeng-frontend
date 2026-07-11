@@ -32,6 +32,8 @@ export type FlightCheckoutData = {
   detailSchedule: string
   supplierFlightClass: string
   source: string
+  customerAdminFeePercent: number
+  customerTaxPercent: number
 }
 
 type IconName = "plane" | "seat" | "bag" | "shield" | "help" | "phone" | "edit" | "user" | "info"
@@ -129,6 +131,11 @@ function sanitizePassengerList(value: unknown, fallbackCount: number) {
 
 function formatIdr(value: number) {
   return `IDR ${Math.max(Number(value || 0), 0).toLocaleString("id-ID")}`
+}
+
+function formatPercent(value: number) {
+  const normalized = Number.isFinite(value) ? value : 0
+  return normalized.toLocaleString("id-ID", { maximumFractionDigits: 2 })
 }
 
 function getPassengerCount(value: string) {
@@ -424,8 +431,11 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
   const [selectedSeats, setSelectedSeats] = useState<Record<string, SelectedSeat>>({})
   const passengerCount = passengers.length || 1
   const subtotal = data.price * passengerCount
-  const taxAndFees = Math.round(subtotal * 0.1)
-  const totalEstimate = subtotal + taxAndFees
+  const customerAdminFeePercent = Number.isFinite(data.customerAdminFeePercent) ? data.customerAdminFeePercent : 0
+  const customerTaxPercent = Number.isFinite(data.customerTaxPercent) ? data.customerTaxPercent : 0
+  const adminFee = Math.round(subtotal * (customerAdminFeePercent / 100))
+  const taxAmount = Math.round((subtotal + adminFee) * (customerTaxPercent / 100))
+  const totalEstimate = subtotal + adminFee + taxAmount
   const passengerSummary = formatPassengerSummary(passengerCount)
   const completePassengerCount = passengers.filter(isPassengerComplete).length
   const manifestIsComplete = completePassengerCount === passengerCount
@@ -1455,8 +1465,12 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
                 <span>{formatIdr(subtotal)}</span>
               </div>
               <div className="flex justify-between gap-4">
-                <span>Pajak & Biaya</span>
-                <span>{formatIdr(taxAndFees)}</span>
+                <span>Admin fee bank transfer ({formatPercent(customerAdminFeePercent)}%)</span>
+                <span>{formatIdr(adminFee)}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span>Pajak ({formatPercent(customerTaxPercent)}%)</span>
+                <span>{formatIdr(taxAmount)}</span>
               </div>
             </div>
             <div className="mt-5 flex items-center justify-between gap-4">

@@ -14,6 +14,8 @@ export type DharmawisataPassenger = {
   title: string
   firstName: string
   lastName: string
+  identityNumber?: string | null
+  identityType?: string | null
   birthDate?: string | null
   gender?: string | null
   email?: string | null
@@ -161,7 +163,7 @@ function normalizeDharmawisataGender(value: string | null | undefined, title: st
 function buildPassengerPayload(passengers: DharmawisataPassenger[], fallbackEmail?: string | null) {
   return passengers.map((passenger) => ({
     addOns: passenger.addOns || [],
-    IDNumber: "",
+    IDNumber: normalizeText(passenger.identityNumber),
     title: passenger.title || "MR",
     firstName: passenger.firstName,
     lastName: passenger.lastName || passenger.firstName,
@@ -169,7 +171,7 @@ function buildPassengerPayload(passengers: DharmawisataPassenger[], fallbackEmai
     gender: normalizeDharmawisataGender(passenger.gender, passenger.title),
     nationality: "ID",
     birthCountry: "ID",
-    DocType: "",
+    DocType: normalizeText(passenger.identityType),
     parent: "",
     passportNumber: "",
     passportIssuedCountry: "",
@@ -338,6 +340,9 @@ function responseStepSummary(endpoint: string, raw: JsonRecord) {
     ok: !responseStatus(raw) || responseStatus(raw) === "SUCCESS",
     status,
     message,
+    searchKey: pickString(raw, ["searchKey"]),
+    airlineAccessCode: pickString(raw, ["airlineAccessCode"]),
+    raw,
   }
 }
 
@@ -357,6 +362,7 @@ async function runDharmawisataPreBookingFlow(input: DharmawisataFlightBookingInp
     getDharmawisataConfiguredPath("DHARMAWISATA_H2H_BAGGAGE_AND_MEAL_PATH") || "/Airline/BaggageAndMeal"
   const seatPath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_SEAT_PATH") || "/Airline/Seat"
   const steps = []
+  let resolvedInput = input
 
   const priceStep = await runPreBookingStep("Airline/Price", pricePath, {
     ...buildFlightFlowBase(input, accessToken),
@@ -377,7 +383,13 @@ async function runDharmawisataPreBookingFlow(input: DharmawisataFlightBookingInp
     }
   }
 
-  const addOnPayload = buildAddOnFlowPayload(input, accessToken)
+  resolvedInput = {
+    ...input,
+    searchKey: priceStep.searchKey || input.searchKey || "",
+    airlineAccessCode: priceStep.airlineAccessCode || input.airlineAccessCode || "",
+  }
+
+  const addOnPayload = buildAddOnFlowPayload(resolvedInput, accessToken)
   const baggageStep = await runPreBookingStep("Airline/BaggageAndMeal", baggageAndMealPath, addOnPayload)
   steps.push(baggageStep)
 
@@ -404,6 +416,8 @@ async function runDharmawisataPreBookingFlow(input: DharmawisataFlightBookingInp
     ok: true,
     message: "Pre-booking flow Dharmawisata berhasil.",
     steps,
+    searchKey: resolvedInput.searchKey || null,
+    airlineAccessCode: resolvedInput.airlineAccessCode || null,
   }
 }
 
@@ -576,7 +590,12 @@ export async function createDharmawisataFlightBooking(
       }
     }
 
-    const payload = buildBookingPayload(input, accessToken)
+    const bookingInput = {
+      ...input,
+      searchKey: preBookingFlow.searchKey || input.searchKey || "",
+      airlineAccessCode: preBookingFlow.airlineAccessCode || input.airlineAccessCode || "",
+    }
+    const payload = buildBookingPayload(bookingInput, accessToken)
     const rawResponse = await dharmawisataJsonFetch({
       path: bookingPath,
       method: "POST",
@@ -612,11 +631,11 @@ export async function createDharmawisataFlightBooking(
       timeLimit: pickString(raw, ["timeLimit"]),
       referenceNo: pickString(raw, ["referenceNo"]),
       bookingCodeAirline: pickString(raw, ["bookingCodeAirline"]),
-      airlineAccessCode: pickString(raw, ["airlineAccessCode"]) || input.airlineAccessCode || null,
+      airlineAccessCode: pickString(raw, ["airlineAccessCode"]) || bookingInput.airlineAccessCode || null,
       raw: {
         bookingMode: "api",
         preBookingFlow,
-        request: summarizeBookingRequest(payload, input.passengers.length),
+        request: summarizeBookingRequest(payload, bookingInput.passengers.length),
         response: rawWithDetail,
       },
     }

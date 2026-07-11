@@ -7,13 +7,40 @@ import type {
   AffiliateFlightSearchParams,
   AffiliateFlightSearchResult,
 } from "@/lib/flights/affiliateTypes"
+import {
+  calculateFlightFareForCustomer,
+  defaultFinanceSettings,
+  getFinanceSettings,
+  type FinanceSettings,
+} from "@/lib/finance/settings"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 function parseDisplayPrice(display: string) {
   return Number(display.replace(/[^\d]/g, "")) || 0
 }
 
-function mapDummyItemToAffiliateOffer(item: DummyCatalogItem, index: number, locale: string): AffiliateFlightOffer {
+async function resolveFinanceSettingsForFallbackPricing() {
+  try {
+    return await getFinanceSettings(
+      createAdminClient() as unknown as Parameters<typeof getFinanceSettings>[0],
+    )
+  } catch {
+    return defaultFinanceSettings
+  }
+}
+
+function formatIdr(value: number) {
+  return `IDR ${new Intl.NumberFormat("id-ID").format(value)}`
+}
+
+function mapDummyItemToAffiliateOffer(
+  item: DummyCatalogItem,
+  index: number,
+  locale: string,
+  financeSettings: FinanceSettings,
+): AffiliateFlightOffer {
   const meta = getFlightCardMeta(item, index, locale)
+  const flightPricing = calculateFlightFareForCustomer(parseDisplayPrice(meta.price), financeSettings)
 
   return {
     offerId: `dummy-affiliate-${item.id}`,
@@ -42,8 +69,8 @@ function mapDummyItemToAffiliateOffer(item: DummyCatalogItem, index: number, loc
     maxPassengers: meta.maxPassengers,
     price: {
       currency: "IDR",
-      total: parseDisplayPrice(meta.price),
-      display: meta.price,
+      total: flightPricing.customerFareAmount,
+      display: formatIdr(flightPricing.customerFareAmount),
     },
     policy: {
       refundable: true,
@@ -52,17 +79,35 @@ function mapDummyItemToAffiliateOffer(item: DummyCatalogItem, index: number, loc
     },
     highlights: meta.highlightBadges,
     sourceItemId: item.id,
+    supplierMeta: {
+      supplierKey: "fallback",
+      airlineId: "",
+      airlineCode: "",
+      flightNumber: "",
+      journeyReference: "",
+      fareReferenceId: "",
+      airlineAccessCode: "",
+      searchKey: "",
+      detailSchedule: "",
+      supplierFareAmount: flightPricing.supplierFareAmount,
+      redfengMarkupAmount: flightPricing.markupAmount,
+      customerFareAmount: flightPricing.customerFareAmount,
+    },
   }
 }
 
-function buildRequestedRouteFallbackOffer(params: AffiliateFlightSearchParams): AffiliateFlightOffer | null {
+function buildRequestedRouteFallbackOffer(
+  params: AffiliateFlightSearchParams,
+  financeSettings: FinanceSettings,
+): AffiliateFlightOffer | null {
   const originCode = params.originCode.trim().toUpperCase()
   const destinationCode = params.destinationCode.trim().toUpperCase()
   if (!originCode || !destinationCode) return null
 
   const passengerCount = Math.max(1, params.passengers.adults + params.passengers.children + params.passengers.infants)
   const routeCode = `${originCode}-${destinationCode}`
-  const totalPrice = Math.max(850000, 980000 + passengerCount * 125000)
+  const supplierEstimateAmount = Math.max(850000, 980000 + passengerCount * 125000)
+  const flightPricing = calculateFlightFareForCustomer(supplierEstimateAmount, financeSettings)
 
   return {
     offerId: `fallback-${routeCode.toLowerCase()}-${params.departDate}`,
@@ -91,8 +136,8 @@ function buildRequestedRouteFallbackOffer(params: AffiliateFlightSearchParams): 
     maxPassengers: passengerCount,
     price: {
       currency: "IDR",
-      total: totalPrice,
-      display: `IDR ${new Intl.NumberFormat("id-ID").format(totalPrice)}`,
+      total: flightPricing.customerFareAmount,
+      display: formatIdr(flightPricing.customerFareAmount),
     },
     policy: {
       refundable: true,
@@ -111,6 +156,9 @@ function buildRequestedRouteFallbackOffer(params: AffiliateFlightSearchParams): 
       airlineAccessCode: "",
       searchKey: "",
       detailSchedule: "",
+      supplierFareAmount: flightPricing.supplierFareAmount,
+      redfengMarkupAmount: flightPricing.markupAmount,
+      customerFareAmount: flightPricing.customerFareAmount,
     },
   }
 }
@@ -123,6 +171,7 @@ export class DummyAffiliateFlightProvider implements AffiliateFlightProvider {
     const catalog = getDummyServiceCatalog("pesawat")
     const normalizedOrigin = params.originCode.trim().toLowerCase()
     const normalizedDestination = params.destinationCode.trim().toLowerCase()
+    const financeSettings = await resolveFinanceSettingsForFallbackPricing()
 
     const offers = catalog.items
       .map((item, index) => ({ item, index }))
@@ -132,8 +181,8 @@ export class DummyAffiliateFlightProvider implements AffiliateFlightProvider {
         const matchesDestination = !normalizedDestination || location.includes(normalizedDestination)
         return matchesOrigin && matchesDestination
       })
-      .map(({ item, index }) => mapDummyItemToAffiliateOffer(item, index, params.locale))
-    const fallbackOffer = offers.length === 0 ? buildRequestedRouteFallbackOffer(params) : null
+      .map(({ item, index }) => mapDummyItemToAffiliateOffer(item, index, params.locale, financeSettings))
+    const fallbackOffer = offers.length === 0 ? buildRequestedRouteFallbackOffer(params, financeSettings) : null
 
     return {
       providerKey: this.providerKey,

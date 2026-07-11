@@ -1,5 +1,7 @@
 import Link from "next/link"
 import SimplePublicLogoHeader from "@/app/components/SimplePublicLogoHeader"
+import { getFinanceSettings, resolveCustomerAdminFeePercent } from "@/lib/finance/settings"
+import { createAdminClient } from "@/lib/supabase/admin"
 import FlightCheckoutClient, { type FlightCheckoutData } from "./FlightCheckoutClient"
 
 export const dynamic = "force-dynamic"
@@ -20,6 +22,9 @@ export default async function FlightCheckoutPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const params = await searchParams
+  const settings = await getFinanceSettings(
+    createAdminClient() as unknown as Parameters<typeof getFinanceSettings>[0],
+  )
   const data: FlightCheckoutData = {
     offerId: firstParam(params, "offer_id"),
     title: firstParam(params, "title"),
@@ -47,6 +52,8 @@ export default async function FlightCheckoutPage({
     detailSchedule: firstParam(params, "detail_schedule"),
     supplierFlightClass: firstParam(params, "supplier_flight_class"),
     source: firstParam(params, "source") || "catalog",
+    customerAdminFeePercent: resolveCustomerAdminFeePercent("bank_transfer", settings),
+    customerTaxPercent: settings.customerTaxPercent,
   }
 
   if (!data.origin || !data.destination || !data.departDate || !data.price) {

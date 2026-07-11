@@ -1606,7 +1606,9 @@ export default async function AdminBookingDetailPage({
             <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Rincian nominal booking</h2>
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               <div className="rounded-[20px] border border-white bg-white p-4">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">Subtotal Paket</p>
+                <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">
+                  {booking.booking_product_type === "package_tour" ? "Subtotal Paket" : "Subtotal Booking"}
+                </p>
                 <p className="mt-2 text-sm font-semibold text-slate-900">{formatMoney(booking.subtotal_amount)}</p>
               </div>
               <div className="rounded-[20px] border border-white bg-white p-4">

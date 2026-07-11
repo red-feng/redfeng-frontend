@@ -150,6 +150,8 @@ function parsePassengerDetails(value: unknown, expectedAdults: number) {
     const lastName = noLastName ? "" : asString(passenger.last_name ?? passenger.lastName)
     const fullName = [firstName, lastName].filter(Boolean).join(" ").trim()
     const birthDate = asString(passenger.birth_date ?? passenger.birthDate)
+    const identityNumber = asString(passenger.identity_number ?? passenger.identityNumber)
+    const identityType = asString(passenger.identity_type ?? passenger.identityType)
 
     return {
       title,
@@ -158,6 +160,8 @@ function parsePassengerDetails(value: unknown, expectedAdults: number) {
       full_name: fullName,
       birth_date: birthDate,
       gender: normalizePassengerGender(passenger.gender, title),
+      identity_number: identityNumber,
+      identity_type: identityType,
       age: calculateAgeFromBirthDate(birthDate),
     }
   })
@@ -179,6 +183,8 @@ function buildDharmawisataPassengers(
           full_name: fallbackName,
           birth_date: "",
           gender: "M",
+          identity_number: "",
+          identity_type: "",
         },
       ]
 
@@ -186,6 +192,8 @@ function buildDharmawisataPassengers(
     title: normalizePassengerTitle(passenger.title),
     firstName: passenger.first_name || splitPersonName(passenger.full_name || fallbackName).firstName,
     lastName: passenger.last_name || splitPersonName(passenger.full_name || fallbackName).lastName,
+    identityNumber: passenger.identity_number || null,
+    identityType: passenger.identity_type || null,
     birthDate: passenger.birth_date || null,
     gender: passenger.gender || null,
     email: fallbackEmail,
@@ -224,10 +232,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Data rute atau tanggal penerbangan belum lengkap untuk cek kursi." }, { status: 400 })
     }
 
-    const incompletePassenger = passengerDetails.find((passenger) => !passenger.full_name || !passenger.gender)
+    const incompletePassenger = passengerDetails.find((passenger) => !passenger.full_name || !passenger.gender || !passenger.identity_number)
     const invalidBirthDatePassenger = passengerDetails.find((passenger) => passenger.age === null)
     if (passengerDetails.length !== passengerMix.adults || incompletePassenger || invalidBirthDatePassenger) {
-      return NextResponse.json({ error: "Lengkapi nama, gender, dan tanggal lahir penumpang sebelum cek kursi." }, { status: 400 })
+      return NextResponse.json({ error: "Lengkapi nama, gender, tanggal lahir, dan nomor identitas penumpang sebelum cek kursi." }, { status: 400 })
     }
 
     const contactNameParts = splitPersonName(customerName)

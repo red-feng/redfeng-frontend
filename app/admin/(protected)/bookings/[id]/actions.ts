@@ -296,6 +296,8 @@ function buildDharmawisataPassengersFromRequestPayload(
         title: normalizePassengerTitle(passenger.title),
         firstName,
         lastName,
+        identityNumber: String(passenger.identityNumber || passenger.identity_number || "").trim() || null,
+        identityType: String(passenger.identityType || passenger.identity_type || "").trim() || null,
         birthDate: String(passenger.birthDate || passenger.birth_date || "").trim() || null,
         gender: String(passenger.gender || "").trim() || null,
         email: fallbackEmail,

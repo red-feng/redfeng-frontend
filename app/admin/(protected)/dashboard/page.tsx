@@ -4113,7 +4113,7 @@ export default async function AdminDashboard({
                   <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactMoney(currentPackageMerchantCutValue)}</p>
                 </div>
               </div>
-              <p className="mt-3 text-[11px] leading-5 text-slate-400">Spread non-paket belum tercatat resmi di database, jadi card ini hanya menghitung profit paket tour.</p>
+              <p className="mt-3 text-[11px] leading-5 text-slate-400">Card ini menghitung profit paket tour dari admin fee dan potongan merchant; spread pesawat/non-paket tampil di card terpisah.</p>
             </div> : null}
 
             {showCommercialWorkspace ? <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">

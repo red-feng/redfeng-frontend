@@ -127,7 +127,7 @@ function normalizeDharmawisataGender(value: string | null | undefined, title: st
 function buildPassengerPayload(passengers: DharmawisataPassenger[], fallbackEmail?: string | null) {
   return passengers.map((passenger) => ({
     addOns: passenger.addOns || [],
-    IDNumber: "",
+    IDNumber: normalizeText(passenger.identityNumber),
     title: passenger.title || "MR",
     firstName: passenger.firstName,
     lastName: passenger.lastName || passenger.firstName,
@@ -135,7 +135,7 @@ function buildPassengerPayload(passengers: DharmawisataPassenger[], fallbackEmai
     gender: normalizeDharmawisataGender(passenger.gender, passenger.title),
     nationality: "ID",
     birthCountry: "ID",
-    DocType: "",
+    DocType: normalizeText(passenger.identityType),
     parent: "",
     passportNumber: "",
     passportIssuedCountry: "",
