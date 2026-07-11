@@ -66,7 +66,7 @@ export default function PublicMobileNav({ locale, notificationDefaults = default
   }, [supabase])
 
   const accountHref =
-    accountRole === "guest" ? "/login?next=%2Fcustomer%2Fdashboard" : getPublicAccountHomePath(accountRole)
+    accountRole === "guest" ? "/login?next=%2F" : getPublicAccountHomePath(accountRole)
 
   const copy = {
     id: {

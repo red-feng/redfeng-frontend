@@ -34,7 +34,7 @@ export default function PublicHeaderAccountControls({
   const [accountRole, setAccountRole] = useState<PublicAccountRole>(initialRole)
   const [isAuthenticated, setIsAuthenticated] = useState(initialRole !== "guest")
 
-  const accountHref = accountRole === "guest" ? "/login" : getPublicAccountHomePath(accountRole)
+  const accountHref = accountRole === "guest" ? "/login?next=%2F" : getPublicAccountHomePath(accountRole)
   const accountLabel = isAuthenticated ? t.account : guestLoginLabel
   const isOverlay = variant === "overlay"
   const controlsClassName = !isAuthenticated && !isOverlay ? "flex flex-wrap items-center gap-0" : "flex flex-wrap items-center gap-2.5 sm:gap-3"
@@ -88,7 +88,7 @@ export default function PublicHeaderAccountControls({
     <div className={controlsClassName}>
       {!isAuthenticated && isOverlay ? (
         <Link
-          href="/login"
+          href="/login?next=%2F"
           className="whitespace-nowrap rounded-full bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_16px_30px_-18px_rgba(239,90,67,0.72)] transition hover:brightness-105"
         >
           {guestLoginRegisterLabel}
@@ -96,7 +96,7 @@ export default function PublicHeaderAccountControls({
       ) : null}
       {!isAuthenticated && !isOverlay ? (
         <Link
-          href="/login"
+          href="/login?next=%2F"
           className="whitespace-nowrap rounded-[16px] bg-[#ff5a43] px-5 py-3 text-[14px] font-semibold text-white shadow-[0_16px_30px_-18px_rgba(239,90,67,0.72)] transition hover:bg-[#ef5b2a]"
         >
           {guestLoginRegisterLabel}

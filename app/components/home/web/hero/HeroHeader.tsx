@@ -81,7 +81,7 @@ export default function HeroHeader({ locale }: { locale: Locale }) {
               iconClassName="h-5 w-5"
               badgeClassName="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#ef5b2a] px-1 text-[10px] font-bold text-white"
             />
-            <Link href="/login" className="whitespace-nowrap rounded-[16px] bg-[#ff5a43] px-5 py-3 text-[14px] font-semibold text-white shadow-[0_16px_30px_-18px_rgba(239,90,67,0.72)]">
+            <Link href="/login?next=%2F" className="whitespace-nowrap rounded-[16px] bg-[#ff5a43] px-5 py-3 text-[14px] font-semibold text-white shadow-[0_16px_30px_-18px_rgba(239,90,67,0.72)]">
               {copy.loginRegister}
             </Link>
           </div>

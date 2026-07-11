@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
-import { ensureAccountRole, hasActiveAccountRole } from "@/lib/account-roles"
+import { ensureAccountRole, ensureCustomerBaselineRole, hasActiveAccountRole } from "@/lib/account-roles"
+import { isAdminPortalRole, isFinancePortalRole, isMarketingPortalRole } from "@/lib/internal-roles"
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const portal = String(searchParams.get("portal") || "").trim().toLowerCase()
 
-  if (portal !== "merchant") {
+  if (portal !== "merchant" && portal !== "customer") {
     return NextResponse.json({ error: "Unsupported portal." }, { status: 400 })
   }
 
-  const supabase = await createClient("merchant")
+  const supabase = await createClient(portal)
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -26,6 +27,41 @@ export async function GET(request: Request) {
     .select("role")
     .eq("id", user.id)
     .maybeSingle()
+
+  if (portal === "customer") {
+    const normalizedRole = String(profile?.role || "").trim().toLowerCase()
+
+    if (!profile) {
+      await adminSupabase.from("profiles").upsert({
+        id: user.id,
+        role: "customer",
+      })
+      await ensureCustomerBaselineRole(adminSupabase, user.id, "customer_password_portal_access")
+    } else if (normalizedRole === "customer" || normalizedRole === "merchant" || !normalizedRole) {
+      await ensureCustomerBaselineRole(adminSupabase, user.id, "customer_password_portal_access")
+    } else if (
+      normalizedRole === "superadmin" ||
+      isAdminPortalRole(normalizedRole) ||
+      isFinancePortalRole(normalizedRole) ||
+      isMarketingPortalRole(normalizedRole)
+    ) {
+      return NextResponse.json(
+        {
+          hasAccess: false,
+          profileRole: profile.role,
+          error: "Portal ini khusus untuk customer.",
+        },
+        { status: 403 },
+      )
+    }
+
+    const hasAccess = await hasActiveAccountRole(adminSupabase, user.id, "customer")
+    return NextResponse.json({
+      hasAccess,
+      profileRole: profile?.role || "customer",
+    })
+  }
+
   const { data: merchant } = await adminSupabase
     .from("merchants")
     .select("id, verification_status")

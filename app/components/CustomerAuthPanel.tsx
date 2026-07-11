@@ -8,13 +8,14 @@ import { type Locale } from "@/lib/i18n";
 import {
   ACTIVE_PORTAL_COOKIE,
   ACTIVE_PORTAL_MAX_AGE,
-  CUSTOMER_PORTAL_DEFAULT_REDIRECT,
 } from "@/lib/portal-context";
 import { readLocaleFromCookie } from "@/lib/locale-client";
 
 type AuthProvider = "google" | "facebook";
+type AuthLoading = AuthProvider | "password";
 type Mode = "login" | "register";
 type LocaleMenuPlacement = "mobile" | "desktop";
+const PUBLIC_LOGIN_DEFAULT_REDIRECT = "/";
 
 const providerConfig: Array<{
   provider: AuthProvider;
@@ -37,9 +38,9 @@ const localeOptions: Array<{ value: Locale; label: string }> = [
 ];
 
 function getSafeNextFromLocation() {
-  if (typeof window === "undefined") return CUSTOMER_PORTAL_DEFAULT_REDIRECT;
+  if (typeof window === "undefined") return PUBLIC_LOGIN_DEFAULT_REDIRECT;
   const requestedNext = new URLSearchParams(window.location.search).get("next");
-  return requestedNext && requestedNext.startsWith("/") ? requestedNext : CUSTOMER_PORTAL_DEFAULT_REDIRECT;
+  return requestedNext && requestedNext.startsWith("/") ? requestedNext : PUBLIC_LOGIN_DEFAULT_REDIRECT;
 }
 
 function getSafeErrorFromLocation() {
@@ -50,6 +51,37 @@ function getSafeErrorFromLocation() {
 function rememberActivePortal(portal: "customer" | "merchant") {
   if (typeof document === "undefined") return;
   document.cookie = `${ACTIVE_PORTAL_COOKIE}=${portal}; Path=/; Max-Age=${ACTIVE_PORTAL_MAX_AGE}; SameSite=Lax`;
+}
+
+function getAuthFlowMessage(
+  locale: Locale,
+  key: "missingCredentials" | "authFailed" | "registerFailed" | "checkEmail" | "portalAccessFailed",
+) {
+  const messages = {
+    id: {
+      missingCredentials: "Masukkan email dan kata sandi terlebih dahulu.",
+      authFailed: "Login gagal. Periksa email dan kata sandi, lalu coba lagi.",
+      registerFailed: "Akun belum bisa dibuat. Silakan coba lagi.",
+      checkEmail: "Registrasi diterima. Silakan cek email untuk aktivasi akun.",
+      portalAccessFailed: "Akses customer belum bisa diverifikasi. Silakan coba lagi.",
+    },
+    en: {
+      missingCredentials: "Enter your email and password first.",
+      authFailed: "Unable to sign in. Please check your credentials and try again.",
+      registerFailed: "Unable to create your account. Please try again.",
+      checkEmail: "Registration received. Please check your email to activate the account.",
+      portalAccessFailed: "Your customer access could not be verified. Please try again.",
+    },
+    zh: {
+      missingCredentials: "Please enter your email and password first.",
+      authFailed: "Unable to sign in. Please check your credentials and try again.",
+      registerFailed: "Unable to create your account. Please try again.",
+      checkEmail: "Registration received. Please check your email to activate the account.",
+      portalAccessFailed: "Your customer access could not be verified. Please try again.",
+    },
+  } satisfies Record<Locale, Record<typeof key, string>>;
+
+  return messages[locale]?.[key] || messages.id[key];
 }
 
 function GlobeIcon() {
@@ -302,12 +334,11 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
   const [locale] = useState<Locale>(() => initialLocale || readLocaleFromCookie());
   const [safeNext] = useState(getSafeNextFromLocation);
   const [searchError] = useState(getSafeErrorFromLocation);
-  const [loadingProvider, setLoadingProvider] = useState<AuthProvider | null>(null);
+  const [loadingProvider, setLoadingProvider] = useState<AuthLoading | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [emailVisual, setEmailVisual] = useState("");
   const [passwordVisual, setPasswordVisual] = useState("");
   const [openLocaleMenu, setOpenLocaleMenu] = useState<LocaleMenuPlacement | null>(null);
-  const enabledProviders = providerConfig.filter((item) => item.enabled);
   const mobileLocaleMenuRef = useRef<HTMLDivElement | null>(null);
   const desktopLocaleMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -315,18 +346,18 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
   const authError = errorMsg || searchError;
   const footerHref =
     mode === "login"
-      ? `/register${safeNext !== CUSTOMER_PORTAL_DEFAULT_REDIRECT ? `?next=${encodeURIComponent(safeNext)}` : ""}`
-      : `/login${safeNext !== CUSTOMER_PORTAL_DEFAULT_REDIRECT ? `?next=${encodeURIComponent(safeNext)}` : ""}`;
+      ? `/register${safeNext !== PUBLIC_LOGIN_DEFAULT_REDIRECT ? `?next=${encodeURIComponent(safeNext)}` : ""}`
+      : `/login${safeNext !== PUBLIC_LOGIN_DEFAULT_REDIRECT ? `?next=${encodeURIComponent(safeNext)}` : ""}`;
 
   const modeTabs = useMemo(
     () => [
       {
-        href: `/login${safeNext !== CUSTOMER_PORTAL_DEFAULT_REDIRECT ? `?next=${encodeURIComponent(safeNext)}` : ""}`,
+        href: `/login${safeNext !== PUBLIC_LOGIN_DEFAULT_REDIRECT ? `?next=${encodeURIComponent(safeNext)}` : ""}`,
         label: copy.loginTab,
         active: mode === "login",
       },
       {
-        href: `/register${safeNext !== CUSTOMER_PORTAL_DEFAULT_REDIRECT ? `?next=${encodeURIComponent(safeNext)}` : ""}`,
+        href: `/register${safeNext !== PUBLIC_LOGIN_DEFAULT_REDIRECT ? `?next=${encodeURIComponent(safeNext)}` : ""}`,
         label: copy.registerTab,
         active: mode === "register",
       },
@@ -379,15 +410,81 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
     }
   };
 
+  const ensureCustomerPortalAccess = async () => {
+    const response = await fetch("/api/auth/portal-access?portal=customer", {
+      method: "GET",
+      cache: "no-store",
+    });
+    if (!response.ok) return false;
+    const payload = (await response.json().catch(() => null)) as { hasAccess?: boolean } | null;
+    return Boolean(payload?.hasAccess);
+  };
+
   const handlePrimaryAction = async () => {
     setErrorMsg("");
+    const email = emailVisual.trim();
+    const password = passwordVisual;
 
-    if (enabledProviders.length === 1) {
-      await handleProviderAuth(enabledProviders[0].provider);
+    if (!email || !password) {
+      setErrorMsg(getAuthFlowMessage(locale, "missingCredentials"));
       return;
     }
 
-    setErrorMsg(copy.chooseProvider);
+    setLoadingProvider("password");
+    rememberActivePortal("customer");
+
+    const redirectTo =
+      typeof window === "undefined"
+        ? undefined
+        : `${window.location.origin}/auth/callback?portal=customer&next=${encodeURIComponent(safeNext)}`;
+
+    if (mode === "login") {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setErrorMsg(error.message || getAuthFlowMessage(locale, "authFailed"));
+        setLoadingProvider(null);
+        return;
+      }
+
+      if (!(await ensureCustomerPortalAccess())) {
+        await supabase.auth.signOut();
+        setErrorMsg(getAuthFlowMessage(locale, "portalAccessFailed"));
+        setLoadingProvider(null);
+        return;
+      }
+
+      window.location.assign(safeNext);
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectTo,
+      },
+    });
+
+    if (error) {
+      setErrorMsg(error.message || getAuthFlowMessage(locale, "registerFailed"));
+      setLoadingProvider(null);
+      return;
+    }
+
+    if (data.session) {
+      if (!(await ensureCustomerPortalAccess())) {
+        await supabase.auth.signOut();
+        setErrorMsg(getAuthFlowMessage(locale, "portalAccessFailed"));
+        setLoadingProvider(null);
+        return;
+      }
+
+      window.location.assign(safeNext);
+      return;
+    }
+
+    setErrorMsg(getAuthFlowMessage(locale, "checkEmail"));
+    setLoadingProvider(null);
   };
 
   useEffect(() => {
