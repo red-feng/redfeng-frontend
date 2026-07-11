@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/server"
 import SignOutButton from "@/app/components/SignOutButton"
 import CustomerHeaderNav from "@/app/components/CustomerHeaderNav"
 import { ensureCustomerBaselineRole, hasActiveAccountRole } from "@/lib/account-roles"
-import { buildAppUrl, getSiteBaseUrl } from "@/lib/site-config"
+import { getSiteBaseUrl } from "@/lib/site-config"
 
 export default async function CustomerLayout({
   children,
@@ -147,7 +147,7 @@ export default async function CustomerLayout({
               </Link>
                 <SignOutButton
                   portal="customer"
-                  redirectTo={buildAppUrl("/login")}
+                  redirectTo="/login?next=%2F"
                 className="rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 sm:px-4"
               />
             </div>
