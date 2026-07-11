@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: RedFeng Customer SSO
- * Description: Customer SSO bridge between www.redfeng.co WordPress and app.redfeng.co Supabase auth.
+ * Description: Customer SSO bridge between www.redfeng.co WordPress and redfeng.co Supabase auth.
  * Version: 1.0.0
  * Author: RedFeng
  */
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
 }
 
 if (!defined('RF_SSO_APP_URL')) {
-    define('RF_SSO_APP_URL', 'https://app.redfeng.co');
+    define('RF_SSO_APP_URL', 'https://redfeng.co');
 }
 
 if (!defined('RF_SSO_SHARED_SECRET')) {

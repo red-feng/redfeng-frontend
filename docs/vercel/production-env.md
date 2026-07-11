@@ -1,6 +1,6 @@
 # Vercel Production Environment Variables
 
-Set these variables in the Vercel project that serves `app.redfeng.co`.
+Set these variables in the Vercel project that serves `redfeng.co`.
 
 Template reference:
 
@@ -58,7 +58,7 @@ Template reference:
 - `CRON_SECRET`
   - Recommended to protect scheduled cleanup endpoints such as abandoned draft booking cleanup.
 - `WORDPRESS_SITE_URL`
-  - Required if customer SSO between `www.redfeng.co` and `app.redfeng.co` is enabled.
+  - Required if customer SSO between `www.redfeng.co` and `redfeng.co` is enabled.
 - `WORDPRESS_SSO_SHARED_SECRET`
   - Required for secure token exchange between WordPress and Next.js app.
 - `WORDPRESS_SSO_LOGIN_PATH`

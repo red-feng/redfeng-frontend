@@ -1,6 +1,6 @@
 # WordPress Customer SSO Integration
 
-`app.redfeng.co` is the customer auth source of truth.
+`redfeng.co` is the customer auth source of truth.
 `www.redfeng.co` should not maintain a separate customer password flow.
 
 ## Required Vercel env
@@ -40,17 +40,17 @@ Use these URLs from WordPress buttons:
 - Login:
 
 ```text
-https://app.redfeng.co/login?next=%2Fapi%2Fsso%2Fwordpress%2Fissue%3Fredirect_to%3D%2Fmy-account
+https://redfeng.co/login?next=%2Fapi%2Fsso%2Fwordpress%2Fissue%3Fredirect_to%3D%2Fmy-account
 ```
 
 - Register:
 
 ```text
-https://app.redfeng.co/register?next=%2Fapi%2Fsso%2Fwordpress%2Fissue%3Fredirect_to%3D%2Fmy-account
+https://redfeng.co/register?next=%2Fapi%2Fsso%2Fwordpress%2Fissue%3Fredirect_to%3D%2Fmy-account
 ```
 
 Meaning:
-- customer authenticates in `app.redfeng.co`
+- customer authenticates in `redfeng.co`
 - after login/register, app redirects to `/api/sso/wordpress/issue`
 - app creates a one-time token
 - app redirects browser back to WordPress callback path:
@@ -70,7 +70,7 @@ That handler must:
 2. Server-side `POST` to:
 
 ```text
-https://app.redfeng.co/api/sso/wordpress/exchange
+https://redfeng.co/api/sso/wordpress/exchange
 ```
 
 3. Send header:
@@ -126,7 +126,7 @@ Files provided in this repo:
 
 This plugin:
 - receives `/rf-sso-login`
-- exchanges token to `app.redfeng.co`
+- exchanges token to `redfeng.co`
 - creates or updates WP customer user
 - logs customer into WordPress
 - redirects to the requested page

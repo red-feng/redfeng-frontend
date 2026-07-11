@@ -27,7 +27,7 @@ function inferCookieDomain(hostname: string) {
   return `.${segments.slice(-2).join(".")}`
 }
 
-const LEGACY_APP_URL = "https://app.redfeng.co"
+const LEGACY_APP_URL = "https://redfeng.co"
 const LEGACY_SITE_URL = "https://redfeng.co"
 
 export function getAppBaseUrl() {

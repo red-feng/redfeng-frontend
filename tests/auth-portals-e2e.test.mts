@@ -17,7 +17,7 @@ type PortalCredentials = {
   passwordSelector: string
 }
 
-const DEFAULT_BASE_URL = process.env.AUTH_E2E_BASE_URL || "https://app.redfeng.co"
+const DEFAULT_BASE_URL = process.env.AUTH_E2E_BASE_URL || "https://redfeng.co"
 const DEFAULT_WAIT_TIMEOUT_MS = Number(process.env.AUTH_E2E_WAIT_TIMEOUT_MS || "45000")
 
 async function resolveBrowserExecutablePath() {

@@ -2,7 +2,7 @@
 
 ## 1. Prepare app side first
 
-Required on `app.redfeng.co`:
+Required on `redfeng.co`:
 
 - run Supabase migration:
   - [20260308_create_sso_tokens.sql](/c:/Users/UsEr/redfeng-frontend/supabase/migrations/20260308_create_sso_tokens.sql)
@@ -33,7 +33,7 @@ wp-content/plugins/redfeng-customer-sso/redfeng-customer-sso.php
 Recommended values for your current setup:
 
 ```php
-define('RF_SSO_APP_URL', 'https://app.redfeng.co');
+define('RF_SSO_APP_URL', 'https://redfeng.co');
 define('RF_SSO_SHARED_SECRET', '9f3a7e8b4c1d6a9e2f7c5d8b1a3e6f4c');
 define('RF_SSO_LOGIN_PATH', 'rf-sso-login');
 define('RF_SSO_WORDPRESS_ACCOUNT_PATH', '/akun-saya');
@@ -45,7 +45,7 @@ Important:
 - in Vercel env use `/rf-sso-login`
 - they represent the same endpoint path
 - `RF_SSO_AUTO_MENU_ENABLED = false` is recommended for Elementor headers that already place auth buttons via shortcode
-- `RF_SSO_WORDPRESS_ACCOUNT_PATH` stays on `/akun-saya` as the symbolic customer target, but successful SSO will send that target to `https://app.redfeng.co/customer/dashboard`
+- `RF_SSO_WORDPRESS_ACCOUNT_PATH` stays on `/akun-saya` as the symbolic customer target, but successful SSO will send that target to `https://redfeng.co/customer/dashboard`
 
 3. Activate the plugin in WordPress admin
 
@@ -105,7 +105,7 @@ If `/rf-sso-login` returns 404 after activation:
 
 1. Open WordPress page with login link
 2. Click login
-3. Complete login on `app.redfeng.co`
+3. Complete login on `redfeng.co`
 4. Confirm browser returns to:
 
 ```text
@@ -113,7 +113,7 @@ https://www.redfeng.co/rf-sso-login?token=...
 ```
 
 5. Confirm WordPress logs in the customer
-6. Confirm redirect lands on `https://app.redfeng.co/customer/dashboard`
+6. Confirm redirect lands on `https://redfeng.co/customer/dashboard`
 7. Confirm WordPress header now shows:
    - before login: `Login`, `Register`
    - after login: `Akun Saya`, `Logout`
