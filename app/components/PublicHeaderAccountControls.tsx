@@ -18,11 +18,13 @@ export default function PublicHeaderAccountControls({
   redirectSuperadminFromHome = false,
   initialRole = "guest",
   variant = "default",
+  showSignOut = true,
 }: {
   locale: Locale
   redirectSuperadminFromHome?: boolean
   initialRole?: PublicAccountRole
   variant?: "default" | "overlay"
+  showSignOut?: boolean
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -114,12 +116,12 @@ export default function PublicHeaderAccountControls({
           {accountLabel}
         </Link>
       )}
-      {isAuthenticated && (
+      {isAuthenticated && showSignOut ? (
         <SignOutButton
           label={signOutLabel}
           className={isOverlay ? "rounded-full border border-white/80 bg-white/84 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur transition hover:text-rose-600" : "rounded-2xl border border-slate-200 bg-white/90 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-rose-300 hover:text-rose-600"}
         />
-      )}
+      ) : null}
     </div>
   )
 }

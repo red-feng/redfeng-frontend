@@ -4,6 +4,7 @@ import { MenuIcon } from "@/app/components/home/shared/homeContent"
 import { homeHeaderLock } from "@/app/components/home/shared/homeHeaderLock"
 import { defaultNotificationItems } from "@/app/components/notifications/defaultNotifications"
 import NotificationBellLink from "@/app/components/notifications/NotificationBellLink"
+import PublicHeaderAccountControls from "@/app/components/PublicHeaderAccountControls"
 import PublicHeaderLocaleSelect from "@/app/components/PublicHeaderLocaleSelect"
 import {
   getPublicHeaderActivityLabel,
@@ -14,17 +15,6 @@ import { dictionaries, type Locale } from "@/lib/i18n"
 
 export default function HeroHeader({ locale }: { locale: Locale }) {
   const t = dictionaries[locale].header
-  const copy = {
-    id: {
-      loginRegister: "Login / Daftar",
-    },
-    en: {
-      loginRegister: "Login / Register",
-    },
-    zh: {
-      loginRegister: "\u767b\u5f55 / \u6ce8\u518c",
-    },
-  }[locale]
   const activityLabel = getPublicHeaderActivityLabel(locale)
 
   return (
@@ -81,9 +71,7 @@ export default function HeroHeader({ locale }: { locale: Locale }) {
               iconClassName="h-5 w-5"
               badgeClassName="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#ef5b2a] px-1 text-[10px] font-bold text-white"
             />
-            <Link href="/login?next=%2F" className="whitespace-nowrap rounded-[16px] bg-[#ff5a43] px-5 py-3 text-[14px] font-semibold text-white shadow-[0_16px_30px_-18px_rgba(239,90,67,0.72)]">
-              {copy.loginRegister}
-            </Link>
+            <PublicHeaderAccountControls locale={locale} variant="overlay" showSignOut={false} />
           </div>
         </div>
 
