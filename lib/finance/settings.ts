@@ -32,9 +32,9 @@ export type FinancePaymentMethod = "bank_transfer" | "qris" | "credit_card"
 export const activeCustomerPaymentMethods: FinancePaymentMethod[] = ["bank_transfer"]
 
 export type FlightPricingSettings = {
-  markupFlatAmount: number
   markupPercent: number
   minimumMarginAmount: number
+  maximumMarginAmount: number
 }
 
 export type FlightPriceBreakdown = {
@@ -77,9 +77,9 @@ export const defaultFinanceSettings: FinanceSettings = {
     credit_card: 3.5,
   },
   flightPricing: {
-    markupFlatAmount: 20000,
-    markupPercent: 0,
-    minimumMarginAmount: 15000,
+    markupPercent: 2,
+    minimumMarginAmount: 20000,
+    maximumMarginAmount: 75000,
   },
   merchantTransferFeeRules: {
     default: 6500,
@@ -149,32 +149,49 @@ function resolveNumericRules<T extends string>(
 }
 
 function resolveFlightPricingRules(source: Record<string, unknown> | null): FlightPricingSettings {
-  return {
-    markupFlatAmount: Math.max(
-      Math.round(
-        toNumber(
-          source?.flight_markup_flat_amount as number | string | null | undefined,
-          defaultFinanceSettings.flightPricing?.markupFlatAmount ?? 20000,
-        ),
-      ),
-      0,
-    ),
-    markupPercent: Math.max(
+  const defaultFlightPricing = defaultFinanceSettings.flightPricing ?? {
+    markupPercent: 2,
+    minimumMarginAmount: 20000,
+    maximumMarginAmount: 75000,
+  }
+  const hasMaximumMarginRule = source?.flight_maximum_margin_amount !== undefined && source?.flight_maximum_margin_amount !== null
+  const legacyFlatAmount = Math.max(
+    Math.round(toNumber(source?.flight_markup_flat_amount as number | string | null | undefined, 0)),
+    0,
+  )
+  const storedMarkupPercent = toNumber(
+    source?.flight_markup_percent as number | string | null | undefined,
+    defaultFlightPricing.markupPercent,
+  )
+  const markupPercent = hasMaximumMarginRule || storedMarkupPercent > 0
+    ? storedMarkupPercent
+    : defaultFlightPricing.markupPercent
+  const storedMinimumMarginAmount = Math.max(
+    Math.round(
       toNumber(
-        source?.flight_markup_percent as number | string | null | undefined,
-        defaultFinanceSettings.flightPricing?.markupPercent ?? 0,
+        source?.flight_minimum_margin_amount as number | string | null | undefined,
+        defaultFlightPricing.minimumMarginAmount,
       ),
-      0,
     ),
-    minimumMarginAmount: Math.max(
-      Math.round(
-        toNumber(
-          source?.flight_minimum_margin_amount as number | string | null | undefined,
-          defaultFinanceSettings.flightPricing?.minimumMarginAmount ?? 15000,
-        ),
+    0,
+  )
+  const minimumMarginAmount = hasMaximumMarginRule
+    ? storedMinimumMarginAmount
+    : Math.max(storedMinimumMarginAmount, legacyFlatAmount, defaultFlightPricing.minimumMarginAmount)
+  const storedMaximumMarginAmount = Math.max(
+    Math.round(
+      toNumber(
+        source?.flight_maximum_margin_amount as number | string | null | undefined,
+        defaultFlightPricing.maximumMarginAmount,
       ),
-      0,
     ),
+    0,
+  )
+
+  return {
+    markupPercent: Math.max(markupPercent, 0),
+    minimumMarginAmount,
+    maximumMarginAmount: Math.max(storedMaximumMarginAmount, minimumMarginAmount),
   }
 }
 
@@ -232,15 +249,16 @@ export function calculateFlightFareForCustomer(
 ): FlightPriceBreakdown {
   const normalizedSupplierFareAmount = Math.max(Math.round(Number(supplierFareAmount || 0)), 0)
   const flightPricing = settings.flightPricing || defaultFinanceSettings.flightPricing || {
-    markupFlatAmount: 20000,
-    markupPercent: 0,
-    minimumMarginAmount: 15000,
+    markupPercent: 2,
+    minimumMarginAmount: 20000,
+    maximumMarginAmount: 75000,
   }
   const percentMarkup = Math.round(
     normalizedSupplierFareAmount * (flightPricing.markupPercent / 100),
   )
-  const configuredMarkup = flightPricing.markupFlatAmount + percentMarkup
-  const markupAmount = Math.max(configuredMarkup, flightPricing.minimumMarginAmount, 0)
+  const uncappedMarkupAmount = Math.max(percentMarkup, flightPricing.minimumMarginAmount, 0)
+  const maximumMarginAmount = Math.max(flightPricing.maximumMarginAmount, flightPricing.minimumMarginAmount, 0)
+  const markupAmount = Math.min(uncappedMarkupAmount, maximumMarginAmount)
   const customerFareAmount = normalizedSupplierFareAmount + markupAmount
 
   return {

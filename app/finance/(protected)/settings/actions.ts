@@ -37,32 +37,42 @@ async function ensureFinance(portal: FinancePortal) {
   }
 }
 
+function parseFinanceNumber(value: FormDataEntryValue | null, fallback = 0) {
+  const normalized = String(value ?? "").trim().replace(",", ".")
+  const parsed = Number(normalized || fallback)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
 export async function saveFinanceSettings(formData: FormData) {
   const portal = resolvePortal(formData)
   await ensureFinance(portal)
 
-  const redfengCommissionPercent = Number(formData.get("redfeng_commission_percent") || 0)
-  const bankTransferFeePercent = Number(formData.get("customer_admin_fee_bank_transfer_percent") || 0)
-  const qrisFeePercent = Number(formData.get("customer_admin_fee_qris_percent") || 0)
-  const creditCardFeePercent = Number(formData.get("customer_admin_fee_credit_card_percent") || 0)
-  const customerTaxPercent = Number(formData.get("customer_tax_percent") || 0)
-  const merchantTransferFee = Number(formData.get("merchant_transfer_fee") || 0)
-  const flightMarkupFlatAmount = Number(formData.get("flight_markup_flat_amount") || 0)
-  const flightMarkupPercent = Number(formData.get("flight_markup_percent") || 0)
-  const flightMinimumMarginAmount = Number(formData.get("flight_minimum_margin_amount") || 0)
+  const redfengCommissionPercent = parseFinanceNumber(formData.get("redfeng_commission_percent"))
+  const bankTransferFeePercent = parseFinanceNumber(formData.get("customer_admin_fee_bank_transfer_percent"))
+  const qrisFeePercent = parseFinanceNumber(formData.get("customer_admin_fee_qris_percent"))
+  const creditCardFeePercent = parseFinanceNumber(formData.get("customer_admin_fee_credit_card_percent"))
+  const customerTaxPercent = parseFinanceNumber(formData.get("customer_tax_percent"))
+  const merchantTransferFee = parseFinanceNumber(formData.get("merchant_transfer_fee"))
+  const flightMarkupPercent = parseFinanceNumber(formData.get("flight_markup_percent"), 2)
+  const flightMinimumMarginAmount = parseFinanceNumber(formData.get("flight_minimum_margin_amount"), 20000)
+  const flightMaximumMarginAmount = parseFinanceNumber(formData.get("flight_maximum_margin_amount"), 75000)
   const merchantTransferFeeRules = Object.fromEntries(
     merchantTransferBanks.map((bankKey) => [
       bankKey,
-      Number(formData.get(`merchant_transfer_fee_${bankKey}`) || merchantTransferFee || 0),
+      parseFinanceNumber(formData.get(`merchant_transfer_fee_${bankKey}`), merchantTransferFee),
     ]),
   )
+  const normalizedFlightMinimumMarginAmount = Math.max(Math.round(flightMinimumMarginAmount), 0)
   const customerAdminFeeRules = {
     bank_transfer: bankTransferFeePercent,
     qris: qrisFeePercent,
     credit_card: creditCardFeePercent,
-    flight_markup_flat_amount: Math.max(Math.round(flightMarkupFlatAmount), 0),
     flight_markup_percent: Math.max(flightMarkupPercent, 0),
-    flight_minimum_margin_amount: Math.max(Math.round(flightMinimumMarginAmount), 0),
+    flight_minimum_margin_amount: normalizedFlightMinimumMarginAmount,
+    flight_maximum_margin_amount: Math.max(
+      Math.round(flightMaximumMarginAmount),
+      normalizedFlightMinimumMarginAmount,
+    ),
   }
 
   const adminSupabase = createAdminClient()
