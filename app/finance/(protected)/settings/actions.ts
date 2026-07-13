@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getFinanceSettings } from "@/lib/finance/settings"
 
 const merchantTransferBanks = ["default", "bca", "bni", "bri", "mandiri", "permata", "cimb", "bsi"] as const
 
@@ -17,6 +18,13 @@ function resolvePortalPaths(portal: FinancePortal) {
     loginPath: portal === "superadmin" ? "/superadmin/login" : "/finance/login",
     settingsPath: portal === "superadmin" ? "/superadmin/finance-settings" : "/finance/settings",
   }
+}
+
+function resolveReturnPath(formData: FormData, portal: FinancePortal) {
+  const fallback = resolvePortalPaths(portal).settingsPath
+  const value = String(formData.get("return_path") || "").trim()
+  const allowedPrefix = portal === "superadmin" ? "/superadmin/finance-settings" : "/finance/settings"
+  return value.startsWith(allowedPrefix) ? value : fallback
 }
 
 async function ensureFinance(portal: FinancePortal) {
@@ -46,24 +54,65 @@ function parseFinanceNumber(value: FormDataEntryValue | null, fallback = 0) {
 export async function saveFinanceSettings(formData: FormData) {
   const portal = resolvePortal(formData)
   await ensureFinance(portal)
+  const adminSupabase = createAdminClient()
+  const currentSettings = await getFinanceSettings(
+    adminSupabase as unknown as Parameters<typeof getFinanceSettings>[0],
+  )
+  const currentFlightPricing = currentSettings.flightPricing || {
+    markupPercent: 2,
+    minimumMarginAmount: 20000,
+    maximumMarginAmount: 75000,
+  }
+  const returnPath = resolveReturnPath(formData, portal)
 
-  const redfengCommissionPercent = parseFinanceNumber(formData.get("redfeng_commission_percent"))
-  const bankTransferFeePercent = parseFinanceNumber(formData.get("customer_admin_fee_bank_transfer_percent"))
-  const qrisFeePercent = parseFinanceNumber(formData.get("customer_admin_fee_qris_percent"))
-  const creditCardFeePercent = parseFinanceNumber(formData.get("customer_admin_fee_credit_card_percent"))
-  const customerTaxPercent = parseFinanceNumber(formData.get("customer_tax_percent"))
-  const merchantTransferFee = parseFinanceNumber(formData.get("merchant_transfer_fee"))
-  const flightMarkupPercent = parseFinanceNumber(formData.get("flight_markup_percent"), 2)
-  const flightMinimumMarginAmount = parseFinanceNumber(formData.get("flight_minimum_margin_amount"), 20000)
-  const flightMaximumMarginAmount = parseFinanceNumber(formData.get("flight_maximum_margin_amount"), 75000)
+  const redfengCommissionPercent = parseFinanceNumber(
+    formData.get("redfeng_commission_percent"),
+    currentSettings.redfengCommissionPercent,
+  )
+  const bankTransferFeePercent = parseFinanceNumber(
+    formData.get("customer_admin_fee_bank_transfer_percent"),
+    currentSettings.customerAdminFeeRules.bank_transfer,
+  )
+  const qrisFeePercent = parseFinanceNumber(
+    formData.get("customer_admin_fee_qris_percent"),
+    currentSettings.customerAdminFeeRules.qris,
+  )
+  const creditCardFeePercent = parseFinanceNumber(
+    formData.get("customer_admin_fee_credit_card_percent"),
+    currentSettings.customerAdminFeeRules.credit_card,
+  )
+  const customerTaxPercent = parseFinanceNumber(
+    formData.get("customer_tax_percent"),
+    currentSettings.customerTaxPercent,
+  )
+  const merchantTransferFee = parseFinanceNumber(
+    formData.get("merchant_transfer_fee"),
+    currentSettings.merchantTransferFee,
+  )
+  const flightMarkupPercent = parseFinanceNumber(
+    formData.get("flight_markup_percent"),
+    currentFlightPricing.markupPercent,
+  )
+  const flightMinimumMarginAmount = parseFinanceNumber(
+    formData.get("flight_minimum_margin_amount"),
+    currentFlightPricing.minimumMarginAmount,
+  )
+  const flightMaximumMarginAmount = parseFinanceNumber(
+    formData.get("flight_maximum_margin_amount"),
+    currentFlightPricing.maximumMarginAmount,
+  )
   const merchantTransferFeeRules = Object.fromEntries(
     merchantTransferBanks.map((bankKey) => [
       bankKey,
-      parseFinanceNumber(formData.get(`merchant_transfer_fee_${bankKey}`), merchantTransferFee),
+      parseFinanceNumber(
+        formData.get(`merchant_transfer_fee_${bankKey}`),
+        currentSettings.merchantTransferFeeRules[bankKey] ?? merchantTransferFee,
+      ),
     ]),
   )
   const normalizedFlightMinimumMarginAmount = Math.max(Math.round(flightMinimumMarginAmount), 0)
   const customerAdminFeeRules = {
+    ...currentSettings.customerAdminFeeRules,
     bank_transfer: bankTransferFeePercent,
     qris: qrisFeePercent,
     credit_card: creditCardFeePercent,
@@ -75,7 +124,6 @@ export async function saveFinanceSettings(formData: FormData) {
     ),
   }
 
-  const adminSupabase = createAdminClient()
   const { error } = await adminSupabase.from("finance_settings").upsert({
     id: "default",
     redfeng_commission_percent: redfengCommissionPercent,
@@ -88,8 +136,8 @@ export async function saveFinanceSettings(formData: FormData) {
   })
 
   if (error) {
-    redirect(`${resolvePortalPaths(portal).settingsPath}?error=${encodeURIComponent(error.message)}`)
+    redirect(`${returnPath}?error=${encodeURIComponent(error.message)}`)
   }
 
-  redirect(`${resolvePortalPaths(portal).settingsPath}?success=Setting finance berhasil diperbarui`)
+  redirect(`${returnPath}?success=Setting finance berhasil diperbarui`)
 }

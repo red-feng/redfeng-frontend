@@ -122,6 +122,22 @@ export default async function SuperadminProtectedLayout({
     { href: "/superadmin/dashboard", label: "Dashboard", badgeCount: 0 },
     { href: "/superadmin/operations-manager", label: "Operations Overview", badgeCount: 0 },
     { href: "/superadmin/finance-manager", label: "Finance Overview", badgeCount: 0 },
+    {
+      label: "Finance Settings",
+      children: [
+        { href: "/superadmin/finance-settings", label: "Overview" },
+        { href: "/superadmin/finance-settings/flights", label: "Pesawat" },
+        { href: "/superadmin/finance-settings/hotels", label: "Hotel" },
+        { href: "/superadmin/finance-settings/trains", label: "Kereta Api" },
+        { href: "/superadmin/finance-settings/bus-travel", label: "Bus & Travel" },
+        { href: "/superadmin/finance-settings/ferries", label: "Kapal Laut" },
+        { href: "/superadmin/finance-settings/cruises", label: "Kapal Pesiar" },
+        { href: "/superadmin/finance-settings/activities", label: "Aktivitas" },
+        { href: "/superadmin/finance-settings/packages", label: "Paket Tour" },
+        { href: "/superadmin/finance-settings/customer-fees", label: "Customer Fee & Tax" },
+        { href: "/superadmin/finance-settings/merchant-transfer", label: "Merchant Transfer" },
+      ],
+    },
     { href: "/superadmin/supplier-balances", label: "Supplier Balances", badgeCount: 0 },
     {
       label: "Marketing Overview",

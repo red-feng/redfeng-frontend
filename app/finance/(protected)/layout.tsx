@@ -81,7 +81,22 @@ export default async function FinanceProtectedLayout({
         { href: "/finance/supplier-balances", label: "Supplier Balances" },
         { href: "/finance/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
         { label: "SISTEM" },
-        { href: "/finance/settings", label: "Finance Settings" },
+        {
+          label: "Finance Settings",
+          children: [
+            { href: "/finance/settings", label: "Overview" },
+            { href: "/finance/settings/flights", label: "Pesawat" },
+            { href: "/finance/settings/hotels", label: "Hotel" },
+            { href: "/finance/settings/trains", label: "Kereta Api" },
+            { href: "/finance/settings/bus-travel", label: "Bus & Travel" },
+            { href: "/finance/settings/ferries", label: "Kapal Laut" },
+            { href: "/finance/settings/cruises", label: "Kapal Pesiar" },
+            { href: "/finance/settings/activities", label: "Aktivitas" },
+            { href: "/finance/settings/packages", label: "Paket Tour" },
+            { href: "/finance/settings/customer-fees", label: "Customer Fee & Tax" },
+            { href: "/finance/settings/merchant-transfer", label: "Merchant Transfer" },
+          ],
+        },
         { href: "/finance/team-accounts", label: "Team Accounts" },
       ]
     : [
