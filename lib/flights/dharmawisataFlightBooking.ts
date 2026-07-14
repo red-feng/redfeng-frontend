@@ -6,7 +6,10 @@ import {
   getDharmawisataCredentials,
   isDharmawisataConfigured,
 } from "@/lib/dharmawisata/client"
-import type { DharmawisataFlightScheduleSegment } from "@/lib/flights/dharmawisataFlightScheduleLookup"
+import type {
+  DharmawisataFlightScheduleSegment,
+  DharmawisataFlightScheduleSource,
+} from "@/lib/flights/dharmawisataFlightScheduleLookup"
 
 type JsonRecord = Record<string, unknown>
 
@@ -48,7 +51,7 @@ export type DharmawisataFlightBookingInput = {
   detailSchedule?: string | null
   searchKey?: string | null
   airlineAccessCode?: string | null
-  scheduleSource?: "Airline/Schedule" | "Airline/LowFareSchedule" | null
+  scheduleSource?: DharmawisataFlightScheduleSource | null
   scheduleSegments?: DharmawisataFlightScheduleSegment[] | null
   contactTitle?: string | null
   contactFirstName?: string | null
@@ -358,7 +361,11 @@ async function runPreBookingStep(endpoint: string, path: string, body: JsonRecor
 }
 
 async function runDharmawisataPreBookingFlow(input: DharmawisataFlightBookingInput, accessToken: string) {
-  const pricePath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_PRICE_PATH") || "/Airline/Price"
+  const usesAllAirlineFlow = input.scheduleSource === "Airline/ScheduleAllAirline"
+  const pricePath = usesAllAirlineFlow
+    ? getDharmawisataConfiguredPath("DHARMAWISATA_H2H_PRICE_ALL_AIRLINE_PATH") || "/Airline/PriceAllAirline"
+    : getDharmawisataConfiguredPath("DHARMAWISATA_H2H_PRICE_PATH") || "/Airline/Price"
+  const priceEndpoint = usesAllAirlineFlow ? "Airline/PriceAllAirline" : "Airline/Price"
   const baggageAndMealPath =
     getDharmawisataConfiguredPath("DHARMAWISATA_H2H_BAGGAGE_AND_MEAL_PATH") || "/Airline/BaggageAndMeal"
   const seatPath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_SEAT_PATH") || "/Airline/Seat"
@@ -366,15 +373,25 @@ async function runDharmawisataPreBookingFlow(input: DharmawisataFlightBookingInp
   let resolvedInput = input
 
   // Dharmawisata confirmed that one flight transaction must keep the same login
-  // accessToken from Airline/Schedule through Price, add-ons, Seat, and Booking.
-  const priceStep = await runPreBookingStep("Airline/Price", pricePath, {
-    ...buildFlightFlowBase(input, accessToken),
-    schDeparts: buildSchedules(input),
-    schReturns: [],
-    airlineAccessCode: input.airlineAccessCode || "",
-    searchKey: input.searchKey || "",
-    journeyDepartReference: input.detailSchedule || "",
-    journeyReturnReference: "",
+  // accessToken from Schedule/ScheduleAllAirline through Price, add-ons, Seat, and Booking.
+  const pricePayload = usesAllAirlineFlow
+    ? {
+        ...buildFlightFlowBase(input, accessToken),
+        airlineAccessCode: input.airlineAccessCode || "",
+        journeyDepartReference: input.detailSchedule || "",
+        journeyReturnReference: "",
+      }
+    : {
+        ...buildFlightFlowBase(input, accessToken),
+        schDeparts: buildSchedules(input),
+        schReturns: [],
+        airlineAccessCode: input.airlineAccessCode || "",
+        searchKey: input.searchKey || "",
+        journeyDepartReference: input.detailSchedule || "",
+        journeyReturnReference: "",
+      }
+  const priceStep = await runPreBookingStep(priceEndpoint, pricePath, {
+    ...pricePayload,
   })
   steps.push(priceStep)
 
@@ -553,12 +570,18 @@ export async function createDharmawisataFlightBooking(
     }
   }
 
-  if (input.scheduleSource !== undefined && input.scheduleSource !== "Airline/Schedule") {
+  const scheduleSourceReady =
+    input.scheduleSource === undefined ||
+    input.scheduleSource === null ||
+    input.scheduleSource === "Airline/Schedule" ||
+    input.scheduleSource === "Airline/ScheduleAllAirline"
+
+  if (!scheduleSourceReady) {
     return {
       ok: false,
       skipped: false,
       mode: "api",
-      message: "Auto-hold Dharmawisata ditahan: Airline/Schedule belum berhasil pada token transaksi yang sama, sehingga Price/Booking tidak dipanggil.",
+      message: "Auto-hold Dharmawisata ditahan: ScheduleAllAirline/Schedule resmi belum berhasil pada token transaksi yang sama, sehingga Price/Booking tidak dipanggil.",
       bookingCode: null,
       bookingDate: null,
       timeLimit: null,
@@ -567,7 +590,7 @@ export async function createDharmawisataFlightBooking(
       airlineAccessCode: input.airlineAccessCode || null,
       raw: {
         bookingMode: "api",
-        error: "airline_schedule_step_required",
+        error: "airline_schedule_or_schedule_all_airline_step_required",
         scheduleSource: input.scheduleSource || null,
       },
     }

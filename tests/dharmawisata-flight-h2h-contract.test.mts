@@ -29,13 +29,14 @@ for (const anchor of [
   "scheduleAccessToken: scheduleAccessToken || null",
   "source,",
   'const scheduleMatch = mapDharmawisataSchedulePayloadForBooking(payload, input, accessToken, "Airline/Schedule")',
+  'const match = mapDharmawisataSchedulePayloadForBooking(payload, input, accessToken, "Airline/ScheduleAllAirline")',
   "const payload = await dharmawisataFormFetch({",
 ]) {
   assertIncludes(scheduleSource, anchor, "Dharmawisata Airline/Schedule booking context contract")
 }
 
 const orderedBookingAnchors = [
-  'const priceStep = await runPreBookingStep("Airline/Price"',
+  'const priceStep = await runPreBookingStep(priceEndpoint, pricePath',
   'const baggageStep = await runPreBookingStep("Airline/BaggageAndMeal"',
   'const seatStep = await runPreBookingStep("Airline/Seat"',
   "const payload = buildBookingPayload(bookingInput, accessToken)",
@@ -50,8 +51,11 @@ for (const anchor of orderedBookingAnchors) {
 }
 
 for (const anchor of [
-  "accessToken from Airline/Schedule through Price, add-ons, Seat, and Booking.",
-  'input.scheduleSource !== undefined && input.scheduleSource !== "Airline/Schedule"',
+  "accessToken from Schedule/ScheduleAllAirline through Price, add-ons, Seat, and Booking.",
+  'const usesAllAirlineFlow = input.scheduleSource === "Airline/ScheduleAllAirline"',
+  'getDharmawisataConfiguredPath("DHARMAWISATA_H2H_PRICE_ALL_AIRLINE_PATH") || "/Airline/PriceAllAirline"',
+  'input.scheduleSource === "Airline/ScheduleAllAirline"',
+  'error: "airline_schedule_or_schedule_all_airline_step_required"',
   "searchKey: baggageStep.searchKey || resolvedInput.searchKey ||",
   "airlineAccessCode: baggageStep.airlineAccessCode || resolvedInput.airlineAccessCode ||",
   "searchKey: seatStep.searchKey || resolvedInput.searchKey || null",
@@ -73,6 +77,8 @@ for (const anchor of [
   "Production uses normal valid SSL.",
   "UAT may temporarily use ignored SSL verification",
   "The same `accessToken` from step 1 must be used through the transaction.",
+  "`Airline/ScheduleAllAirline`",
+  "`Airline/PriceAllAirline`",
   "AirAsia/QZ has a special flow and cannot use normal HOLD booking.",
   "For normal airlines, agent balance is cut at issued time",
 ]) {

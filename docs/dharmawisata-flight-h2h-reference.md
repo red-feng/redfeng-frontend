@@ -16,18 +16,20 @@ This note captures the working agreement from the RedFeng and Dharmawisata H2H W
 
 ## Airline Flow
 
-The confirmed normal flight flow is:
+The confirmed normal all-airline flight flow from Dharmawisata manual examples is:
 
 1. `Session/Login`
-2. `Airline/Schedule`
-3. `Airline/Price`
+2. `Airline/ScheduleAllAirline`
+3. `Airline/PriceAllAirline`
 4. `Airline/BaggageAndMeal`
 5. `Airline/Seat`
 6. `Airline/Booking`
 
+`Airline/Schedule` and `Airline/Price` remain supported for the single-airline flow when Dharmawisata returns that schedule context.
+
 The same `accessToken` from step 1 must be used through the transaction. The schedule/price context such as `searchKey`, `airlineAccessCode`, `detailSchedule`, and `flightClass` must be carried forward from supplier responses instead of being regenerated locally.
 
-`Airline/LowFareSchedule` may feed the public catalog, but auto-hold must only continue to `Airline/Price` and `Airline/Booking` after `Airline/Schedule` succeeds on the same transaction token. If only LowFareSchedule succeeds, stop before Price and keep the booking in admin recheck.
+`Airline/LowFareSchedule` may feed the public catalog, but auto-hold must only continue after an official `Airline/ScheduleAllAirline` or `Airline/Schedule` context succeeds on the same transaction token. If only LowFareSchedule succeeds, stop before Price and keep the booking in admin recheck.
 
 ## AirAsia Exception
 
