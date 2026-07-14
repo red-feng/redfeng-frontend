@@ -71,7 +71,7 @@ export default function HeroHeader({ locale }: { locale: Locale }) {
               iconClassName="h-5 w-5"
               badgeClassName="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#ef5b2a] px-1 text-[10px] font-bold text-white"
             />
-            <PublicHeaderAccountControls locale={locale} variant="overlay" showSignOut={false} />
+            <PublicHeaderAccountControls locale={locale} variant="overlay" />
           </div>
         </div>
 

@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { shouldRefreshPublicAuthShell } from "@/lib/chat/auth-flow-policy.mjs"
-import SignOutButton from "@/app/components/SignOutButton"
 import {
   getPublicAccountHomePath,
   resolvePublicAccountRole,
@@ -18,13 +17,11 @@ export default function PublicHeaderAccountControls({
   redirectSuperadminFromHome = false,
   initialRole = "guest",
   variant = "default",
-  showSignOut = true,
 }: {
   locale: Locale
   redirectSuperadminFromHome?: boolean
   initialRole?: PublicAccountRole
   variant?: "default" | "overlay"
-  showSignOut?: boolean
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -32,7 +29,6 @@ export default function PublicHeaderAccountControls({
   const t = dictionaries[locale].header
   const guestLoginLabel = locale === "zh" ? "\u767b\u5f55" : locale === "en" ? "Login" : "Masuk"
   const guestLoginRegisterLabel = locale === "zh" ? "\u767b\u5f55 / \u6ce8\u518c" : locale === "en" ? "Login / Register" : "Login / Daftar"
-  const signOutLabel = locale === "zh" ? "\u9000\u51fa\u767b\u5f55" : locale === "en" ? "Logout" : "Keluar"
   const [accountRole, setAccountRole] = useState<PublicAccountRole>(initialRole)
   const [isAuthenticated, setIsAuthenticated] = useState(initialRole !== "guest")
 
@@ -116,12 +112,6 @@ export default function PublicHeaderAccountControls({
           {accountLabel}
         </Link>
       )}
-      {isAuthenticated && showSignOut ? (
-        <SignOutButton
-          label={signOutLabel}
-          className={isOverlay ? "rounded-full border border-white/80 bg-white/84 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur transition hover:text-rose-600" : "rounded-2xl border border-slate-200 bg-white/90 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-rose-300 hover:text-rose-600"}
-        />
-      ) : null}
     </div>
   )
 }
