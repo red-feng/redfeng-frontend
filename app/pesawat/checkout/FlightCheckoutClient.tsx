@@ -728,7 +728,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
 
     if (incompletePassengerIndex >= 0) {
       setOpenPassengerId(passengers[incompletePassengerIndex]?.id || passengers[0]?.id || "passenger-1")
-      setError(`Lengkapi data Penumpang Dewasa ${incompletePassengerIndex + 1} sebelum mengajukan booking.`)
+      setError(`Lengkapi data Penumpang Dewasa ${incompletePassengerIndex + 1} sebelum membuat booking.`)
       return
     }
 
@@ -1435,7 +1435,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
             <h2 className="text-xl font-bold text-[#ff4b00]">Status Booking</h2>
             <div className="mt-5 space-y-4">
               {[
-                ["1", "Ajukan booking", "Data pemesanan dikirim ke Red Feng."],
+                ["1", "Booking", "Data pemesanan dikirim ke Red Feng."],
                 ["2", "Validasi harga", "Tim Red Feng memastikan harga dan ketersediaan kursi."],
                 ["3", "Amankan kursi", "Kode booking maskapai dibuat jika data valid."],
                 ["4", "Pembayaran", "Link pembayaran dibuka setelah kursi berhasil diamankan."],
