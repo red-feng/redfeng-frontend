@@ -136,6 +136,11 @@ function getPayloadAirlineAccessCode(payload: unknown) {
   return isRecord(payload) ? asString(payload.airlineAccessCode) : ""
 }
 
+function getPayloadSearchKey(payload: unknown) {
+  if (!isRecord(payload)) return ""
+  return asString(payload.searchKey || payload.SearchKey)
+}
+
 function getPayloadAirlineIndex(payload: unknown) {
   return isRecord(payload) ? asNumber(payload.airlineIndex) : 0
 }
@@ -166,9 +171,22 @@ function matchesSchedule(journey: unknown, input: DharmawisataFlightScheduleLook
   )
 }
 
+function pickString(raw: JsonRecord, keys: string[]) {
+  for (const key of keys) {
+    const value = asString(raw[key])
+    if (value) return value
+  }
+  return ""
+}
+
+function getJourneyDetailSchedule(raw: JsonRecord) {
+  return pickString(raw, ["detailSchedule", "journeyReference", "scheduleReference", "schDepart"])
+}
+
 function mapJourney(
   journey: unknown,
   airlineAccessCode: string,
+  searchKey: string,
   scheduleAccessToken: string,
   source: "Airline/Schedule" | "Airline/LowFareSchedule",
   expectedFlightClass?: string | null,
@@ -177,7 +195,7 @@ function mapJourney(
   const segment = firstRecord(record.segment)
   const flightDetail = firstRecord(segment.flightDetail)
   const availableDetail = matchingRecord(segment.availableDetail, expectedFlightClass)
-  const journeyReference = asString(record.journeyReference)
+  const detailSchedule = getJourneyDetailSchedule(record)
   const journeyFlightClass = asString(availableDetail.flightClass)
   const rawSegments = Array.isArray(record.segment) ? record.segment : []
   const segments = rawSegments.flatMap((rawSegment) => {
@@ -200,17 +218,17 @@ function mapJourney(
           departureAt: asString(record.jiDepartTime || detail.fdDepartTime),
           arrivalAt: asString(record.jiArrivalTime || detail.fdArrivalTime),
           flightClass: sourceFlightClass,
-          detailSchedule: journeyReference,
+          detailSchedule,
         }
       })
       .filter((item): item is DharmawisataFlightScheduleSegment => Boolean(item))
   })
 
   return {
-    ok: Boolean(journeyReference),
-    message: journeyReference ? `Schedule ditemukan dari ${source}.` : `${source} menemukan journey tetapi journeyReference kosong.`,
-    detailSchedule: journeyReference || null,
-    searchKey: journeyReference || null,
+    ok: Boolean(detailSchedule),
+    message: detailSchedule ? `Schedule ditemukan dari ${source}.` : `${source} menemukan journey tetapi detailSchedule kosong.`,
+    detailSchedule: detailSchedule || null,
+    searchKey: searchKey || detailSchedule || null,
     airlineAccessCode: airlineAccessCode || null,
     scheduleAccessToken: scheduleAccessToken || null,
     flightClass: journeyFlightClass || null,
@@ -219,6 +237,25 @@ function mapJourney(
     arrivalAt: asString(record.jiArrivalTime || flightDetail.fdArrivalTime) || null,
     segments,
   }
+}
+
+export function mapDharmawisataSchedulePayloadForBooking(
+  payload: unknown,
+  input: DharmawisataFlightScheduleLookupInput,
+  accessToken: string,
+  source: "Airline/Schedule" | "Airline/LowFareSchedule" = "Airline/Schedule",
+): DharmawisataFlightScheduleLookupResult | null {
+  const match = extractJourneys(payload).find((journey) => matchesSchedule(journey, input))
+  if (!match) return null
+
+  return mapJourney(
+    match,
+    getPayloadAirlineAccessCode(payload) || input.airlineAccessCode || "",
+    getPayloadSearchKey(payload),
+    accessToken,
+    source,
+    input.flightClass,
+  )
 }
 
 export async function findDharmawisataLowFareScheduleForBooking(
@@ -288,16 +325,8 @@ export async function findDharmawisataLowFareScheduleForBooking(
         },
       })
       lastMessage = getPayloadMessage(payload) || getPayloadStatus(payload) || lastMessage
-      const scheduleMatch = extractJourneys(payload).find((journey) => matchesSchedule(journey, input))
-      if (scheduleMatch) {
-        return mapJourney(
-          scheduleMatch,
-          getPayloadAirlineAccessCode(payload) || input.airlineAccessCode || "",
-          accessToken,
-          "Airline/Schedule",
-          input.flightClass,
-        )
-      }
+      const scheduleMatch = mapDharmawisataSchedulePayloadForBooking(payload, input, accessToken, "Airline/Schedule")
+      if (scheduleMatch) return scheduleMatch
     } catch (error) {
       lastMessage = error instanceof Error ? `Airline/Schedule gagal: ${error.message}` : "Airline/Schedule gagal."
     }
@@ -355,15 +384,12 @@ export async function findDharmawisataLowFareScheduleForBooking(
     seenStates.add(stateKey)
     lastMessage = message || status || lastMessage
 
-    const match = extractJourneys(payload).find((journey) => matchesSchedule(journey, input))
+    const match = mapDharmawisataSchedulePayloadForBooking(payload, input, accessToken, "Airline/LowFareSchedule")
     if (match) {
-      return mapJourney(
-        match,
-        nextAirlineAccessCode || airlineAccessCode,
-        accessToken,
-        "Airline/LowFareSchedule",
-        input.flightClass,
-      )
+      return {
+        ...match,
+        airlineAccessCode: match.airlineAccessCode || nextAirlineAccessCode || airlineAccessCode || null,
+      }
     }
 
     if (status === "SUCCESS" && totalAirline > 0 && airlineIndex >= totalAirline) break

@@ -364,6 +364,8 @@ async function runDharmawisataPreBookingFlow(input: DharmawisataFlightBookingInp
   const steps = []
   let resolvedInput = input
 
+  // Dharmawisata confirmed that one flight transaction must keep the same login
+  // accessToken from Airline/Schedule through Price, add-ons, Seat, and Booking.
   const priceStep = await runPreBookingStep("Airline/Price", pricePath, {
     ...buildFlightFlowBase(input, accessToken),
     schDeparts: buildSchedules(input),
@@ -401,7 +403,13 @@ async function runDharmawisataPreBookingFlow(input: DharmawisataFlightBookingInp
     }
   }
 
-  const seatStep = await runPreBookingStep("Airline/Seat", seatPath, addOnPayload)
+  resolvedInput = {
+    ...resolvedInput,
+    searchKey: baggageStep.searchKey || resolvedInput.searchKey || "",
+    airlineAccessCode: baggageStep.airlineAccessCode || resolvedInput.airlineAccessCode || "",
+  }
+
+  const seatStep = await runPreBookingStep("Airline/Seat", seatPath, buildAddOnFlowPayload(resolvedInput, accessToken))
   steps.push(seatStep)
 
   if (!seatStep.ok) {
@@ -416,8 +424,8 @@ async function runDharmawisataPreBookingFlow(input: DharmawisataFlightBookingInp
     ok: true,
     message: "Pre-booking flow Dharmawisata berhasil.",
     steps,
-    searchKey: resolvedInput.searchKey || null,
-    airlineAccessCode: resolvedInput.airlineAccessCode || null,
+    searchKey: seatStep.searchKey || resolvedInput.searchKey || null,
+    airlineAccessCode: seatStep.airlineAccessCode || resolvedInput.airlineAccessCode || null,
   }
 }
 
