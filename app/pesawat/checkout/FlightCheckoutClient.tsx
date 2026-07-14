@@ -1341,7 +1341,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
               disabled={checkingSession || submitting}
               className="h-14 rounded-lg bg-[#ff4b00] px-12 text-base font-bold text-white shadow-[0_10px_22px_rgba(255,75,0,0.25)] transition hover:bg-[#e64400] disabled:cursor-not-allowed disabled:bg-orange-200"
             >
-              {submitting ? "Menyimpan..." : isAuthenticated ? "Ajukan Booking Pesawat" : "Login untuk Booking"}
+              {submitting ? "Menyimpan..." : isAuthenticated ? "Booking" : "Login untuk Booking"}
             </button>
           </div>
         </section>
