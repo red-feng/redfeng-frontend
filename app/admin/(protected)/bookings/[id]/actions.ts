@@ -974,6 +974,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
     scheduleLookup = {
       ok: false,
       message: error instanceof Error ? error.message : "LowFareSchedule lookup gagal.",
+      source: null,
       detailSchedule: null,
       searchKey: null,
       airlineAccessCode: null,
@@ -1011,6 +1012,7 @@ export async function recheckAndHoldDharmawisataFlight(formData: FormData) {
     detailSchedule,
     searchKey,
     airlineAccessCode: resolvedAirlineAccessCode,
+    scheduleSource: scheduleLookup.source || null,
     scheduleSegments: scheduleLookup.ok ? scheduleLookup.segments : null,
     contactTitle: "MR",
     contactFirstName: contactName.firstName,

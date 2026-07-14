@@ -27,6 +27,8 @@ The confirmed normal flight flow is:
 
 The same `accessToken` from step 1 must be used through the transaction. The schedule/price context such as `searchKey`, `airlineAccessCode`, `detailSchedule`, and `flightClass` must be carried forward from supplier responses instead of being regenerated locally.
 
+`Airline/LowFareSchedule` may feed the public catalog, but auto-hold must only continue to `Airline/Price` and `Airline/Booking` after `Airline/Schedule` succeeds on the same transaction token. If only LowFareSchedule succeeds, stop before Price and keep the booking in admin recheck.
+
 ## AirAsia Exception
 
 - AirAsia/QZ has a special flow and cannot use normal HOLD booking.

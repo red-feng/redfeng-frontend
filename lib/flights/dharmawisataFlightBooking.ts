@@ -48,6 +48,7 @@ export type DharmawisataFlightBookingInput = {
   detailSchedule?: string | null
   searchKey?: string | null
   airlineAccessCode?: string | null
+  scheduleSource?: "Airline/Schedule" | "Airline/LowFareSchedule" | null
   scheduleSegments?: DharmawisataFlightScheduleSegment[] | null
   contactTitle?: string | null
   contactFirstName?: string | null
@@ -548,6 +549,26 @@ export async function createDharmawisataFlightBooking(
       raw: {
         bookingMode: "manual_incomplete_data",
         missingFields,
+      },
+    }
+  }
+
+  if (input.scheduleSource !== undefined && input.scheduleSource !== "Airline/Schedule") {
+    return {
+      ok: false,
+      skipped: false,
+      mode: "api",
+      message: "Auto-hold Dharmawisata ditahan: Airline/Schedule belum berhasil pada token transaksi yang sama, sehingga Price/Booking tidak dipanggil.",
+      bookingCode: null,
+      bookingDate: null,
+      timeLimit: null,
+      referenceNo: null,
+      bookingCodeAirline: null,
+      airlineAccessCode: input.airlineAccessCode || null,
+      raw: {
+        bookingMode: "api",
+        error: "airline_schedule_step_required",
+        scheduleSource: input.scheduleSource || null,
       },
     }
   }

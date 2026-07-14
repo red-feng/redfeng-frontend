@@ -27,7 +27,9 @@ for (const anchor of [
   'return asString(payload.searchKey || payload.SearchKey)',
   'return pickString(raw, ["detailSchedule", "journeyReference", "scheduleReference", "schDepart"])',
   "scheduleAccessToken: scheduleAccessToken || null",
+  "source,",
   'const scheduleMatch = mapDharmawisataSchedulePayloadForBooking(payload, input, accessToken, "Airline/Schedule")',
+  "const payload = await dharmawisataFormFetch({",
 ]) {
   assertIncludes(scheduleSource, anchor, "Dharmawisata Airline/Schedule booking context contract")
 }
@@ -49,6 +51,7 @@ for (const anchor of orderedBookingAnchors) {
 
 for (const anchor of [
   "accessToken from Airline/Schedule through Price, add-ons, Seat, and Booking.",
+  'input.scheduleSource !== undefined && input.scheduleSource !== "Airline/Schedule"',
   "searchKey: baggageStep.searchKey || resolvedInput.searchKey ||",
   "airlineAccessCode: baggageStep.airlineAccessCode || resolvedInput.airlineAccessCode ||",
   "searchKey: seatStep.searchKey || resolvedInput.searchKey || null",

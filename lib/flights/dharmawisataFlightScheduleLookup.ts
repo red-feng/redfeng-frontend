@@ -39,6 +39,7 @@ export type DharmawisataFlightScheduleSegment = {
 export type DharmawisataFlightScheduleLookupResult = {
   ok: boolean
   message: string
+  source?: "Airline/Schedule" | "Airline/LowFareSchedule" | null
   detailSchedule: string | null
   searchKey: string | null
   airlineAccessCode: string | null
@@ -227,6 +228,7 @@ function mapJourney(
   return {
     ok: Boolean(detailSchedule),
     message: detailSchedule ? `Schedule ditemukan dari ${source}.` : `${source} menemukan journey tetapi detailSchedule kosong.`,
+    source,
     detailSchedule: detailSchedule || null,
     searchKey: searchKey || detailSchedule || null,
     airlineAccessCode: airlineAccessCode || null,
@@ -258,6 +260,30 @@ export function mapDharmawisataSchedulePayloadForBooking(
   )
 }
 
+function buildScheduleRequestBody(
+  input: DharmawisataFlightScheduleLookupInput,
+  userID: string,
+  accessToken: string,
+) {
+  return {
+    airlineID: input.airlineCode || "",
+    tripType: normalizeTripType(input.tripType),
+    origin: input.originAirportCode || "",
+    destination: input.destinationAirportCode || "",
+    departDate: lowFareDateTime(input.departureAt),
+    returnDate: normalizeTripType(input.tripType) === "RoundTrip"
+      ? lowFareDateTime(input.returnAt)
+      : "0001-01-01T00:00:00",
+    paxAdult: input.paxAdult,
+    paxChild: input.paxChild || 0,
+    paxInfant: input.paxInfant || 0,
+    promoCode: "",
+    airlineAccessCode: input.airlineAccessCode || "",
+    userID,
+    accessToken,
+  }
+}
+
 export async function findDharmawisataLowFareScheduleForBooking(
   input: DharmawisataFlightScheduleLookupInput,
 ): Promise<DharmawisataFlightScheduleLookupResult> {
@@ -268,6 +294,7 @@ export async function findDharmawisataLowFareScheduleForBooking(
     return {
       ok: false,
       message: "Airline/Schedule atau LowFareSchedule belum dikonfigurasi.",
+      source: null,
       detailSchedule: null,
       searchKey: null,
       airlineAccessCode: null,
@@ -288,6 +315,7 @@ export async function findDharmawisataLowFareScheduleForBooking(
     return {
       ok: false,
       message: "Login berhasil dipanggil tetapi access token kosong.",
+      source: null,
       detailSchedule: null,
       searchKey: null,
       airlineAccessCode: null,
@@ -302,27 +330,13 @@ export async function findDharmawisataLowFareScheduleForBooking(
   let lastMessage = ""
 
   if (schedulePath) {
+    const scheduleBody = buildScheduleRequestBody(input, credentials.userId, accessToken)
+
     try {
       const payload = await dharmawisataJsonFetch({
         path: schedulePath,
         method: "POST",
-        body: {
-          airlineID: input.airlineCode || "",
-          tripType: normalizeTripType(input.tripType),
-          origin: input.originAirportCode || "",
-          destination: input.destinationAirportCode || "",
-          departDate: lowFareDateTime(input.departureAt),
-          returnDate: normalizeTripType(input.tripType) === "RoundTrip"
-            ? lowFareDateTime(input.returnAt)
-            : "0001-01-01T00:00:00",
-          paxAdult: input.paxAdult,
-          paxChild: input.paxChild || 0,
-          paxInfant: input.paxInfant || 0,
-          promoCode: "",
-          airlineAccessCode: input.airlineAccessCode || "",
-          userID: credentials.userId,
-          accessToken,
-        },
+        body: scheduleBody,
       })
       lastMessage = getPayloadMessage(payload) || getPayloadStatus(payload) || lastMessage
       const scheduleMatch = mapDharmawisataSchedulePayloadForBooking(payload, input, accessToken, "Airline/Schedule")
@@ -330,12 +344,27 @@ export async function findDharmawisataLowFareScheduleForBooking(
     } catch (error) {
       lastMessage = error instanceof Error ? `Airline/Schedule gagal: ${error.message}` : "Airline/Schedule gagal."
     }
+
+    try {
+      const payload = await dharmawisataFormFetch({
+        path: schedulePath,
+        method: "POST",
+        body: scheduleBody,
+      })
+      lastMessage = getPayloadMessage(payload) || getPayloadStatus(payload) || lastMessage
+      const scheduleMatch = mapDharmawisataSchedulePayloadForBooking(payload, input, accessToken, "Airline/Schedule")
+      if (scheduleMatch) return scheduleMatch
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Airline/Schedule form gagal."
+      lastMessage = lastMessage ? `${lastMessage}; Airline/Schedule form gagal: ${message}` : `Airline/Schedule form gagal: ${message}`
+    }
   }
 
   if (!searchPath) {
     return {
       ok: false,
       message: lastMessage ? `Schedule tidak ditemukan lewat Airline/Schedule: ${lastMessage}` : "Schedule tidak ditemukan lewat Airline/Schedule.",
+      source: null,
       detailSchedule: null,
       searchKey: null,
       airlineAccessCode: null,
@@ -400,6 +429,7 @@ export async function findDharmawisataLowFareScheduleForBooking(
   return {
     ok: false,
     message: lastMessage ? `Schedule tidak ditemukan di LowFareSchedule: ${lastMessage}` : "Schedule tidak ditemukan di LowFareSchedule.",
+    source: null,
     detailSchedule: null,
     searchKey: null,
     airlineAccessCode: null,

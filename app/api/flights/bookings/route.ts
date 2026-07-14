@@ -40,6 +40,7 @@ function summarizeScheduleLookup(result: DharmawisataFlightScheduleLookupResult 
   return {
     ok: result.ok,
     message: result.message,
+    source: result.source || null,
     hasDetailSchedule: Boolean(result.detailSchedule),
     hasSearchKey: Boolean(result.searchKey),
     hasAirlineAccessCode: Boolean(result.airlineAccessCode),
@@ -697,6 +698,7 @@ export async function POST(req: Request) {
         }).catch<DharmawisataFlightScheduleLookupResult>((error) => ({
           ok: false,
           message: error instanceof Error ? error.message : "Schedule lookup gagal sebelum hold.",
+          source: null,
           detailSchedule: null,
           searchKey: null,
           airlineAccessCode: null,
@@ -737,6 +739,7 @@ export async function POST(req: Request) {
           detailSchedule: resolvedDetailSchedule,
           searchKey: resolvedSearchKey,
           airlineAccessCode: resolvedAirlineAccessCode,
+          scheduleSource: scheduleLookup?.source || null,
           scheduleSegments: scheduleLookup?.ok ? scheduleLookup.segments : null,
           contactTitle,
           contactFirstName: contactNameParts.firstName,
