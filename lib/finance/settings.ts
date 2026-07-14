@@ -40,6 +40,7 @@ export type FlightPricingSettings = {
 export type FlightPriceBreakdown = {
   supplierFareAmount: number
   markupAmount: number
+  taxAmount: number
   customerFareAmount: number
 }
 
@@ -259,11 +260,15 @@ export function calculateFlightFareForCustomer(
   const uncappedMarkupAmount = Math.max(percentMarkup, flightPricing.minimumMarginAmount, 0)
   const maximumMarginAmount = Math.max(flightPricing.maximumMarginAmount, flightPricing.minimumMarginAmount, 0)
   const markupAmount = Math.min(uncappedMarkupAmount, maximumMarginAmount)
-  const customerFareAmount = normalizedSupplierFareAmount + markupAmount
+  const ticketBaseAmount = normalizedSupplierFareAmount + markupAmount
+  const customerTaxPercent = Math.max(Number(settings.customerTaxPercent || 0), 0)
+  const taxAmount = Math.round(ticketBaseAmount * (customerTaxPercent / 100))
+  const customerFareAmount = ticketBaseAmount + taxAmount
 
   return {
     supplierFareAmount: normalizedSupplierFareAmount,
     markupAmount,
+    taxAmount,
     customerFareAmount,
   }
 }
@@ -339,6 +344,33 @@ export function calculateBookingAmounts(
     customerAdminFeeAmount,
     customerTaxPercent,
     customerTaxAmount,
+    totalAmount,
+    dpAmount,
+    finalPaymentAmount: Math.max(totalAmount - dpAmount, 0),
+  }
+}
+
+export function calculateFlightBookingAmounts(
+  ticketSubtotalAmount: number,
+  includedTicketTaxAmount: number,
+  paymentMethod: string | null | undefined,
+  settings: FinanceSettings,
+): BookingPriceBreakdown {
+  const normalizedSubtotal = Math.max(Number(ticketSubtotalAmount || 0), 0)
+  const normalizedIncludedTaxAmount = Math.max(Math.round(Number(includedTicketTaxAmount || 0)), 0)
+  const normalizedPaymentMethod = normalizePaymentMethod(paymentMethod)
+  const customerAdminFeePercent = resolveCustomerAdminFeePercent(normalizedPaymentMethod, settings)
+  const customerAdminFeeAmount = Math.round(normalizedSubtotal * (customerAdminFeePercent / 100))
+  const totalAmount = normalizedSubtotal + customerAdminFeeAmount
+  const dpAmount = Math.round(totalAmount * 0.3)
+
+  return {
+    subtotalAmount: normalizedSubtotal,
+    paymentMethod: normalizedPaymentMethod,
+    customerAdminFeePercent,
+    customerAdminFeeAmount,
+    customerTaxPercent: settings.customerTaxPercent,
+    customerTaxAmount: normalizedIncludedTaxAmount,
     totalAmount,
     dpAmount,
     finalPaymentAmount: Math.max(totalAmount - dpAmount, 0),

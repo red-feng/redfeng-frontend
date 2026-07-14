@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { calculateBookingAmounts, getFinanceSettings } from "@/lib/finance/settings"
+import { calculateFlightBookingAmounts, getFinanceSettings } from "@/lib/finance/settings"
 import { getFlightAutomationPolicy } from "@/lib/flights/automationPolicy"
 import { createDharmawisataFlightBooking, type DharmawisataPassenger } from "@/lib/flights/dharmawisataFlightBooking"
 import {
@@ -375,6 +375,7 @@ export async function POST(req: Request) {
     const fareAmount = asMoney(body.price)
     const supplierFareAmountFromCatalog = asMoney(body.supplier_price)
     const redfengMarkupAmountFromCatalog = asMoney(body.redfeng_markup_amount)
+    const redfengTaxAmountFromCatalog = asMoney(body.redfeng_tax_amount)
     const passengerDetails = parsePassengerDetails(body.passenger_details, passengerMix.adults)
     const seatAddOns = parseSeatAddOns(body.selected_seats, passengerDetails, originAirportCode, destinationAirportCode)
     const selectedSeatDetails = Object.entries(seatAddOns).flatMap(([passengerIndex, addOns]) =>
@@ -450,16 +451,32 @@ export async function POST(req: Request) {
     }
 
     const settings = await getFinanceSettings(supabase as unknown as Parameters<typeof getFinanceSettings>[0])
-    const subtotalAmount = fareAmount * passengerCount
+    const ticketTaxAmount =
+      redfengTaxAmountFromCatalog > 0
+        ? redfengTaxAmountFromCatalog
+        : supplierFareAmountFromCatalog > 0 || redfengMarkupAmountFromCatalog > 0
+          ? Math.max(fareAmount - supplierFareAmountFromCatalog - redfengMarkupAmountFromCatalog, 0)
+          : 0
     const supplierFareAmount =
       supplierFareAmountFromCatalog > 0
         ? supplierFareAmountFromCatalog
-        : redfengMarkupAmountFromCatalog > 0
-          ? Math.max(fareAmount - redfengMarkupAmountFromCatalog, 0)
+        : redfengMarkupAmountFromCatalog > 0 || ticketTaxAmount > 0
+          ? Math.max(fareAmount - redfengMarkupAmountFromCatalog - ticketTaxAmount, 0)
           : fareAmount
+    const redfengMarkupAmount =
+      redfengMarkupAmountFromCatalog > 0
+        ? redfengMarkupAmountFromCatalog
+        : Math.max(fareAmount - supplierFareAmount - ticketTaxAmount, 0)
+    const subtotalAmount = fareAmount * passengerCount
     const supplierSubtotalAmount = Math.max(Math.round(supplierFareAmount * passengerCount), 0)
-    const recordedSpreadAmount = Math.max(Math.round(subtotalAmount - supplierSubtotalAmount), 0)
-    const priceBreakdown = calculateBookingAmounts(subtotalAmount, "bank_transfer", settings)
+    const includedTicketTaxAmount = Math.max(Math.round(ticketTaxAmount * passengerCount), 0)
+    const recordedSpreadAmount = Math.max(Math.round(redfengMarkupAmount * passengerCount), 0)
+    const priceBreakdown = calculateFlightBookingAmounts(
+      subtotalAmount,
+      includedTicketTaxAmount,
+      "bank_transfer",
+      settings,
+    )
     const bookingCode = generateBookingCode()
     const expiry = new Date()
     expiry.setMinutes(expiry.getMinutes() + 30)
@@ -531,6 +548,7 @@ export async function POST(req: Request) {
       supplierFareAmount,
       customerFareAmount: fareAmount,
       redfengMarkupAmount: recordedSpreadAmount,
+      redfengTaxAmount: includedTicketTaxAmount,
       supplierCostAmount: supplierSubtotalAmount,
       supplierCostCurrency: "IDR",
       passengerManifest: passengerManifest || null,

@@ -46,6 +46,7 @@ export default async function FlightCheckoutPage({
     price: numberParam(params, "price"),
     supplierPrice: numberParam(params, "supplier_price"),
     redfengMarkupAmount: numberParam(params, "redfeng_markup_amount"),
+    redfengTaxAmount: numberParam(params, "redfeng_tax_amount"),
     fareReferenceId: firstParam(params, "fare_reference_id"),
     airlineAccessCode: firstParam(params, "airline_access_code"),
     searchKey: firstParam(params, "search_key"),

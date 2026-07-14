@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import {
+  calculateFlightBookingAmounts,
   calculateFlightFareForCustomer,
   defaultFinanceSettings,
   getFinanceSettings,
@@ -18,6 +19,7 @@ async function runCase(name: string, fn: () => void | Promise<void>) {
 function settingsWithFlightPricing() {
   return {
     ...defaultFinanceSettings,
+    customerTaxPercent: 12,
     flightPricing: {
       markupPercent: 2,
       minimumMarginAmount: 20000,
@@ -31,21 +33,36 @@ await runCase("flight pricing uses minimum margin for low fares", () => {
 
   assert.equal(result.supplierFareAmount, 700000)
   assert.equal(result.markupAmount, 20000)
-  assert.equal(result.customerFareAmount, 720000)
+  assert.equal(result.taxAmount, 86400)
+  assert.equal(result.customerFareAmount, 806400)
 })
 
 await runCase("flight pricing uses percentage margin inside min/max band", () => {
   const result = calculateFlightFareForCustomer(2000000, settingsWithFlightPricing())
 
   assert.equal(result.markupAmount, 40000)
-  assert.equal(result.customerFareAmount, 2040000)
+  assert.equal(result.taxAmount, 244800)
+  assert.equal(result.customerFareAmount, 2284800)
 })
 
 await runCase("flight pricing caps high-fare margin", () => {
   const result = calculateFlightFareForCustomer(6000000, settingsWithFlightPricing())
 
   assert.equal(result.markupAmount, 75000)
-  assert.equal(result.customerFareAmount, 6075000)
+  assert.equal(result.taxAmount, 729000)
+  assert.equal(result.customerFareAmount, 6804000)
+})
+
+await runCase("flight checkout adds admin fee without adding ticket tax twice", () => {
+  const settings = settingsWithFlightPricing()
+  const result = calculateFlightBookingAmounts(806400, 86400, "bank_transfer", settings)
+
+  assert.equal(result.subtotalAmount, 806400)
+  assert.equal(result.customerTaxPercent, 12)
+  assert.equal(result.customerTaxAmount, 86400)
+  assert.equal(result.customerAdminFeePercent, 3)
+  assert.equal(result.customerAdminFeeAmount, 24192)
+  assert.equal(result.totalAmount, 830592)
 })
 
 await runCase("legacy flat flight settings migrate to percent with min and max", async () => {

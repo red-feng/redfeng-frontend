@@ -91,6 +91,7 @@ function mapDummyItemToAffiliateOffer(
       detailSchedule: "",
       supplierFareAmount: flightPricing.supplierFareAmount,
       redfengMarkupAmount: flightPricing.markupAmount,
+      customerTaxAmount: flightPricing.taxAmount,
       customerFareAmount: flightPricing.customerFareAmount,
     },
   }
@@ -158,6 +159,7 @@ function buildRequestedRouteFallbackOffer(
       detailSchedule: "",
       supplierFareAmount: flightPricing.supplierFareAmount,
       redfengMarkupAmount: flightPricing.markupAmount,
+      customerTaxAmount: flightPricing.taxAmount,
       customerFareAmount: flightPricing.customerFareAmount,
     },
   }

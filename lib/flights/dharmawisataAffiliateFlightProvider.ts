@@ -238,6 +238,7 @@ function mapJourneyToOffer(
       flightClass,
       supplierFareAmount: flightPricing.supplierFareAmount,
       redfengMarkupAmount: flightPricing.markupAmount,
+      customerTaxAmount: flightPricing.taxAmount,
       customerFareAmount: flightPricing.customerFareAmount,
     },
   }
@@ -323,6 +324,7 @@ function mapOffer(
       flightClass: asString(offer.flightClass),
       supplierFareAmount: flightPricing.supplierFareAmount,
       redfengMarkupAmount: flightPricing.markupAmount,
+      customerTaxAmount: flightPricing.taxAmount,
       customerFareAmount: flightPricing.customerFareAmount,
     },
   }

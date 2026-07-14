@@ -292,7 +292,8 @@ function FlightSection({
         <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Pesawat</p>
         <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Aturan profit pesawat</h2>
         <p className="mt-2 text-sm leading-7 text-slate-500">
-          Harga katalog pesawat memakai persentase markup dengan batas minimum dan maksimum per pax.
+          Harga katalog pesawat = biaya supplier + spread RedFeng + pajak customer. Admin fee baru ditambahkan
+          saat customer lanjut ke pembayaran.
         </p>
       </div>
       <div className="grid gap-4 md:grid-cols-3">

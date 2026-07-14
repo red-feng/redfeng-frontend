@@ -26,6 +26,7 @@ export type FlightCheckoutData = {
   price: number
   supplierPrice: number
   redfengMarkupAmount: number
+  redfengTaxAmount: number
   fareReferenceId: string
   airlineAccessCode: string
   searchKey: string
@@ -432,10 +433,8 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
   const passengerCount = passengers.length || 1
   const subtotal = data.price * passengerCount
   const customerAdminFeePercent = Number.isFinite(data.customerAdminFeePercent) ? data.customerAdminFeePercent : 0
-  const customerTaxPercent = Number.isFinite(data.customerTaxPercent) ? data.customerTaxPercent : 0
   const adminFee = Math.round(subtotal * (customerAdminFeePercent / 100))
-  const taxAmount = Math.round((subtotal + adminFee) * (customerTaxPercent / 100))
-  const totalEstimate = subtotal + adminFee + taxAmount
+  const totalEstimate = subtotal + adminFee
   const passengerSummary = formatPassengerSummary(passengerCount)
   const completePassengerCount = passengers.filter(isPassengerComplete).length
   const manifestIsComplete = completePassengerCount === passengerCount
@@ -636,6 +635,7 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
       price: data.price,
       supplier_price: data.supplierPrice,
       redfeng_markup_amount: data.redfengMarkupAmount,
+      redfeng_tax_amount: data.redfengTaxAmount,
       fare_reference_id: data.fareReferenceId,
       airline_access_code: data.airlineAccessCode,
       search_key: data.searchKey,
@@ -1461,18 +1461,17 @@ export default function FlightCheckoutClient({ data }: { data: FlightCheckoutDat
             <h2 className="text-xl font-bold text-[#ff4b00]">Rincian Harga</h2>
             <div className="mt-5 space-y-4 border-b border-orange-100 pb-5 text-sm text-neutral-700">
               <div className="flex justify-between gap-4">
-                <span>{passengerCount} Dewasa</span>
+                <span>Harga tiket ({passengerCount} Dewasa)</span>
                 <span>{formatIdr(subtotal)}</span>
               </div>
               <div className="flex justify-between gap-4">
                 <span>Admin fee bank transfer ({formatPercent(customerAdminFeePercent)}%)</span>
                 <span>{formatIdr(adminFee)}</span>
               </div>
-              <div className="flex justify-between gap-4">
-                <span>Pajak ({formatPercent(customerTaxPercent)}%)</span>
-                <span>{formatIdr(taxAmount)}</span>
-              </div>
             </div>
+            <p className="mt-3 text-xs leading-5 text-neutral-500">
+              Harga tiket sudah termasuk pajak yang berlaku.
+            </p>
             <div className="mt-5 flex items-center justify-between gap-4">
               <span className="font-bold text-neutral-900">Total Harga</span>
               <span className="text-2xl font-bold text-[#ff4b00]">{formatIdr(totalEstimate)}</span>

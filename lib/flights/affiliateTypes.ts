@@ -49,6 +49,7 @@ export type AffiliateFlightSupplierMeta = {
   flightClass?: string
   supplierFareAmount?: number
   redfengMarkupAmount?: number
+  customerTaxAmount?: number
   customerFareAmount?: number
 }
 
