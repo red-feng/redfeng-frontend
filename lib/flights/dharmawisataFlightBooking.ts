@@ -349,6 +349,25 @@ function buildFlightFlowBase(input: DharmawisataFlightBookingInput, accessToken:
   }
 }
 
+function buildPriceAllAirlinePayload(input: DharmawisataFlightBookingInput, accessToken: string) {
+  return {
+    ...buildFlightFlowBase(input, accessToken),
+    airlineAccessCode: input.airlineAccessCode || "",
+    journeyDepartReference: input.detailSchedule || "",
+    journeyReturnReference: "",
+  }
+}
+
+function buildPricePayload(input: DharmawisataFlightBookingInput, accessToken: string) {
+  return {
+    ...buildFlightFlowBase(input, accessToken),
+    searchKey: input.searchKey || "",
+    promoCode: "",
+    schDeparts: buildSchedules(input),
+    schReturns: [],
+  }
+}
+
 function buildAddOnFlowPayload(input: DharmawisataFlightBookingInput, accessToken: string) {
   return {
     ...buildFlightFlowBase(input, accessToken),
@@ -416,21 +435,8 @@ async function runDharmawisataPreBookingFlow(input: DharmawisataFlightBookingInp
   // Dharmawisata confirmed that one flight transaction must keep the same login
   // accessToken from Schedule/ScheduleAllAirline through Price, add-ons, Seat, and Booking.
   const pricePayload = usesAllAirlineFlow
-    ? {
-        ...buildFlightFlowBase(input, accessToken),
-        airlineAccessCode: input.airlineAccessCode || "",
-        journeyDepartReference: input.detailSchedule || "",
-        journeyReturnReference: "",
-      }
-    : {
-        ...buildFlightFlowBase(input, accessToken),
-        schDeparts: buildSchedules(input),
-        schReturns: [],
-        airlineAccessCode: input.airlineAccessCode || "",
-        searchKey: input.searchKey || "",
-        journeyDepartReference: input.detailSchedule || "",
-        journeyReturnReference: "",
-      }
+    ? buildPriceAllAirlinePayload(input, accessToken)
+    : buildPricePayload(input, accessToken)
   const priceStep = await runPreBookingStep(priceEndpoint, pricePath, { ...pricePayload }, input.flightClass)
   steps.push(priceStep)
 
