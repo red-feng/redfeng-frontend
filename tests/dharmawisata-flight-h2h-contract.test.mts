@@ -30,10 +30,17 @@ for (const anchor of [
   "source,",
   'const scheduleMatch = mapDharmawisataSchedulePayloadForBooking(payload, input, accessToken, "Airline/Schedule")',
   'const match = mapDharmawisataSchedulePayloadForBooking(payload, input, accessToken, "Airline/ScheduleAllAirline")',
+  'let airlineAccessCode = ""',
+  "body: buildScheduleAllAirlineRequestBody(input, credentials.userId, accessToken, airlineAccessCode)",
   "const payload = await dharmawisataFormFetch({",
 ]) {
   assertIncludes(scheduleSource, anchor, "Dharmawisata Airline/Schedule booking context contract")
 }
+
+assert.ok(
+  scheduleSource.indexOf('if (scheduleAllAirlinePath)') < scheduleSource.indexOf("if (schedulePath)"),
+  "Dharmawisata booking lookup must prefer ScheduleAllAirline before Schedule",
+)
 
 const orderedBookingAnchors = [
   'const priceStep = await runPreBookingStep(priceEndpoint, pricePath',
@@ -83,6 +90,7 @@ for (const anchor of [
   "`Airline/ScheduleAllAirline`",
   "`Airline/PriceAllAirline`",
   "`Airline/PriceAllAirline.journeyDepartReference` uses the `journeyReference`",
+  "first request must start with an empty `airlineAccessCode`",
   "That `classFare` must be used as `schDepart`/`schReturn`",
   "AirAsia/QZ has a special flow and cannot use normal HOLD booking.",
   "For normal airlines, agent balance is cut at issued time",

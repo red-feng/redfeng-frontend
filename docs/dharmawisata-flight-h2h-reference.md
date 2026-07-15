@@ -29,6 +29,8 @@ The confirmed normal all-airline flight flow from Dharmawisata manual examples i
 
 The same `accessToken` from step 1 must be used through the transaction. `Airline/PriceAllAirline.journeyDepartReference` uses the `journeyReference` from `ScheduleAllAirline.journeyDepart`; for round trip, `journeyReturnReference` uses `journeyReference` from `journeyReturn`.
 
+`ScheduleAllAirline` should be attempted before the single-airline `Schedule` fallback for booking hold, and its first request must start with an empty `airlineAccessCode`. Follow-up ScheduleAllAirline iterations may use the `airlineAccessCode` returned by Dharmawisata.
+
 After `PriceAllAirline` succeeds, Dharmawisata returns `classFare` in `priceDepart` or `priceReturn`. That `classFare` must be used as `schDepart`/`schReturn` for `BaggageAndMeal` and `Seat`, and as `schDeparts[].detailSchedule`/`schReturns[].detailSchedule` for `Booking`.
 
 `Airline/LowFareSchedule` may feed the public catalog, but auto-hold must only continue after an official `Airline/ScheduleAllAirline` or `Airline/Schedule` context succeeds on the same transaction token. If only LowFareSchedule succeeds, stop before Price and keep the booking in admin recheck.

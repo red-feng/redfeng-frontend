@@ -293,7 +293,7 @@ function buildScheduleAllAirlineRequestBody(
   input: DharmawisataFlightScheduleLookupInput,
   userID: string,
   accessToken: string,
-  airlineAccessCode: string | null = null,
+  airlineAccessCode = "",
 ) {
   return {
     tripType: normalizeTripType(input.tripType),
@@ -307,7 +307,7 @@ function buildScheduleAllAirlineRequestBody(
     paxChild: input.paxChild || 0,
     paxInfant: input.paxInfant || 0,
     promoCode: "",
-    airlineAccessCode: airlineAccessCode || input.airlineAccessCode || "",
+    airlineAccessCode,
     cacheType: 2,
     isShowEachAirline: true,
     userID,
@@ -362,39 +362,8 @@ export async function findDharmawisataLowFareScheduleForBooking(
 
   let lastMessage = ""
 
-  if (schedulePath) {
-    const scheduleBody = buildScheduleRequestBody(input, credentials.userId, accessToken)
-
-    try {
-      const payload = await dharmawisataJsonFetch({
-        path: schedulePath,
-        method: "POST",
-        body: scheduleBody,
-      })
-      lastMessage = getPayloadMessage(payload) || getPayloadStatus(payload) || lastMessage
-      const scheduleMatch = mapDharmawisataSchedulePayloadForBooking(payload, input, accessToken, "Airline/Schedule")
-      if (scheduleMatch) return scheduleMatch
-    } catch (error) {
-      lastMessage = error instanceof Error ? `Airline/Schedule gagal: ${error.message}` : "Airline/Schedule gagal."
-    }
-
-    try {
-      const payload = await dharmawisataFormFetch({
-        path: schedulePath,
-        method: "POST",
-        body: scheduleBody,
-      })
-      lastMessage = getPayloadMessage(payload) || getPayloadStatus(payload) || lastMessage
-      const scheduleMatch = mapDharmawisataSchedulePayloadForBooking(payload, input, accessToken, "Airline/Schedule")
-      if (scheduleMatch) return scheduleMatch
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Airline/Schedule form gagal."
-      lastMessage = lastMessage ? `${lastMessage}; Airline/Schedule form gagal: ${message}` : `Airline/Schedule form gagal: ${message}`
-    }
-  }
-
   if (scheduleAllAirlinePath) {
-    let airlineAccessCode = input.airlineAccessCode || ""
+    let airlineAccessCode = ""
     const seenStates = new Set<string>()
 
     for (let iteration = 0; iteration < 10; iteration += 1) {
@@ -402,7 +371,7 @@ export async function findDharmawisataLowFareScheduleForBooking(
         const payload = await dharmawisataJsonFetch({
           path: scheduleAllAirlinePath,
           method: "POST",
-          body: buildScheduleAllAirlineRequestBody(input, credentials.userId, accessToken, airlineAccessCode || null),
+          body: buildScheduleAllAirlineRequestBody(input, credentials.userId, accessToken, airlineAccessCode),
         })
         const status = getPayloadStatus(payload)
         const message = getPayloadMessage(payload)
@@ -432,6 +401,37 @@ export async function findDharmawisataLowFareScheduleForBooking(
           : `Airline/ScheduleAllAirline gagal: ${message}`
         break
       }
+    }
+  }
+
+  if (schedulePath) {
+    const scheduleBody = buildScheduleRequestBody(input, credentials.userId, accessToken)
+
+    try {
+      const payload = await dharmawisataJsonFetch({
+        path: schedulePath,
+        method: "POST",
+        body: scheduleBody,
+      })
+      lastMessage = getPayloadMessage(payload) || getPayloadStatus(payload) || lastMessage
+      const scheduleMatch = mapDharmawisataSchedulePayloadForBooking(payload, input, accessToken, "Airline/Schedule")
+      if (scheduleMatch) return scheduleMatch
+    } catch (error) {
+      lastMessage = error instanceof Error ? `Airline/Schedule gagal: ${error.message}` : "Airline/Schedule gagal."
+    }
+
+    try {
+      const payload = await dharmawisataFormFetch({
+        path: schedulePath,
+        method: "POST",
+        body: scheduleBody,
+      })
+      lastMessage = getPayloadMessage(payload) || getPayloadStatus(payload) || lastMessage
+      const scheduleMatch = mapDharmawisataSchedulePayloadForBooking(payload, input, accessToken, "Airline/Schedule")
+      if (scheduleMatch) return scheduleMatch
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Airline/Schedule form gagal."
+      lastMessage = lastMessage ? `${lastMessage}; Airline/Schedule form gagal: ${message}` : `Airline/Schedule form gagal: ${message}`
     }
   }
 
