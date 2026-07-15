@@ -388,6 +388,19 @@ function getHeroStatusCopy(activeTab: HeroTabKey, locale: Locale) {
     }
   }
 
+  if (activeTab === "flight") {
+    return {
+      label: locale === "en" ? "Live flight search" : locale === "zh" ? "Live flight search" : "Pencarian live",
+      body:
+        locale === "en"
+          ? "Live flight catalog is active. Payment opens after fare and seat availability are validated."
+          : locale === "zh"
+            ? "Live flight catalog is active. Payment opens after fare and seat availability are validated."
+            : "Katalog pesawat live aktif. Pembayaran dibuka setelah harga dan kursi divalidasi.",
+      tone: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    }
+  }
+
   const serviceLabelByTab: Record<Exclude<HeroTabKey, "package">, string> = {
     flight: "Pesawat",
     hotel: "Hotel",
@@ -1323,6 +1336,15 @@ function compactDateShift(input: string, dayOffset: number) {
 }
 
 function formatDisplayDateToIso(input: string) {
+  const isoMatch = input.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (isoMatch) return input
+
+  const slashMatch = input.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+  if (slashMatch) {
+    const [, dayRaw, monthRaw, yearRaw] = slashMatch
+    return `${yearRaw}-${String(Number(monthRaw)).padStart(2, "0")}-${String(Number(dayRaw)).padStart(2, "0")}`
+  }
+
   const match = input.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/)
   if (!match) return ""
   const [, dayRaw, monthLabel, yearRaw] = match
