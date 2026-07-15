@@ -106,6 +106,45 @@ function pickString(raw: JsonRecord, keys: string[]) {
   return null
 }
 
+function recordsFrom(value: unknown): JsonRecord[] {
+  if (Array.isArray(value)) return value.filter((item): item is JsonRecord => Boolean(asRecord(item)))
+  const record = asRecord(value)
+  return record ? [record] : []
+}
+
+function pickPriceClassFare(raw: JsonRecord, keys: string[], expectedFlightClass?: string | null) {
+  const expected = normalizeText(expectedFlightClass).toUpperCase()
+  for (const key of keys) {
+    const options = recordsFrom(raw[key])
+    if (options.length === 0) continue
+
+    const matchingOption = expected
+      ? options.find((option) => normalizeText(option.flightClass || option.className || option.cabinClass).toUpperCase() === expected)
+      : null
+    const selected = matchingOption || options[0]
+    const classFare = selected ? pickString(selected, ["classFare", "ClassFare"]) : null
+    if (classFare) return classFare
+  }
+  return null
+}
+
+function replaceScheduleDetail(input: DharmawisataFlightBookingInput, detailSchedule: string | null) {
+  if (!detailSchedule) return input
+
+  const scheduleSegments = Array.isArray(input.scheduleSegments)
+    ? input.scheduleSegments.map((segment) => ({
+        ...segment,
+        detailSchedule,
+      }))
+    : input.scheduleSegments
+
+  return {
+    ...input,
+    detailSchedule,
+    scheduleSegments,
+  }
+}
+
 function getResponseMessage(raw: JsonRecord) {
   return pickString(raw, ["respMessage", "message", "errorMessage", "resultMessage"]) || "Dharmawisata booking response diterima."
 }
@@ -335,7 +374,7 @@ function responseStatus(raw: JsonRecord) {
   return normalizeText(raw.status).toUpperCase()
 }
 
-function responseStepSummary(endpoint: string, raw: JsonRecord) {
+function responseStepSummary(endpoint: string, raw: JsonRecord, expectedFlightClass?: string | null) {
   const status = normalizeText(raw.status) || "SUCCESS"
   const message = normalizeText(raw.respMessage || raw.message) || status
 
@@ -346,18 +385,20 @@ function responseStepSummary(endpoint: string, raw: JsonRecord) {
     message,
     searchKey: pickString(raw, ["searchKey"]),
     airlineAccessCode: pickString(raw, ["airlineAccessCode"]),
+    departureClassFare: pickPriceClassFare(raw, ["priceDepart", "PriceDepart"], expectedFlightClass),
+    returnClassFare: pickPriceClassFare(raw, ["priceReturn", "PriceReturn"], expectedFlightClass),
     raw,
   }
 }
 
-async function runPreBookingStep(endpoint: string, path: string, body: JsonRecord) {
+async function runPreBookingStep(endpoint: string, path: string, body: JsonRecord, expectedFlightClass?: string | null) {
   const response = await dharmawisataJsonFetch({
     path,
     method: "POST",
     body,
   })
   const raw = asRecord(response) || { response }
-  return responseStepSummary(endpoint, raw)
+  return responseStepSummary(endpoint, raw, expectedFlightClass)
 }
 
 async function runDharmawisataPreBookingFlow(input: DharmawisataFlightBookingInput, accessToken: string) {
@@ -390,9 +431,7 @@ async function runDharmawisataPreBookingFlow(input: DharmawisataFlightBookingInp
         journeyDepartReference: input.detailSchedule || "",
         journeyReturnReference: "",
       }
-  const priceStep = await runPreBookingStep(priceEndpoint, pricePath, {
-    ...pricePayload,
-  })
+  const priceStep = await runPreBookingStep(priceEndpoint, pricePath, { ...pricePayload }, input.flightClass)
   steps.push(priceStep)
 
   if (!priceStep.ok) {
@@ -403,11 +442,14 @@ async function runDharmawisataPreBookingFlow(input: DharmawisataFlightBookingInp
     }
   }
 
-  resolvedInput = {
-    ...input,
-    searchKey: priceStep.searchKey || input.searchKey || "",
-    airlineAccessCode: priceStep.airlineAccessCode || input.airlineAccessCode || "",
-  }
+  resolvedInput = replaceScheduleDetail(
+    {
+      ...input,
+      searchKey: priceStep.searchKey || input.searchKey || "",
+      airlineAccessCode: priceStep.airlineAccessCode || input.airlineAccessCode || "",
+    },
+    priceStep.departureClassFare || null,
+  )
 
   const addOnPayload = buildAddOnFlowPayload(resolvedInput, accessToken)
   const baggageStep = await runPreBookingStep("Airline/BaggageAndMeal", baggageAndMealPath, addOnPayload)
@@ -444,6 +486,8 @@ async function runDharmawisataPreBookingFlow(input: DharmawisataFlightBookingInp
     steps,
     searchKey: seatStep.searchKey || resolvedInput.searchKey || null,
     airlineAccessCode: seatStep.airlineAccessCode || resolvedInput.airlineAccessCode || null,
+    departureClassFare: priceStep.departureClassFare || resolvedInput.detailSchedule || null,
+    returnClassFare: priceStep.returnClassFare || null,
   }
 }
 
@@ -642,11 +686,14 @@ export async function createDharmawisataFlightBooking(
       }
     }
 
-    const bookingInput = {
-      ...input,
-      searchKey: preBookingFlow.searchKey || input.searchKey || "",
-      airlineAccessCode: preBookingFlow.airlineAccessCode || input.airlineAccessCode || "",
-    }
+    const bookingInput = replaceScheduleDetail(
+      {
+        ...input,
+        searchKey: preBookingFlow.searchKey || input.searchKey || "",
+        airlineAccessCode: preBookingFlow.airlineAccessCode || input.airlineAccessCode || "",
+      },
+      preBookingFlow.departureClassFare || null,
+    )
     const payload = buildBookingPayload(bookingInput, accessToken)
     const rawResponse = await dharmawisataJsonFetch({
       path: bookingPath,

@@ -55,6 +55,9 @@ for (const anchor of [
   'const usesAllAirlineFlow = input.scheduleSource === "Airline/ScheduleAllAirline"',
   'getDharmawisataConfiguredPath("DHARMAWISATA_H2H_PRICE_ALL_AIRLINE_PATH") || "/Airline/PriceAllAirline"',
   'input.scheduleSource === "Airline/ScheduleAllAirline"',
+  'departureClassFare: pickPriceClassFare(raw, ["priceDepart", "PriceDepart"], expectedFlightClass)',
+  "resolvedInput = replaceScheduleDetail(",
+  "preBookingFlow.departureClassFare || null",
   'error: "airline_schedule_or_schedule_all_airline_step_required"',
   "searchKey: baggageStep.searchKey || resolvedInput.searchKey ||",
   "airlineAccessCode: baggageStep.airlineAccessCode || resolvedInput.airlineAccessCode ||",
@@ -79,6 +82,8 @@ for (const anchor of [
   "The same `accessToken` from step 1 must be used through the transaction.",
   "`Airline/ScheduleAllAirline`",
   "`Airline/PriceAllAirline`",
+  "`Airline/PriceAllAirline.journeyDepartReference` uses the `journeyReference`",
+  "That `classFare` must be used as `schDepart`/`schReturn`",
   "AirAsia/QZ has a special flow and cannot use normal HOLD booking.",
   "For normal airlines, agent balance is cut at issued time",
 ]) {
