@@ -88,9 +88,8 @@ function dateOnly(value: string | null | undefined) {
   return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10)
 }
 
-function lowFareDateTime(value: string | null | undefined, fallback = "") {
-  const date = dateOnly(value)
-  return date ? `${date}T00:00:00` : fallback
+function scheduleDate(value: string | null | undefined, fallback = "") {
+  return dateOnly(value) || fallback
 }
 
 function minutesOfDay(value: string | null | undefined) {
@@ -275,10 +274,10 @@ function buildScheduleRequestBody(
     tripType: normalizeTripType(input.tripType),
     origin: input.originAirportCode || "",
     destination: input.destinationAirportCode || "",
-    departDate: lowFareDateTime(input.departureAt),
+    departDate: scheduleDate(input.departureAt),
     returnDate: normalizeTripType(input.tripType) === "RoundTrip"
-      ? lowFareDateTime(input.returnAt)
-      : "0001-01-01T00:00:00",
+      ? scheduleDate(input.returnAt)
+      : "0001-01-01",
     paxAdult: input.paxAdult,
     paxChild: input.paxChild || 0,
     paxInfant: input.paxInfant || 0,
@@ -299,10 +298,10 @@ function buildScheduleAllAirlineRequestBody(
     tripType: normalizeTripType(input.tripType),
     origin: input.originAirportCode || "",
     destination: input.destinationAirportCode || "",
-    departDate: lowFareDateTime(input.departureAt),
+    departDate: scheduleDate(input.departureAt),
     returnDate: normalizeTripType(input.tripType) === "RoundTrip"
-      ? lowFareDateTime(input.returnAt)
-      : "0001-01-01T00:00:00",
+      ? scheduleDate(input.returnAt)
+      : "0001-01-01",
     paxAdult: input.paxAdult,
     paxChild: input.paxChild || 0,
     paxInfant: input.paxInfant || 0,
@@ -464,10 +463,10 @@ export async function findDharmawisataLowFareScheduleForBooking(
         tripType: normalizeTripType(input.tripType),
         origin: input.originAirportCode || "",
         destination: input.destinationAirportCode || "",
-        departDate: lowFareDateTime(input.departureAt),
+        departDate: scheduleDate(input.departureAt),
         returnDate: normalizeTripType(input.tripType) === "RoundTrip"
-          ? lowFareDateTime(input.returnAt)
-          : "0001-01-01T00:00:00",
+          ? scheduleDate(input.returnAt)
+          : "0001-01-01",
         paxAdult: input.paxAdult,
         paxChild: input.paxChild || 0,
         paxInfant: input.paxInfant || 0,
