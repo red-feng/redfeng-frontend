@@ -47,6 +47,10 @@ After `PriceAllAirline` succeeds, Dharmawisata returns `classFare` in `priceDepa
 - `Airline/Route` is a per-airline route reference endpoint. Its request body needs `airlineID`, `userID`, and `accessToken`.
 - These reference endpoints support master data and route cache sync. They are not a replacement for the transaction flow: `ScheduleAllAirline` or `Schedule`, then `PriceAllAirline` or `Price`, then add-ons, seat, and booking.
 - `Airline/Booking` is the mutating hold endpoint. It must receive the same search context: `schDeparts`, `schReturns`, passenger contact fields, `paxDetails`, `searchKey`, `airlineAccessCode`, `userID`, and the same `accessToken`.
+- `Airline/Booking` returns supplier identifiers such as `bookingCode`, `bookingDate`, `referenceNo`, `bookingCodeAirline`, and `timeLimit`, plus fare and flight snapshots. RedFeng stores the raw supplier response and maps those identifiers for hold/PNR tracking.
+- Dharmawisata fare fields in the Booking response, such as `ticketPrice`, `salesPrice`, and `adminFee`, are supplier audit data for RedFeng. Internal customer pricing and finance fields still come from RedFeng checkout pricing: supplier cost, spread, included tax, and customer admin fee.
+- `Airline/BookingDetail` is the direct follow-up for a successful Booking response. Send `bookingCode`, `bookingDate`, optional `referenceNo`, `userID`, and the same `accessToken`.
+- `Airline/BookingList` is a reconciliation/list endpoint with `filterByStatus`, `startDate`, `endDate`, `userID`, and `accessToken`. It is not required before Booking or BookingDetail in the checkout hold flow.
 - Domestic Indonesian passenger payloads currently default `nationality` and `birthCountry` to `ID`. Use `Airline/Nationality` as the reference source before supporting non-Indonesia or international passenger nationality choices.
 
 ## AirAsia Exception
