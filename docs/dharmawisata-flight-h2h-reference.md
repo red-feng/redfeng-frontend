@@ -41,6 +41,14 @@ After `PriceAllAirline` succeeds, Dharmawisata returns `classFare` in `priceDepa
 
 `Airline/LowFareSchedule` may feed the public catalog, but auto-hold must only continue after an official `Airline/ScheduleAllAirline` or `Airline/Schedule` context succeeds on the same transaction token. If only LowFareSchedule succeeds, stop before Price and keep the booking in admin recheck.
 
+## Airline Reference Endpoints
+
+- `Airline/List`, `Airline/City`, and `Airline/Nationality` are reference endpoints. Their request body only needs `userID` and `accessToken`.
+- `Airline/Route` is a per-airline route reference endpoint. Its request body needs `airlineID`, `userID`, and `accessToken`.
+- These reference endpoints support master data and route cache sync. They are not a replacement for the transaction flow: `ScheduleAllAirline` or `Schedule`, then `PriceAllAirline` or `Price`, then add-ons, seat, and booking.
+- `Airline/Booking` is the mutating hold endpoint. It must receive the same search context: `schDeparts`, `schReturns`, passenger contact fields, `paxDetails`, `searchKey`, `airlineAccessCode`, `userID`, and the same `accessToken`.
+- Domestic Indonesian passenger payloads currently default `nationality` and `birthCountry` to `ID`. Use `Airline/Nationality` as the reference source before supporting non-Indonesia or international passenger nationality choices.
+
 ## AirAsia Exception
 
 - AirAsia/QZ has a special flow and cannot use normal HOLD booking.

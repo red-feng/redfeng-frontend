@@ -5,6 +5,8 @@ import { resolve } from "node:path"
 const clientSource = readFileSync(resolve("lib/dharmawisata/client.ts"), "utf8")
 const scheduleSource = readFileSync(resolve("lib/flights/dharmawisataFlightScheduleLookup.ts"), "utf8")
 const bookingSource = readFileSync(resolve("lib/flights/dharmawisataFlightBooking.ts"), "utf8")
+const routeCacheSource = readFileSync(resolve("lib/flights/dharmawisataRouteCache.ts"), "utf8")
+const airlineApiSource = readFileSync(resolve("lib/flights/dharmawisataAirlineApi.ts"), "utf8")
 const policySource = readFileSync(resolve("lib/flights/automationPolicy.ts"), "utf8")
 const referenceSource = readFileSync(resolve("docs/dharmawisata-flight-h2h-reference.md"), "utf8")
 
@@ -76,8 +78,38 @@ for (const anchor of [
   "airlineAccessCode: baggageStep.airlineAccessCode || resolvedInput.airlineAccessCode ||",
   "searchKey: seatStep.searchKey || resolvedInput.searchKey || null",
   "airlineAccessCode: seatStep.airlineAccessCode || resolvedInput.airlineAccessCode || null",
+  "function buildBookingPayload(input: DharmawisataFlightBookingInput, accessToken: string)",
+  "schDeparts: buildSchedules(input)",
+  "schReturns: []",
+  "searchKey: input.searchKey || \"\"",
+  "insurance: false",
+  "airlineAccessCode: input.airlineAccessCode || \"\"",
+  "nationality: \"ID\"",
+  "birthCountry: \"ID\"",
 ]) {
   assertIncludes(bookingSource, anchor, "Dharmawisata same-token transaction contract")
+}
+
+for (const anchor of [
+  'path: getPath("DHARMAWISATA_H2H_AIRLINE_CITY_PATH", "/Airline/City")',
+  'path: getPath("DHARMAWISATA_H2H_AIRLINE_LIST_PATH", "/Airline/List")',
+  'path: getPath("DHARMAWISATA_H2H_AIRLINE_ROUTE_PATH", "/Airline/Route")',
+  "airlineID: airline.code,",
+  "userID: credentials.userId,",
+  "accessToken,",
+]) {
+  assertIncludes(routeCacheSource, anchor, "Dharmawisata airline reference endpoint contract")
+}
+
+for (const anchor of [
+  'defaultPath: "/Airline/List"',
+  'defaultPath: "/Airline/Route"',
+  'defaultPath: "/Airline/Nationality"',
+  'defaultPath: "/Airline/City"',
+  'defaultPath: "/Airline/Booking"',
+  'envName: "DHARMAWISATA_H2H_AIRLINE_NATIONALITY_PATH"',
+]) {
+  assertIncludes(airlineApiSource, anchor, "Dharmawisata airline API descriptor contract")
 }
 
 for (const anchor of [
@@ -103,6 +135,10 @@ for (const anchor of [
   "`Airline/Schedule` and `Airline/ScheduleAllAirline` send `departDate` and `returnDate` as `yyyy-MM-dd`",
   "`Airline/Price`, `Airline/PriceAllAirline`, and `Airline/Booking` keep the documented date-time format.",
   "That `classFare` must be used as `schDepart`/`schReturn`",
+  "`Airline/List`, `Airline/City`, and `Airline/Nationality` are reference endpoints.",
+  "`Airline/Route` is a per-airline route reference endpoint.",
+  "`Airline/Booking` is the mutating hold endpoint.",
+  "Domestic Indonesian passenger payloads currently default `nationality` and `birthCountry` to `ID`.",
   "AirAsia/QZ has a special flow and cannot use normal HOLD booking.",
   "For normal airlines, agent balance is cut at issued time",
 ]) {
