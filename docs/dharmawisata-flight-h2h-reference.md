@@ -51,6 +51,8 @@ After `PriceAllAirline` succeeds, Dharmawisata returns `classFare` in `priceDepa
 - Dharmawisata fare fields in the Booking response, such as `ticketPrice`, `salesPrice`, and `adminFee`, are supplier audit data for RedFeng. Internal customer pricing and finance fields still come from RedFeng checkout pricing: supplier cost, spread, included tax, and customer admin fee.
 - `Airline/BookingDetail` is the direct follow-up for a successful Booking response. Send `bookingCode`, `bookingDate`, optional `referenceNo`, `userID`, and the same `accessToken`.
 - `Airline/BookingList` is a reconciliation/list endpoint with `filterByStatus`, `startDate`, `endDate`, `userID`, and `accessToken`. It is not required before Booking or BookingDetail in the checkout hold flow.
+- `Airline/Issued` is the ticket issue endpoint for normal held bookings after payment is verified. Its request body must include `airlineID`, `origin`, `destination`, `tripType`, `departDate`, `returnDate`, `bookingCode`, `bookingDate`, `airlineAccessCode`, `userID`, and the same `accessToken`.
+- RedFeng calls `Airline/Issued` only after payment is verified, using supplier booking identifiers from `Airline/Booking` or `Airline/BookingDetail` when available. If hold identifiers are missing, keep the booking in ops review instead of issuing.
 - Domestic Indonesian passenger payloads currently default `nationality` and `birthCountry` to `ID`. Use `Airline/Nationality` as the reference source before supporting non-Indonesia or international passenger nationality choices.
 
 ## AirAsia Exception
@@ -61,6 +63,7 @@ After `PriceAllAirline` succeeds, Dharmawisata returns `classFare` in `priceDepa
 ## Deposit Timing
 
 - For normal airlines, agent balance is cut at issued time, not when `Airline/Booking` only creates hold/PNR.
+- The official issue endpoint is `Airline/Issued`; configure it with `DHARMAWISATA_H2H_ISSUE_PATH=/Airline/Issued`.
 - AirAsia is the exception noted by Dharmawisata.
 - Hold/payment limit depends on airline. A hold that is not continued to issued does not cut balance in the normal airline flow.
 

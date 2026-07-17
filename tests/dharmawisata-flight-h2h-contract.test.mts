@@ -7,6 +7,7 @@ const scheduleSource = readFileSync(resolve("lib/flights/dharmawisataFlightSched
 const bookingSource = readFileSync(resolve("lib/flights/dharmawisataFlightBooking.ts"), "utf8")
 const routeCacheSource = readFileSync(resolve("lib/flights/dharmawisataRouteCache.ts"), "utf8")
 const airlineApiSource = readFileSync(resolve("lib/flights/dharmawisataAirlineApi.ts"), "utf8")
+const ticketIssueSource = readFileSync(resolve("lib/flights/dharmawisataTicketIssue.ts"), "utf8")
 const policySource = readFileSync(resolve("lib/flights/automationPolicy.ts"), "utf8")
 const referenceSource = readFileSync(resolve("docs/dharmawisata-flight-h2h-reference.md"), "utf8")
 
@@ -119,11 +120,33 @@ for (const anchor of [
     'defaultPath: "/Airline/Booking"',
     'defaultPath: "/Airline/BookingList"',
     'defaultPath: "/Airline/BookingDetail"',
+    'defaultPath: "/Airline/Issued"',
     'envName: "DHARMAWISATA_H2H_AIRLINE_NATIONALITY_PATH"',
     'envName: "DHARMAWISATA_H2H_BOOKING_LIST_PATH"',
     'envName: "DHARMAWISATA_H2H_BOOKING_DETAIL_PATH"',
+    'envName: "DHARMAWISATA_H2H_ISSUE_PATH"',
 ]) {
   assertIncludes(airlineApiSource, anchor, "Dharmawisata airline API descriptor contract")
+}
+
+for (const anchor of [
+  'getDharmawisataConfiguredPath("DHARMAWISATA_H2H_ISSUE_PATH")',
+  'officialPath: "/Airline/Issued"',
+  "userID: credentials.userId",
+  "accessToken,",
+  "airlineID: input.airlineId || undefined",
+  "origin: input.originAirportCode || undefined",
+  "destination: input.destinationAirportCode || undefined",
+  "tripType: normalizeDharmawisataTripType(input.tripType)",
+  "departDate: input.departureAt || undefined",
+  "returnDate: input.returnAt || undefined",
+  "bookingCode: externalBookingCode",
+  "bookingDate: input.bookingDate || undefined",
+  "airlineAccessCode: input.airlineAccessCode || input.fareReferenceId || input.supplierOrderId || undefined",
+  "path: issuePath",
+  'method: "POST"',
+]) {
+  assertIncludes(ticketIssueSource, anchor, "Dharmawisata issued payload contract")
 }
 
 for (const anchor of [
@@ -156,6 +179,10 @@ for (const anchor of [
     "Dharmawisata fare fields in the Booking response",
     "`Airline/BookingDetail` is the direct follow-up",
     "`Airline/BookingList` is a reconciliation/list endpoint",
+    "`Airline/Issued` is the ticket issue endpoint",
+    "`airlineID`, `origin`, `destination`, `tripType`, `departDate`, `returnDate`, `bookingCode`, `bookingDate`, `airlineAccessCode`, `userID`, and the same `accessToken`.",
+    "RedFeng calls `Airline/Issued` only after payment is verified",
+    "The official issue endpoint is `Airline/Issued`; configure it with `DHARMAWISATA_H2H_ISSUE_PATH=/Airline/Issued`.",
     "Domestic Indonesian passenger payloads currently default `nationality` and `birthCountry` to `ID`.",
   "AirAsia/QZ has a special flow and cannot use normal HOLD booking.",
   "For normal airlines, agent balance is cut at issued time",
