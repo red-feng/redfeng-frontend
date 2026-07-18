@@ -45,6 +45,27 @@ function normalizeText(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
 }
 
+function safeText(value: unknown, maxLength = 240) {
+  const normalized = normalizeText(value)
+  if (!normalized) return ""
+  return normalized.length > maxLength ? `${normalized.slice(0, maxLength)}...` : normalized
+}
+
+function redactCredentialFields(raw: JsonRecord): JsonRecord {
+  return {
+    ...raw,
+    userID: normalizeText(raw.userID) ? "[redacted]" : raw.userID,
+    accessToken: normalizeText(raw.accessToken) ? "[redacted]" : raw.accessToken,
+  }
+}
+
+function responseKeys(raw: JsonRecord) {
+  const blocked = new Set(["accessToken", "userID"])
+  return Object.keys(raw)
+    .filter((key) => !blocked.has(key))
+    .sort()
+}
+
 function pickStringDeep(value: unknown, keys: string[]): string | null {
   const record = asRecord(value)
   if (!record) return null
@@ -128,22 +149,41 @@ function normalizeDharmawisataTripType(value: string | null | undefined) {
   return String(value || "").toLowerCase() === "round_trip" ? "RoundTrip" : "OneWay"
 }
 
+function summarizeIssueResponse(raw: JsonRecord): JsonRecord {
+  return {
+    status: safeText(raw.status),
+    message: safeText(raw.respMessage || raw.message, 480),
+    bookingStatus: safeText(raw.bookingStatus),
+    airlineID: safeText(raw.airlineID),
+    origin: safeText(raw.origin),
+    destination: safeText(raw.destination),
+    tripType: safeText(raw.tripType),
+    departDate: safeText(raw.departDate),
+    returnDate: safeText(raw.returnDate),
+    bookingCode: safeText(raw.bookingCode),
+    bookingDate: safeText(raw.bookingDate),
+    airlineAccessCode: safeText(raw.airlineAccessCode),
+    respTime: safeText(raw.respTime),
+    responseKeys: responseKeys(raw),
+  }
+}
+
 function buildIssuePayload(input: DharmawisataTicketIssueInput, accessToken: string) {
   const credentials = getDharmawisataCredentials()
-  const externalBookingCode = input.supplierOrderId || input.supplierReference || input.pnrCode || input.bookingCode || undefined
+  const supplierBookingCode = input.bookingCode || input.supplierOrderId || input.supplierReference || input.pnrCode || undefined
 
   return {
-    userID: credentials.userId,
-    accessToken,
     airlineID: input.airlineId || undefined,
     origin: input.originAirportCode || undefined,
     destination: input.destinationAirportCode || undefined,
     tripType: normalizeDharmawisataTripType(input.tripType),
     departDate: input.departureAt || undefined,
     returnDate: input.returnAt || undefined,
-    bookingCode: externalBookingCode,
+    bookingCode: supplierBookingCode,
     bookingDate: input.bookingDate || undefined,
     airlineAccessCode: input.airlineAccessCode || input.fareReferenceId || input.supplierOrderId || undefined,
+    userID: credentials.userId,
+    accessToken,
   }
 }
 
@@ -184,7 +224,7 @@ export async function issueDharmawisataFlightTicket(
         pnrCode: null,
         raw: {
           issueMode: "api",
-          auth,
+          auth: redactCredentialFields(auth),
           error: "empty_access_token",
         },
       }
@@ -210,9 +250,11 @@ export async function issueDharmawisataFlightTicket(
         issueMode: "api",
         request: {
           ...payload,
+          userID: "[redacted]",
           accessToken: "[redacted]",
         },
-        response: raw,
+        responseSummary: summarizeIssueResponse(raw),
+        response: redactCredentialFields(raw),
       },
     }
   } catch (error) {

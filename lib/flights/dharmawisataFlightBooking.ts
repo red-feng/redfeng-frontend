@@ -781,6 +781,46 @@ function summarizeBookingResponse(raw: JsonRecord): JsonRecord {
   }
 }
 
+function summarizeBookingDetailResponse(detail: unknown): JsonRecord | null {
+  const raw = asRecord(detail)
+  if (!raw) return null
+
+  const adminFee = asRecord(raw.adminFee) || {}
+  return {
+    status: safeText(raw.status),
+    message: safeText(raw.respMessage || raw.message, 480),
+    airline: safeText(raw.airline),
+    airlineID: safeText(raw.airlineID),
+    flightClass: safeText(raw.flightClass),
+    bookingCode: safeText(raw.bookingCode),
+    referenceNo: safeText(raw.referenceNo),
+    bookingDate: safeText(raw.bookingDate),
+    timeLimit: safeText(raw.timeLimit),
+    origin: safeText(raw.origin),
+    destination: safeText(raw.destination),
+    tripType: safeText(raw.tripType),
+    departDate: safeText(raw.departDate),
+    returnDate: safeText(raw.returnDate),
+    ticketStatus: safeText(raw.ticketStatus),
+    ticketDetail: safeText(raw.ticketDetail),
+    currency: safeText(raw.currency),
+    issuedDate: safeText(raw.issuedDate),
+    bookingCodeAirline: safeText(raw.bookingCodeAirline),
+    flightDepartCount: Array.isArray(raw.flightDeparts) ? raw.flightDeparts.length : 0,
+    flightReturnCount: Array.isArray(raw.flightReturns) ? raw.flightReturns.length : 0,
+    passengerCount: Array.isArray(raw.passengers) ? raw.passengers.length : 0,
+    adminFee: {
+      ticketPrice: safeText(adminFee.ticketPrice),
+      ticketPriceIDR: safeText(adminFee.ticketPriceIDR),
+      airlineMarkup: safeText(adminFee.airlineMarkup),
+      memberMarkup: safeText(adminFee.memberMarkup),
+      memberDiscount: safeText(adminFee.memberDiscount),
+      salesPrice: safeText(adminFee.salesPrice),
+    },
+    responseKeys: responseKeys(raw),
+  }
+}
+
 export function buildDharmawisataFlightBookingPayloadPreview(
   input: DharmawisataFlightBookingInput,
 ): DharmawisataFlightBookingPayloadPreview {
@@ -1032,6 +1072,7 @@ export async function createDharmawisataFlightBooking(
         request: summarizeBookingRequest(payload, bookingInput.passengers.length),
         diagnostics: bookingDiagnostics,
         responseSummary: summarizeBookingResponse(raw),
+        bookingDetailSummary: summarizeBookingDetailResponse(detail),
         response: rawWithDetail,
       },
       diagnostics: bookingDiagnostics,

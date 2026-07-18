@@ -305,7 +305,10 @@ export async function autoIssueFlightTicketAfterPayment(
 
   const issueResult = await issueDharmawisataFlightTicket({
     bookingId,
-    bookingCode: booking.booking_code,
+    bookingCode:
+      readNestedString(supplierOrder?.response_payload, ["bookingCode"]) ||
+      supplierOrder?.supplier_order_id ||
+      booking.booking_code,
     bookingDate: readNestedString(supplierOrder?.response_payload, ["bookingDate"]) || booking.created_at,
     supplierOrderId: supplierOrder?.supplier_order_id || supplierOrder?.id || null,
     supplierReference:

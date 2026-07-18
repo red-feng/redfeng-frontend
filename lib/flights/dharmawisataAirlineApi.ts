@@ -155,9 +155,10 @@ export const DHARMAWISATA_AIRLINE_ENDPOINTS: DharmawisataAirlineEndpointDefiniti
     defaultPath: "/Airline/BookingDetail",
     envName: "DHARMAWISATA_H2H_BOOKING_DETAIL_PATH",
     mode: "read",
-    summary: "Baca detail booking supplier.",
+    summary: "Baca detail booking supplier. Payload manual: bookingCode, referenceNo, bookingDate; userID/accessToken otomatis.",
     requiresAuth: true,
     customerFlow: "active",
+    timeoutMs: 45000,
   },
   {
     key: "issued",
@@ -165,9 +166,10 @@ export const DHARMAWISATA_AIRLINE_ENDPOINTS: DharmawisataAirlineEndpointDefiniti
     defaultPath: "/Airline/Issued",
     envName: "DHARMAWISATA_H2H_ISSUE_PATH",
     mode: "mutating",
-    summary: "Issue tiket supplier. Endpoint private, dilindungi di diagnostics.",
+    summary: "Issue tiket supplier. Payload manual: airlineID, origin, destination, tripType, departDate, returnDate, bookingCode, bookingDate, airlineAccessCode; userID/accessToken otomatis.",
     requiresAuth: true,
     customerFlow: "protected",
+    timeoutMs: 45000,
   },
   {
     key: "preview",

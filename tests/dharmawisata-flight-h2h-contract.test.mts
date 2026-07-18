@@ -9,6 +9,7 @@ const bookingSource = readFileSync(resolve("lib/flights/dharmawisataFlightBookin
 const routeCacheSource = readFileSync(resolve("lib/flights/dharmawisataRouteCache.ts"), "utf8")
 const airlineApiSource = readFileSync(resolve("lib/flights/dharmawisataAirlineApi.ts"), "utf8")
 const ticketIssueSource = readFileSync(resolve("lib/flights/dharmawisataTicketIssue.ts"), "utf8")
+const autoIssueSource = readFileSync(resolve("lib/flights/autoIssue.ts"), "utf8")
 const policySource = readFileSync(resolve("lib/flights/automationPolicy.ts"), "utf8")
 const referenceSource = readFileSync(resolve("docs/dharmawisata-flight-h2h-reference.md"), "utf8")
 const flightBookingRouteSource = readFileSync(resolve("app/api/flights/bookings/route.ts"), "utf8")
@@ -300,6 +301,17 @@ for (const anchor of [
     "flightDepartCount: Array.isArray(raw.flightDeparts) ? raw.flightDeparts.length : 0",
     "flightReturnCount: Array.isArray(raw.flightReturns) ? raw.flightReturns.length : 0",
     "responseSummary: summarizeBookingResponse(raw)",
+    "function summarizeBookingDetailResponse(detail: unknown)",
+    "const adminFee = asRecord(raw.adminFee)",
+    "airline: safeText(raw.airline)",
+    "airlineID: safeText(raw.airlineID)",
+    "flightClass: safeText(raw.flightClass)",
+    "ticketStatus: safeText(raw.ticketStatus)",
+    "ticketDetail: safeText(raw.ticketDetail)",
+    "issuedDate: safeText(raw.issuedDate)",
+    "passengerCount: Array.isArray(raw.passengers) ? raw.passengers.length : 0",
+    "ticketPriceIDR: safeText(adminFee.ticketPriceIDR)",
+    "bookingDetailSummary: summarizeBookingDetailResponse(detail)",
     "export type DharmawisataFlightHoldDiagnostics",
     "safeForInternalLog: true",
     'sameTransactionToken: options.accessTokenSource === "schedule_lookup"',
@@ -412,6 +424,7 @@ for (const anchor of [
     "Baca booking list agent H2H. Payload manual: filterByStatus, startDate, endDate; userID/accessToken otomatis.",
     "timeoutMs: 45000",
     'envName: "DHARMAWISATA_H2H_BOOKING_DETAIL_PATH"',
+    "Baca detail booking supplier. Payload manual: bookingCode, referenceNo, bookingDate; userID/accessToken otomatis.",
     'envName: "DHARMAWISATA_H2H_ISSUE_PATH"',
     "auth = redactRecord(login)",
     "payload: redactRecord(requestPayload)",
@@ -431,13 +444,27 @@ for (const anchor of [
   "tripType: normalizeDharmawisataTripType(input.tripType)",
   "departDate: input.departureAt || undefined",
   "returnDate: input.returnAt || undefined",
-  "bookingCode: externalBookingCode",
+  "const supplierBookingCode = input.bookingCode || input.supplierOrderId || input.supplierReference || input.pnrCode || undefined",
+  "bookingCode: supplierBookingCode",
   "bookingDate: input.bookingDate || undefined",
   "airlineAccessCode: input.airlineAccessCode || input.fareReferenceId || input.supplierOrderId || undefined",
+  "responseSummary: summarizeIssueResponse(raw)",
+  "response: redactCredentialFields(raw)",
+  "bookingStatus: safeText(raw.bookingStatus)",
+  "respTime: safeText(raw.respTime)",
   "path: issuePath",
   'method: "POST"',
 ]) {
   assertIncludes(ticketIssueSource, anchor, "Dharmawisata issued payload contract")
+}
+
+for (const anchor of [
+  'bookingCode:',
+  'readNestedString(supplierOrder?.response_payload, ["bookingCode"])',
+  "supplierOrder?.supplier_order_id",
+  "booking.booking_code",
+]) {
+  assertIncludes(autoIssueSource, anchor, "Dharmawisata issued supplier booking code contract")
 }
 
 for (const anchor of [
@@ -508,11 +535,21 @@ for (const anchor of [
     "a safe response summary with counts for `flightDeparts` and `flightReturns`",
     "Dharmawisata fare fields in the Booking response",
     "`Airline/BookingDetail` is the direct follow-up",
+    "`POST /Airline/BookingDetail`",
+    "`bookingCode`, `referenceNo`, `bookingDate`, `userID`, and `accessToken`",
+    "`bookingCode` and `bookingDate` are required",
+    "`flightDeparts`, `flightReturns`, `airline`, `airlineID`, `flightClass`, `bookingCode`, `referenceNo`, `bookingDate`, `timeLimit`, `origin`, `destination`, `tripType`, `departDate`, `returnDate`, `ticketStatus`, `ticketDetail`, `passengers`, `currency`, `adminFee`, `issuedDate`, `bookingCodeAirline`, `respTime`, `userID`, `accessToken`, `status`, and `respMessage`",
+    "`ticketPrice`, `ticketPriceIDR`, `airlineMarkup`, `memberMarkup`, `memberDiscount`, and `salesPrice`",
+    "a safe BookingDetail summary with flight and passenger counts",
     "`Airline/BookingList` is a reconciliation/list endpoint and is called with `POST /Airline/BookingList`.",
     "`filterByStatus`, `startDate`, `endDate`, `userID`, and `accessToken`",
     "`filterByStatus`, `startDate`, `endDate`, `bookingInfos`, `respTime`, `userID`, `accessToken`, `status`, and `respMessage`",
     "`Airline/Issued` is the ticket issue endpoint",
+    "`POST /Airline/Issued`",
     "`airlineID`, `origin`, `destination`, `tripType`, `departDate`, `returnDate`, `bookingCode`, `bookingDate`, `airlineAccessCode`, `userID`, and the same `accessToken`.",
+    "`airlineID`, `origin`, `destination`, `tripType`, `departDate`, `returnDate`, `bookingCode`, `airlineAccessCode`, `bookingStatus`, `respTime`, `userID`, `accessToken`, `status`, and `respMessage`",
+    "supplier booking code returned by `Airline/Booking` or `Airline/BookingDetail` as `bookingCode`",
+    "stores an `Airline/Issued` response summary with `bookingStatus`",
     "RedFeng calls `Airline/Issued` only after payment is verified",
     "The official issue endpoint is `Airline/Issued`; configure it with `DHARMAWISATA_H2H_ISSUE_PATH=/Airline/Issued`.",
     "Domestic Indonesian passenger payloads currently default `nationality` and `birthCountry` to `ID`.",
