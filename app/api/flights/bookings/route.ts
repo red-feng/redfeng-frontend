@@ -806,11 +806,15 @@ export async function POST(req: Request) {
     const resolvedFlightNumber = scheduleLookup?.ok && scheduleLookup.flightNumber ? scheduleLookup.flightNumber : flightNumber
     const resolvedDepartureAt = scheduleLookup?.ok && scheduleLookup.departureAt ? scheduleLookup.departureAt : departureAt
     const resolvedArrivalAt = scheduleLookup?.ok && scheduleLookup.arrivalAt ? scheduleLookup.arrivalAt : arrivalAt
+    const scheduleLookupReadyForHold =
+      scheduleLookup?.ok === true &&
+      (scheduleLookup.source === "Airline/ScheduleAllAirline" || scheduleLookup.source === "Airline/Schedule")
+    const canAutoHoldDharmawisata = shouldAutoBookDharmawisata && scheduleLookupReadyForHold
 
-    const bookingApiResult = shouldAutoBookDharmawisata
+    const bookingApiResult = canAutoHoldDharmawisata
       ? await createDharmawisataFlightBooking({
           bookingId: booking.id,
-          accessToken: scheduleLookup?.ok ? scheduleLookup.scheduleAccessToken : null,
+          accessToken: scheduleLookup.scheduleAccessToken,
           airlineId: airlineCode,
           airlineCode,
           flightNumber: resolvedFlightNumber,
@@ -838,6 +842,28 @@ export async function POST(req: Request) {
           paxInfant: 0,
           passengers: dharmawisataPassengers,
         })
+      : shouldAutoBookDharmawisata
+        ? {
+            ok: false,
+            skipped: false,
+            mode: "api" as const,
+            message:
+              "Auto-hold Dharmawisata ditahan: ScheduleAllAirline/Schedule resmi belum berhasil pada token transaksi yang sama, sehingga Price/Booking tidak dipanggil.",
+            bookingCode: null,
+            bookingDate: null,
+            timeLimit: null,
+            referenceNo: null,
+            bookingCodeAirline: null,
+            airlineAccessCode: null,
+            raw: {
+              bookingMode: "api_schedule_required",
+              supplierCode: supplier.supplier_code,
+              integrationMode: supplier.integration_mode,
+              automationPolicy,
+              scheduleLookup: summarizeScheduleLookup(scheduleLookup),
+              error: "airline_schedule_or_schedule_all_airline_step_required",
+            },
+          }
       : {
           ok: false,
           skipped: true,

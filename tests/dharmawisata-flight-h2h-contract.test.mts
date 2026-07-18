@@ -336,6 +336,12 @@ for (const anchor of [
   "diagnosticJourneyDepartReference",
   "diagnosticDepartureClassFare",
   "dharmawisataDiagnostics: summary",
+  "const scheduleLookupReadyForHold =",
+  'scheduleLookup.source === "Airline/ScheduleAllAirline" || scheduleLookup.source === "Airline/Schedule"',
+  "const canAutoHoldDharmawisata = shouldAutoBookDharmawisata && scheduleLookupReadyForHold",
+  "const bookingApiResult = canAutoHoldDharmawisata",
+  'bookingMode: "api_schedule_required"',
+  'error: "airline_schedule_or_schedule_all_airline_step_required"',
   "...dharmawisataDiagnosticMetadata(bookingApiResult.diagnostics)",
 ]) {
   assertIncludes(flightBookingRouteSource, anchor, "Dharmawisata hold diagnostics event metadata contract")
