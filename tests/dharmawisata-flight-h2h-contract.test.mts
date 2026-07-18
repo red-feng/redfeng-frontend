@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs"
 import { resolve } from "node:path"
 
 const clientSource = readFileSync(resolve("lib/dharmawisata/client.ts"), "utf8")
+const agentBalanceSource = readFileSync(resolve("lib/dharmawisata/agentBalance.ts"), "utf8")
 const scheduleSource = readFileSync(resolve("lib/flights/dharmawisataFlightScheduleLookup.ts"), "utf8")
 const bookingSource = readFileSync(resolve("lib/flights/dharmawisataFlightBooking.ts"), "utf8")
 const routeCacheSource = readFileSync(resolve("lib/flights/dharmawisataRouteCache.ts"), "utf8")
@@ -26,6 +27,29 @@ assertIncludes(
   "return md5(`${token}${md5(password)}`)",
   "Dharmawisata login securityCode contract",
 )
+for (const anchor of [
+  "export type DharmawisataAuthResponse = {",
+  "accessToken: string | null",
+  "respTime?: string",
+  "userID?: string",
+  "status?: string",
+  "respMessage?: string",
+  "export function buildDharmawisataLoginToken(date = new Date())",
+  "return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`",
+  "export function buildDharmawisataSecurityCode(token: string, password: string)",
+  "function buildDharmawisataSessionPayload(options?: DharmawisataSessionOptions)",
+  "const token = buildDharmawisataLoginToken()",
+  "buildDharmawisataSecurityCode(token, credentials.password)",
+  "token,",
+  "securityCode,",
+  "language: options?.language ?? 1,",
+  "userID: credentials.userId,",
+  '"Content-Type": "application/json"',
+  'Accept: "application/json"',
+  "body: body === undefined ? null : JSON.stringify(body)",
+]) {
+  assertIncludes(clientSource, anchor, "Dharmawisata Session/Login JSON contract")
+}
 assertIncludes(
   clientSource,
   'getOptionalEnv("DHARMAWISATA_H2H_TLS_REJECT_UNAUTHORIZED", "true").toLowerCase() !== "false"',
@@ -51,11 +75,42 @@ assertIncludes(
   'path: logoutPath || "/Session/Logout"',
   "Dharmawisata logout endpoint contract",
 )
+assertIncludes(
+  clientSource,
+  'method: "POST"',
+  "Dharmawisata session endpoints must use POST",
+)
 assert.ok(
   clientSource.includes("body: buildDharmawisataSessionPayload(options)") &&
     clientSource.indexOf('path: loginPath || "/Session/Login"') < clientSource.indexOf('path: logoutPath || "/Session/Logout"'),
   "Dharmawisata login/logout must share the same JSON auth payload shape",
 )
+
+for (const anchor of [
+  "export type DharmawisataAgentBalanceResult = {",
+  "balance: number | null",
+  "balanceFormatted: string",
+  "respTime: string | null",
+  "userId: string | null",
+  "function redactAgentBalanceResponse(raw: JsonRecord)",
+  'accessToken: normalizeText(raw.accessToken) ? "present-redacted" : ""',
+  "const auth = await dharmawisataLogin({ language: 1 })",
+  "const accessToken = normalizeText(auth.accessToken)",
+  'path: getDharmawisataConfiguredPath("DHARMAWISATA_H2H_AGENT_BALANCE_PATH") || "/Agent/Balance"',
+  'method: "POST"',
+  "body: {",
+  "userID: credentials.userId,",
+  "accessToken,",
+  "const balance = normalizeMoney(raw.balance)",
+  'status.toUpperCase() === "SUCCESS" && balance !== null',
+  "respTime: normalizeText(raw.respTime) || null",
+  "userId: normalizeText(raw.userID) || credentials.userId",
+  'balanceMode: "api"',
+  "hasAccessToken: true",
+  "response: redactAgentBalanceResponse(raw)",
+]) {
+  assertIncludes(agentBalanceSource, anchor, "Dharmawisata Agent/Balance contract")
+}
 
 for (const anchor of [
   'return asString(payload.searchKey || payload.SearchKey)',
@@ -270,7 +325,17 @@ for (const anchor of [
   "Production uses normal valid SSL.",
   "UAT may temporarily use ignored SSL verification",
   "Session Login and Logout requests are sent as `application/json`.",
+  "`Session/Login` is called with `POST /Session/Login`.",
+  "Login request body is `application/json` with `token`, `securityCode`, `language`, and `userID`.",
+  "`token` uses timestamp format `yyyy-MM-dd'T'HH:mm:ss`.",
+  "Login response should expose `accessToken`, `respTime`, `userID`, `status`, and `respMessage`.",
+  "`Session/Logout` is called with `POST /Session/Logout`.",
   "`Session/Logout` uses the same session payload shape as Login",
+  "Logout response follows the same session response shape",
+  "`Agent/Balance` is called with `POST /Agent/Balance`.",
+  "Balance request body is `application/json` with `userID` and the `accessToken` returned by Login.",
+  "Balance response should expose `balance`, `respTime`, `userID`, `accessToken`, `status`, and `respMessage`.",
+  "RedFeng redacts `accessToken` in stored/debug balance metadata.",
   "The same `accessToken` from step 1 must be used through the transaction.",
   "`Airline/ScheduleAllAirline`",
   "`Airline/PriceAllAirline`",

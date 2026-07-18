@@ -10,11 +10,27 @@ This note captures the working agreement from the RedFeng and Dharmawisata H2H W
 
 ## Login
 
-- Login request uses `token` as timestamp.
+- `Session/Login` is called with `POST /Session/Login`.
+- Login request body is `application/json` with `token`, `securityCode`, `language`, and `userID`.
+- `token` uses timestamp format `yyyy-MM-dd'T'HH:mm:ss`.
 - `securityCode` is `md5(token + md5(password))`.
 - Session Login and Logout requests are sent as `application/json`.
-- `Session/Logout` uses the same session payload shape as Login: `token`, `securityCode`, `language`, and `userID`.
+- Login response should expose `accessToken`, `respTime`, `userID`, `status`, and `respMessage`.
 - The `accessToken` returned by Login must be reused for one flight transaction flow until Booking.
+
+## Logout
+
+- `Session/Logout` is called with `POST /Session/Logout`.
+- Logout request body is `application/json` and uses the same session payload shape as Login: `token`, `securityCode`, `language`, and `userID`.
+- `Session/Logout` uses the same session payload shape as Login: `token`, `securityCode`, `language`, and `userID`.
+- Logout response follows the same session response shape: `accessToken`, `respTime`, `userID`, `status`, and `respMessage`.
+
+## Agent Balance
+
+- `Agent/Balance` is called with `POST /Agent/Balance`.
+- Balance request body is `application/json` with `userID` and the `accessToken` returned by Login.
+- Balance response should expose `balance`, `respTime`, `userID`, `accessToken`, `status`, and `respMessage`.
+- RedFeng redacts `accessToken` in stored/debug balance metadata.
 
 ## Airline Flow
 
