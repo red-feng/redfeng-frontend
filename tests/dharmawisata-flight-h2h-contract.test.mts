@@ -32,6 +32,26 @@ assert.ok(
     clientSource.indexOf("return dharmawisataJsonFetch({") < clientSource.indexOf('path: loginPath || "/Session/Login"'),
   "Dharmawisata login must send application/json payloads",
 )
+assertIncludes(
+  clientSource,
+  "function buildDharmawisataSessionPayload",
+  "Dharmawisata shared session auth payload contract",
+)
+assertIncludes(
+  clientSource,
+  "export async function dharmawisataLogout",
+  "Dharmawisata logout API contract",
+)
+assertIncludes(
+  clientSource,
+  'path: logoutPath || "/Session/Logout"',
+  "Dharmawisata logout endpoint contract",
+)
+assert.ok(
+  clientSource.includes("body: buildDharmawisataSessionPayload(options)") &&
+    clientSource.indexOf('path: loginPath || "/Session/Login"') < clientSource.indexOf('path: logoutPath || "/Session/Logout"'),
+  "Dharmawisata login/logout must share the same JSON auth payload shape",
+)
 
 for (const anchor of [
   'return asString(payload.searchKey || payload.SearchKey)',
@@ -197,7 +217,8 @@ for (const anchor of [
 for (const anchor of [
   "Production uses normal valid SSL.",
   "UAT may temporarily use ignored SSL verification",
-  "Login request is sent as `application/json`.",
+  "Session Login and Logout requests are sent as `application/json`.",
+  "`Session/Logout` uses the same session payload shape as Login",
   "The same `accessToken` from step 1 must be used through the transaction.",
   "`Airline/ScheduleAllAirline`",
   "`Airline/PriceAllAirline`",

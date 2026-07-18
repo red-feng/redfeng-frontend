@@ -275,6 +275,10 @@ export async function dharmawisataFormFetch({
   return response.json()
 }
 
+type DharmawisataSessionOptions = {
+  language?: 1 | 2 | 3
+}
+
 function md5(value: string) {
   return createHash("md5").update(value).digest("hex")
 }
@@ -309,27 +313,42 @@ export function getDharmawisataAuthPayload(
   }
 }
 
-export async function dharmawisataLogin(
-  options?: {
-    language?: 1 | 2 | 3
-  },
-): Promise<DharmawisataAuthResponse> {
-  const loginPath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_LOGIN_PATH")
+function buildDharmawisataSessionPayload(options?: DharmawisataSessionOptions) {
   const credentials = getDharmawisataCredentials()
   const token = buildDharmawisataLoginToken()
   const securityCode =
     getDharmawisataSecurityCode() ||
     buildDharmawisataSecurityCode(token, credentials.password)
 
+  return {
+    token,
+    securityCode,
+    language: options?.language ?? 1,
+    userID: credentials.userId,
+  }
+}
+
+export async function dharmawisataLogin(
+  options?: DharmawisataSessionOptions,
+): Promise<DharmawisataAuthResponse> {
+  const loginPath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_LOGIN_PATH")
+
   return dharmawisataJsonFetch({
     path: loginPath || "/Session/Login",
     method: "POST",
-    body: {
-      token,
-      securityCode,
-      language: options?.language ?? 1,
-      userID: credentials.userId,
-    },
+    body: buildDharmawisataSessionPayload(options),
+  })
+}
+
+export async function dharmawisataLogout(
+  options?: DharmawisataSessionOptions,
+): Promise<DharmawisataAuthResponse> {
+  const logoutPath = getDharmawisataConfiguredPath("DHARMAWISATA_H2H_LOGOUT_PATH")
+
+  return dharmawisataJsonFetch({
+    path: logoutPath || "/Session/Logout",
+    method: "POST",
+    body: buildDharmawisataSessionPayload(options),
   })
 }
 

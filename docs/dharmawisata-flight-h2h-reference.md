@@ -12,7 +12,8 @@ This note captures the working agreement from the RedFeng and Dharmawisata H2H W
 
 - Login request uses `token` as timestamp.
 - `securityCode` is `md5(token + md5(password))`.
-- Login request is sent as `application/json`.
+- Session Login and Logout requests are sent as `application/json`.
+- `Session/Logout` uses the same session payload shape as Login: `token`, `securityCode`, `language`, and `userID`.
 - The `accessToken` returned by Login must be reused for one flight transaction flow until Booking.
 
 ## Airline Flow
