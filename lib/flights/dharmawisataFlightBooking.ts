@@ -758,6 +758,29 @@ function summarizeBookingRequest(
   }
 }
 
+function summarizeBookingResponse(raw: JsonRecord): JsonRecord {
+  return {
+    status: safeText(raw.status),
+    message: safeText(raw.respMessage || raw.message, 480),
+    bookingCode: safeText(raw.bookingCode),
+    bookingDate: safeText(raw.bookingDate),
+    referenceNo: safeText(raw.referenceNo),
+    timeLimit: safeText(raw.timeLimit),
+    bookingCodeAirline: safeText(raw.bookingCodeAirline),
+    airlineAdminFee: safeText(raw.airlineAdminFee),
+    memberAdminFee: safeText(raw.memberAdminFee),
+    memberDiscount: safeText(raw.memberDiscount),
+    salesPrice: safeText(raw.salesPrice),
+    ticketPrice: safeText(raw.ticketPrice),
+    currency: safeText(raw.currency),
+    detailPresent: hasText(raw.detail),
+    segment: safeCount(raw.segment),
+    flightDepartCount: Array.isArray(raw.flightDeparts) ? raw.flightDeparts.length : 0,
+    flightReturnCount: Array.isArray(raw.flightReturns) ? raw.flightReturns.length : 0,
+    responseKeys: responseKeys(raw),
+  }
+}
+
 export function buildDharmawisataFlightBookingPayloadPreview(
   input: DharmawisataFlightBookingInput,
 ): DharmawisataFlightBookingPayloadPreview {
@@ -1008,6 +1031,7 @@ export async function createDharmawisataFlightBooking(
         preBookingFlow,
         request: summarizeBookingRequest(payload, bookingInput.passengers.length),
         diagnostics: bookingDiagnostics,
+        responseSummary: summarizeBookingResponse(raw),
         response: rawWithDetail,
       },
       diagnostics: bookingDiagnostics,
