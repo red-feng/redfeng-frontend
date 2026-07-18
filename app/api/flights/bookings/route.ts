@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server"
 import { calculateFlightBookingAmounts, getFinanceSettings } from "@/lib/finance/settings"
 import { getFlightAutomationPolicy } from "@/lib/flights/automationPolicy"
-import { createDharmawisataFlightBooking, type DharmawisataPassenger } from "@/lib/flights/dharmawisataFlightBooking"
+import {
+  createDharmawisataFlightBooking,
+  type DharmawisataFlightHoldDiagnostics,
+  type DharmawisataPassenger,
+} from "@/lib/flights/dharmawisataFlightBooking"
 import {
   findDharmawisataLowFareScheduleForBooking,
   type DharmawisataFlightScheduleLookupResult,
@@ -49,6 +53,87 @@ function summarizeScheduleLookup(result: DharmawisataFlightScheduleLookupResult 
     departureAt: result.departureAt,
     arrivalAt: result.arrivalAt,
     segmentCount: result.segments.length,
+  }
+}
+
+function summarizeDharmawisataHoldDiagnostics(diagnostics: DharmawisataFlightHoldDiagnostics | null | undefined) {
+  if (!diagnostics) return null
+  const priceStep = diagnostics.steps.find((step) => step.endpoint === "Airline/PriceAllAirline" || step.endpoint === "Airline/Price") || null
+  const addOnStep = diagnostics.steps.find((step) => step.endpoint === "Airline/BaggageAndMeal") || null
+  const seatStep = diagnostics.steps.find((step) => step.endpoint === "Airline/Seat") || null
+
+  return {
+    provider: diagnostics.provider,
+    flow: diagnostics.flow,
+    safeForInternalLog: diagnostics.safeForInternalLog,
+    accessTokenSource: diagnostics.accessTokenSource,
+    sameTransactionToken: diagnostics.sameTransactionToken,
+    scheduleSource: diagnostics.scheduleSource,
+    failedStep: diagnostics.failedStep,
+    failedMessage: diagnostics.failedMessage,
+    input: diagnostics.input,
+    price: priceStep
+      ? {
+          endpoint: priceStep.endpoint,
+          path: priceStep.path,
+          ok: priceStep.ok,
+          status: priceStep.status,
+          message: priceStep.message,
+          request: priceStep.request,
+          response: priceStep.response,
+        }
+      : null,
+    baggageAndMeal: addOnStep
+      ? {
+          ok: addOnStep.ok,
+          status: addOnStep.status,
+          message: addOnStep.message,
+          request: addOnStep.request,
+          response: addOnStep.response,
+        }
+      : null,
+    seat: seatStep
+      ? {
+          ok: seatStep.ok,
+          status: seatStep.status,
+          message: seatStep.message,
+          request: seatStep.request,
+          response: seatStep.response,
+        }
+      : null,
+    finalRequest: diagnostics.finalRequest || null,
+    steps: diagnostics.steps.map((step) => ({
+      endpoint: step.endpoint,
+      path: step.path,
+      ok: step.ok,
+      status: step.status,
+      message: step.message,
+    })),
+  }
+}
+
+function dharmawisataDiagnosticMetadata(diagnostics: DharmawisataFlightHoldDiagnostics | null | undefined): Record<string, unknown> {
+  const summary = summarizeDharmawisataHoldDiagnostics(diagnostics)
+  if (!summary) return {}
+
+  const priceRequest = (summary.price?.request || {}) as Record<string, unknown>
+  const priceResponse = (summary.price?.response || {}) as Record<string, unknown>
+  const finalRequest = (summary.finalRequest || {}) as Record<string, unknown>
+
+  return {
+    diagnosticSafeForInternalLog: summary.safeForInternalLog,
+    diagnosticAccessTokenSource: summary.accessTokenSource,
+    diagnosticSameTransactionToken: summary.sameTransactionToken,
+    diagnosticScheduleSource: summary.scheduleSource,
+    diagnosticFailedStep: summary.failedStep,
+    diagnosticMessage: summary.failedMessage,
+    diagnosticPriceStatus: summary.price?.status || null,
+    diagnosticPriceMessage: summary.price?.message || null,
+    diagnosticHasJourneyDepartReference: priceRequest.hasJourneyDepartReference,
+    diagnosticJourneyDepartReference: priceRequest.journeyDepartReference,
+    diagnosticHasDepartureClassFare: priceResponse.hasDepartureClassFare,
+    diagnosticDepartureClassFare: priceResponse.departureClassFare || finalRequest.schDepart,
+    dharmawisataDiagnostics: summary,
   }
 }
 
@@ -833,6 +918,7 @@ export async function POST(req: Request) {
           bookingCodeAirline: bookingApiResult.bookingCodeAirline,
           timeLimit: bookingApiResult.timeLimit,
           scheduleLookup: summarizeScheduleLookup(scheduleLookup),
+          ...dharmawisataDiagnosticMetadata(bookingApiResult.diagnostics),
         },
       })
     } else if (!bookingApiResult.skipped) {
@@ -858,6 +944,7 @@ export async function POST(req: Request) {
           lifecycleStatus: "fare_recheck_required",
           message: bookingApiResult.message,
           scheduleLookup: summarizeScheduleLookup(scheduleLookup),
+          ...dharmawisataDiagnosticMetadata(bookingApiResult.diagnostics),
         },
       })
     } else {

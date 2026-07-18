@@ -321,7 +321,7 @@ export async function dharmawisataLogin(
     getDharmawisataSecurityCode() ||
     buildDharmawisataSecurityCode(token, credentials.password)
 
-  return dharmawisataFormFetch({
+  return dharmawisataJsonFetch({
     path: loginPath || "/Session/Login",
     method: "POST",
     body: {

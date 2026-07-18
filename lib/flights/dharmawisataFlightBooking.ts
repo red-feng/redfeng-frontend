@@ -12,6 +12,7 @@ import type {
 } from "@/lib/flights/dharmawisataFlightScheduleLookup"
 
 type JsonRecord = Record<string, unknown>
+type DharmawisataAccessTokenSource = "schedule_lookup" | "env_override" | "login"
 
 export type DharmawisataPassenger = {
   title: string
@@ -66,6 +67,31 @@ export type DharmawisataFlightBookingInput = {
   passengers: DharmawisataPassenger[]
 }
 
+export type DharmawisataFlightHoldDiagnosticStep = {
+  endpoint: string
+  path: string
+  ok: boolean
+  status: string
+  message: string
+  request: JsonRecord
+  response: JsonRecord
+}
+
+export type DharmawisataFlightHoldDiagnostics = {
+  provider: "dharmawisata-h2h"
+  flow: "flight_hold"
+  safeForInternalLog: true
+  bookingId: string
+  accessTokenSource: DharmawisataAccessTokenSource
+  sameTransactionToken: boolean
+  scheduleSource: DharmawisataFlightScheduleSource | null
+  input: JsonRecord
+  failedStep: string | null
+  failedMessage: string | null
+  steps: DharmawisataFlightHoldDiagnosticStep[]
+  finalRequest?: JsonRecord | null
+}
+
 export type DharmawisataFlightBookingResult = {
   ok: boolean
   skipped: boolean
@@ -78,6 +104,7 @@ export type DharmawisataFlightBookingResult = {
   bookingCodeAirline: string | null
   airlineAccessCode: string | null
   raw: JsonRecord
+  diagnostics?: DharmawisataFlightHoldDiagnostics | null
 }
 
 export type DharmawisataFlightBookingPayloadPreview = {
@@ -96,6 +123,40 @@ function asRecord(value: unknown): JsonRecord | null {
 
 function normalizeText(value: unknown) {
   return typeof value === "string" ? value.trim() : typeof value === "number" ? String(value) : ""
+}
+
+function safeText(value: unknown, maxLength = 240) {
+  const normalized = normalizeText(value)
+  if (!normalized) return ""
+  return normalized.length > maxLength ? `${normalized.slice(0, maxLength)}...` : normalized
+}
+
+function hasText(value: unknown) {
+  return Boolean(normalizeText(value))
+}
+
+function safeCount(value: unknown) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function responseKeys(raw: JsonRecord) {
+  const blocked = new Set([
+    "accessToken",
+    "password",
+    "securityCode",
+    "token",
+    "userID",
+    "paxDetails",
+    "contactEmail",
+    "contactFirstName",
+    "contactLastName",
+    "contactRemainingPhoneNo",
+  ])
+
+  return Object.keys(raw)
+    .filter((key) => !blocked.has(key))
+    .slice(0, 24)
 }
 
 function pickString(raw: JsonRecord, keys: string[]) {
@@ -389,6 +450,87 @@ function buildAddOnFlowPayload(input: DharmawisataFlightBookingInput, accessToke
   }
 }
 
+function summarizeDiagnosticInput(input: DharmawisataFlightBookingInput): JsonRecord {
+  return {
+    airlineID: input.airlineId || input.airlineCode || "",
+    flightNumber: input.flightNumber || "",
+    origin: input.originAirportCode || "",
+    destination: input.destinationAirportCode || "",
+    tripType: normalizeDharmawisataTripType(input.tripType),
+    departDate: dharmawisataCalendarDateTime(input.departureAt),
+    returnDate: normalizeDharmawisataTripType(input.tripType) === "RoundTrip"
+      ? dharmawisataCalendarDateTime(input.returnAt)
+      : "0001-01-01T00:00:00",
+    flightClass: input.flightClass || "",
+    scheduleSource: input.scheduleSource || null,
+    scheduleSegmentCount: Array.isArray(input.scheduleSegments) ? input.scheduleSegments.length : 0,
+    hasInitialDetailSchedule: hasText(input.detailSchedule),
+    initialDetailSchedule: safeText(input.detailSchedule, 360),
+    hasInitialSearchKey: hasText(input.searchKey),
+    hasInitialAirlineAccessCode: hasText(input.airlineAccessCode),
+    initialAirlineAccessCode: safeText(input.airlineAccessCode),
+    paxAdult: input.paxAdult,
+    paxChild: input.paxChild || 0,
+    paxInfant: input.paxInfant || 0,
+    passengerCount: input.passengers.length,
+  }
+}
+
+function summarizeSchedulePayload(value: unknown) {
+  const records = Array.isArray(value) ? value.filter((item): item is JsonRecord => Boolean(asRecord(item))) : []
+  const first = records[0] || null
+
+  return {
+    count: records.length,
+    firstFlightNumber: first ? safeText(first.flightNumber) : "",
+    firstDetailSchedule: first ? safeText(first.detailSchedule, 360) : "",
+    hasFirstDetailSchedule: first ? hasText(first.detailSchedule) : false,
+  }
+}
+
+function summarizePreBookingRequest(endpoint: string, body: JsonRecord): JsonRecord {
+  const summary: JsonRecord = {
+    endpoint,
+    airlineID: safeText(body.airlineID),
+    origin: safeText(body.origin),
+    destination: safeText(body.destination),
+    tripType: safeText(body.tripType),
+    departDate: safeText(body.departDate),
+    returnDate: safeText(body.returnDate),
+    paxAdult: safeCount(body.paxAdult),
+    paxChild: safeCount(body.paxChild),
+    paxInfant: safeCount(body.paxInfant),
+    hasUserID: hasText(body.userID),
+    hasAccessToken: hasText(body.accessToken),
+    hasAirlineAccessCode: hasText(body.airlineAccessCode),
+    airlineAccessCode: safeText(body.airlineAccessCode),
+  }
+
+  if ("journeyDepartReference" in body || "journeyReturnReference" in body) {
+    summary.hasJourneyDepartReference = hasText(body.journeyDepartReference)
+    summary.journeyDepartReference = safeText(body.journeyDepartReference, 480)
+    summary.journeyDepartReferenceLength = normalizeText(body.journeyDepartReference).length
+    summary.hasJourneyReturnReference = hasText(body.journeyReturnReference)
+    summary.journeyReturnReference = safeText(body.journeyReturnReference, 480)
+  }
+
+  if ("schDepart" in body || "schReturn" in body) {
+    summary.hasSchDepart = hasText(body.schDepart)
+    summary.schDepart = safeText(body.schDepart, 480)
+    summary.hasSchReturn = hasText(body.schReturn)
+    summary.schReturn = safeText(body.schReturn, 480)
+  }
+
+  if ("schDeparts" in body || "schReturns" in body) {
+    summary.schDeparts = summarizeSchedulePayload(body.schDeparts)
+    summary.schReturns = summarizeSchedulePayload(body.schReturns)
+    summary.hasSearchKey = hasText(body.searchKey)
+    summary.searchKeyPresent = hasText(body.searchKey)
+  }
+
+  return summary
+}
+
 function responseStatus(raw: JsonRecord) {
   return normalizeText(raw.status).toUpperCase()
 }
@@ -410,14 +552,86 @@ function responseStepSummary(endpoint: string, raw: JsonRecord, expectedFlightCl
   }
 }
 
-async function runPreBookingStep(endpoint: string, path: string, body: JsonRecord, expectedFlightClass?: string | null) {
-  const response = await dharmawisataJsonFetch({
+function summarizePreBookingResponse(step: ReturnType<typeof responseStepSummary>): JsonRecord {
+  return {
+    status: step.status,
+    message: safeText(step.message, 480),
+    hasSearchKey: hasText(step.searchKey),
+    hasAirlineAccessCode: hasText(step.airlineAccessCode),
+    airlineAccessCode: safeText(step.airlineAccessCode),
+    hasDepartureClassFare: hasText(step.departureClassFare),
+    departureClassFare: safeText(step.departureClassFare, 480),
+    hasReturnClassFare: hasText(step.returnClassFare),
+    returnClassFare: safeText(step.returnClassFare, 480),
+    responseKeys: responseKeys(step.raw),
+  }
+}
+
+function buildPreBookingStepDiagnostic(
+  endpoint: string,
+  path: string,
+  body: JsonRecord,
+  step: ReturnType<typeof responseStepSummary>,
+): DharmawisataFlightHoldDiagnosticStep {
+  return {
+    endpoint,
     path,
-    method: "POST",
-    body,
-  })
-  const raw = asRecord(response) || { response }
-  return responseStepSummary(endpoint, raw, expectedFlightClass)
+    ok: step.ok,
+    status: step.status,
+    message: safeText(step.message, 480),
+    request: summarizePreBookingRequest(endpoint, body),
+    response: summarizePreBookingResponse(step),
+  }
+}
+
+function buildHoldDiagnostics(input: DharmawisataFlightBookingInput, options: {
+  accessTokenSource: DharmawisataAccessTokenSource
+  steps: DharmawisataFlightHoldDiagnosticStep[]
+  finalRequest?: JsonRecord | null
+}): DharmawisataFlightHoldDiagnostics {
+  const failedStep = options.steps.find((step) => !step.ok) || null
+
+  return {
+    provider: "dharmawisata-h2h",
+    flow: "flight_hold",
+    safeForInternalLog: true,
+    bookingId: input.bookingId,
+    accessTokenSource: options.accessTokenSource,
+    sameTransactionToken: options.accessTokenSource === "schedule_lookup",
+    scheduleSource: input.scheduleSource || null,
+    input: summarizeDiagnosticInput(input),
+    failedStep: failedStep?.endpoint || null,
+    failedMessage: failedStep?.message || null,
+    steps: options.steps,
+    finalRequest: options.finalRequest || null,
+  }
+}
+
+async function runPreBookingStep(endpoint: string, path: string, body: JsonRecord, expectedFlightClass?: string | null) {
+  try {
+    const response = await dharmawisataJsonFetch({
+      path,
+      method: "POST",
+      body,
+    })
+    const raw = asRecord(response) || { response }
+    const step = responseStepSummary(endpoint, raw, expectedFlightClass)
+    return {
+      ...step,
+      diagnostic: buildPreBookingStepDiagnostic(endpoint, path, body, step),
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : `${endpoint} gagal tanpa pesan error.`
+    const raw = {
+      status: "ERROR",
+      respMessage: message,
+    }
+    const step = responseStepSummary(endpoint, raw, expectedFlightClass)
+    return {
+      ...step,
+      diagnostic: buildPreBookingStepDiagnostic(endpoint, path, body, step),
+    }
+  }
 }
 
 async function runDharmawisataPreBookingFlow(input: DharmawisataFlightBookingInput, accessToken: string) {
@@ -646,12 +860,25 @@ export async function createDharmawisataFlightBooking(
     }
   }
 
+  const inputAccessToken = normalizeText(input.accessToken)
+  const envAccessToken = getDharmawisataAccessTokenOverride()
+  const accessTokenSource: DharmawisataAccessTokenSource = inputAccessToken
+    ? "schedule_lookup"
+    : envAccessToken
+      ? "env_override"
+      : "login"
+
   try {
-    const accessTokenOverride = normalizeText(input.accessToken) || getDharmawisataAccessTokenOverride()
+    const accessTokenOverride = inputAccessToken || envAccessToken
     const auth = accessTokenOverride ? { accessToken: accessTokenOverride } : await dharmawisataLogin({ language: 1 })
     const accessToken = normalizeText(auth.accessToken)
 
     if (!accessToken) {
+      const diagnostics = buildHoldDiagnostics(input, {
+        accessTokenSource,
+        steps: [],
+      })
+
       return {
         ok: false,
         skipped: false,
@@ -668,10 +895,15 @@ export async function createDharmawisataFlightBooking(
           auth,
           error: "empty_access_token",
         },
+        diagnostics,
       }
     }
 
     const preBookingFlow = await runDharmawisataPreBookingFlow(input, accessToken)
+    const preBookingDiagnostics = buildHoldDiagnostics(input, {
+      accessTokenSource,
+      steps: preBookingFlow.steps.map((step) => step.diagnostic),
+    })
 
     if (!preBookingFlow.ok) {
       return {
@@ -688,7 +920,9 @@ export async function createDharmawisataFlightBooking(
         raw: {
           bookingMode: "api",
           preBookingFlow,
+          diagnostics: preBookingDiagnostics,
         },
+        diagnostics: preBookingDiagnostics,
       }
     }
 
@@ -701,6 +935,12 @@ export async function createDharmawisataFlightBooking(
       preBookingFlow.departureClassFare || null,
     )
     const payload = buildBookingPayload(bookingInput, accessToken)
+    const finalRequestDiagnostic = summarizePreBookingRequest("Airline/Booking", payload)
+    const bookingDiagnostics = buildHoldDiagnostics(input, {
+      accessTokenSource,
+      steps: preBookingFlow.steps.map((step) => step.diagnostic),
+      finalRequest: finalRequestDiagnostic,
+    })
     const rawResponse = await dharmawisataJsonFetch({
       path: bookingPath,
       method: "POST",
@@ -741,11 +981,17 @@ export async function createDharmawisataFlightBooking(
         bookingMode: "api",
         preBookingFlow,
         request: summarizeBookingRequest(payload, bookingInput.passengers.length),
+        diagnostics: bookingDiagnostics,
         response: rawWithDetail,
       },
+      diagnostics: bookingDiagnostics,
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Dharmawisata booking gagal tanpa pesan error."
+    const diagnostics = buildHoldDiagnostics(input, {
+      accessTokenSource,
+      steps: [],
+    })
 
     return {
       ok: false,
@@ -761,7 +1007,9 @@ export async function createDharmawisataFlightBooking(
       raw: {
         bookingMode: "api",
         error: message,
+        diagnostics,
       },
+      diagnostics,
     }
   }
 }

@@ -356,6 +356,14 @@ function metadataHighlights(metadata: Record<string, unknown> | null) {
     "customerEmail",
     "message",
     "error",
+    "diagnosticFailedStep",
+    "diagnosticMessage",
+    "diagnosticAccessTokenSource",
+    "diagnosticSameTransactionToken",
+    "diagnosticScheduleSource",
+    "diagnosticPriceStatus",
+    "diagnosticHasJourneyDepartReference",
+    "diagnosticHasDepartureClassFare",
     "reason",
     "policy",
     "supplierCode",
@@ -364,6 +372,55 @@ function metadataHighlights(metadata: Record<string, unknown> | null) {
 
   return keys.flatMap((key) => {
     const value = metadata[key]
+    if (value === undefined || value === null || value === "") return []
+    if (typeof value === "object") return []
+    return [{ key, value: String(value) }]
+  })
+}
+
+function metadataRecord(value: unknown) {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null
+}
+
+function diagnosticValue(metadata: Record<string, unknown>, key: string) {
+  const direct = metadata[key]
+  if (direct !== undefined && direct !== null && direct !== "") return direct
+
+  const diagnostics = metadataRecord(metadata.dharmawisataDiagnostics)
+  if (!diagnostics) return null
+  if (key === "diagnosticFailedStep") return diagnostics.failedStep || null
+  if (key === "diagnosticMessage") return diagnostics.failedMessage || null
+  if (key === "diagnosticAccessTokenSource") return diagnostics.accessTokenSource || null
+  if (key === "diagnosticSameTransactionToken") return diagnostics.sameTransactionToken ?? null
+  if (key === "diagnosticScheduleSource") return diagnostics.scheduleSource || null
+
+  const price = metadataRecord(diagnostics.price)
+  const priceRequest = metadataRecord(price?.request)
+  const priceResponse = metadataRecord(price?.response)
+  if (key === "diagnosticPriceStatus") return price?.status || null
+  if (key === "diagnosticPriceMessage") return price?.message || null
+  if (key === "diagnosticJourneyDepartReference") return priceRequest?.journeyDepartReference || null
+  if (key === "diagnosticDepartureClassFare") return priceResponse?.departureClassFare || null
+
+  return null
+}
+
+function dharmawisataDiagnosticHighlights(metadata: Record<string, unknown> | null) {
+  if (!metadata) return []
+  const keys = [
+    "diagnosticFailedStep",
+    "diagnosticMessage",
+    "diagnosticAccessTokenSource",
+    "diagnosticSameTransactionToken",
+    "diagnosticScheduleSource",
+    "diagnosticPriceStatus",
+    "diagnosticPriceMessage",
+    "diagnosticJourneyDepartReference",
+    "diagnosticDepartureClassFare",
+  ]
+
+  return keys.flatMap((key) => {
+    const value = diagnosticValue(metadata, key)
     if (value === undefined || value === null || value === "") return []
     if (typeof value === "object") return []
     return [{ key, value: String(value) }]
@@ -1495,6 +1552,7 @@ export default async function AdminBookingDetailPage({
                 <div className="mt-4 space-y-3">
                   {autoPilotEvents.map((event, index) => {
                     const highlights = metadataHighlights(event.metadata)
+                    const diagnosticHighlights = dharmawisataDiagnosticHighlights(event.metadata)
                     const outcome = autoPilotOutcome(event)
 
                     return (
@@ -1528,6 +1586,22 @@ export default async function AdminBookingDetailPage({
                                   <span className="break-all">{item.value}</span>
                                 </span>
                               ))}
+                            </div>
+                          ) : null}
+                          {diagnosticHighlights.length ? (
+                            <div className="mt-3">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Dharmawisata diagnostics</p>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {diagnosticHighlights.slice(0, 9).map((item) => (
+                                  <span
+                                    key={`diagnostic-${event.id}-${item.key}`}
+                                    className="inline-flex max-w-full rounded-[12px] border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-medium text-amber-800"
+                                  >
+                                    <span className="mr-1 font-semibold">{formatMetadataLabel(item.key.replace(/^diagnostic/, ""))}:</span>
+                                    <span className="break-all">{item.value}</span>
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           ) : null}
                         </div>

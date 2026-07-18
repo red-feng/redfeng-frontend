@@ -10,6 +10,8 @@ const airlineApiSource = readFileSync(resolve("lib/flights/dharmawisataAirlineAp
 const ticketIssueSource = readFileSync(resolve("lib/flights/dharmawisataTicketIssue.ts"), "utf8")
 const policySource = readFileSync(resolve("lib/flights/automationPolicy.ts"), "utf8")
 const referenceSource = readFileSync(resolve("docs/dharmawisata-flight-h2h-reference.md"), "utf8")
+const flightBookingRouteSource = readFileSync(resolve("app/api/flights/bookings/route.ts"), "utf8")
+const adminBookingPageSource = readFileSync(resolve("app/admin/(protected)/bookings/[id]/page.tsx"), "utf8")
 
 function assertIncludes(source: string, anchor: string, label: string) {
   assert.ok(source.includes(anchor), `${label} missing anchor: ${anchor}`)
@@ -24,6 +26,11 @@ assertIncludes(
   clientSource,
   'getOptionalEnv("DHARMAWISATA_H2H_TLS_REJECT_UNAUTHORIZED", "true").toLowerCase() !== "false"',
   "Dharmawisata UAT SSL override contract",
+)
+assert.ok(
+  clientSource.includes("return dharmawisataJsonFetch({") &&
+    clientSource.indexOf("return dharmawisataJsonFetch({") < clientSource.indexOf('path: loginPath || "/Session/Login"'),
+  "Dharmawisata login must send application/json payloads",
 )
 
 for (const anchor of [
@@ -97,8 +104,37 @@ for (const anchor of [
     'bookingCode: pickString(raw, ["bookingCode"])',
     'timeLimit: pickString(raw, ["timeLimit"])',
     'bookingCodeAirline: pickString(raw, ["bookingCodeAirline"])',
+    "export type DharmawisataFlightHoldDiagnostics",
+    "safeForInternalLog: true",
+    'sameTransactionToken: options.accessTokenSource === "schedule_lookup"',
+    "summary.journeyDepartReference = safeText(body.journeyDepartReference",
+    "departureClassFare: safeText(step.departureClassFare",
+    "diagnostic: buildPreBookingStepDiagnostic",
+    "diagnostics: preBookingDiagnostics",
+    'summarizePreBookingRequest("Airline/Booking", payload)',
 ]) {
   assertIncludes(bookingSource, anchor, "Dharmawisata same-token transaction contract")
+}
+
+for (const anchor of [
+  "function summarizeDharmawisataHoldDiagnostics",
+  "function dharmawisataDiagnosticMetadata",
+  "diagnosticFailedStep",
+  "diagnosticJourneyDepartReference",
+  "diagnosticDepartureClassFare",
+  "dharmawisataDiagnostics: summary",
+  "...dharmawisataDiagnosticMetadata(bookingApiResult.diagnostics)",
+]) {
+  assertIncludes(flightBookingRouteSource, anchor, "Dharmawisata hold diagnostics event metadata contract")
+}
+
+for (const anchor of [
+  "function dharmawisataDiagnosticHighlights",
+  "diagnosticJourneyDepartReference",
+  "diagnosticDepartureClassFare",
+  "Dharmawisata diagnostics",
+]) {
+  assertIncludes(adminBookingPageSource, anchor, "Dharmawisata hold diagnostics admin highlight contract")
 }
 
 for (const anchor of [
@@ -161,6 +197,7 @@ for (const anchor of [
 for (const anchor of [
   "Production uses normal valid SSL.",
   "UAT may temporarily use ignored SSL verification",
+  "Login request is sent as `application/json`.",
   "The same `accessToken` from step 1 must be used through the transaction.",
   "`Airline/ScheduleAllAirline`",
   "`Airline/PriceAllAirline`",
@@ -184,6 +221,8 @@ for (const anchor of [
     "RedFeng calls `Airline/Issued` only after payment is verified",
     "The official issue endpoint is `Airline/Issued`; configure it with `DHARMAWISATA_H2H_ISSUE_PATH=/Airline/Issued`.",
     "Domestic Indonesian passenger payloads currently default `nationality` and `birthCountry` to `ID`.",
+    "Diagnostics must redact credentials and PII",
+    "`journeyDepartReference`, and returned `classFare`.",
   "AirAsia/QZ has a special flow and cannot use normal HOLD booking.",
   "For normal airlines, agent balance is cut at issued time",
 ]) {

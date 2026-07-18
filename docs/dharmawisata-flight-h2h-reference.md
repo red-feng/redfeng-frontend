@@ -12,6 +12,7 @@ This note captures the working agreement from the RedFeng and Dharmawisata H2H W
 
 - Login request uses `token` as timestamp.
 - `securityCode` is `md5(token + md5(password))`.
+- Login request is sent as `application/json`.
 - The `accessToken` returned by Login must be reused for one flight transaction flow until Booking.
 
 ## Airline Flow
@@ -40,6 +41,12 @@ The same `accessToken` from step 1 must be used through the transaction. `Airlin
 After `PriceAllAirline` succeeds, Dharmawisata returns `classFare` in `priceDepart` or `priceReturn`. That `classFare` must be used as `schDepart`/`schReturn` for `BaggageAndMeal` and `Seat`, and as `schDeparts[].detailSchedule`/`schReturns[].detailSchedule` for `Booking`.
 
 `Airline/LowFareSchedule` may feed the public catalog, but auto-hold must only continue after an official `Airline/ScheduleAllAirline` or `Airline/Schedule` context succeeds on the same transaction token. If only LowFareSchedule succeeds, stop before Price and keep the booking in admin recheck.
+
+## Hold Diagnostics
+
+- RedFeng stores safe internal diagnostics for Dharmawisata flight hold attempts in `supplier_order_events.metadata`.
+- Diagnostics must redact credentials and PII: do not log raw `accessToken`, password, `securityCode`, `userID`, customer contact fields, or passenger details.
+- Diagnostics should highlight the schedule source, access token source, same-transaction token status, Price endpoint status/message, `journeyDepartReference`, and returned `classFare`.
 
 ## Airline Reference Endpoints
 
