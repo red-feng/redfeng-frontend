@@ -1,4 +1,4 @@
-import ServiceDummyCatalogPage from "@/app/components/services/ServiceDummyCatalogPage"
+import FlightCatalogPage from "@/app/components/services/FlightCatalogPage"
 
 export const dynamic = "force-dynamic"
 
@@ -7,5 +7,5 @@ export default async function FlightsCatalogRoute({
 }: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  return <ServiceDummyCatalogPage slug="pesawat" searchParams={searchParams} />
+  return <FlightCatalogPage searchParams={searchParams} />
 }

@@ -1,11 +1,46 @@
-import type { DummyCatalogItem } from "@/lib/service-dummy-catalog"
 import type { FlightTripMode } from "@/app/components/flights/flightSearchParams"
 import { dharmawisataAffiliateFlightProvider } from "@/lib/flights/dharmawisataAffiliateFlightProvider"
-import { getFlightCardMeta, type FlightCatalogCardMeta } from "@/lib/flights/dummyFlightCatalog"
-import type { AffiliateFlightOffer } from "@/lib/flights/affiliateTypes"
+import type { AffiliateFlightOffer, AffiliateFlightSupplierMeta } from "@/lib/flights/affiliateTypes"
+
+export type FlightCatalogTemplateItem = {
+  id: string
+  title: string
+  location: string
+  region: string
+  group: string
+  image: string
+  availabilityNote: string
+  statusNote: string
+  highlights: string[]
+  facts: {
+    label: string
+    value: string
+  }[]
+}
+
+export type FlightCatalogCardMeta = {
+  airline: string
+  flightNumber?: string
+  departure: string
+  arrival: string
+  duration: string
+  transit: string
+  price: string
+  seatNote: string
+  origin: string
+  destination: string
+  routeCode: string
+  cabin: string
+  tripLabel: string
+  highlightBadges: string[]
+  maxPassengers: number
+  tripSupport: FlightTripMode[]
+  availableDates: string[]
+  supplierMeta?: AffiliateFlightSupplierMeta
+}
 
 export type FlightCatalogBuildParams = {
-  items: DummyCatalogItem[]
+  items: FlightCatalogTemplateItem[]
   locale: string
   trip: string
   rawFrom: string
@@ -23,7 +58,7 @@ export type FlightCatalogBuildParams = {
 }
 
 export type FlightCatalogResultItem = {
-  item: DummyCatalogItem
+  item: FlightCatalogTemplateItem
   meta: FlightCatalogCardMeta
 }
 
@@ -112,7 +147,7 @@ function matchFlightPriceBand(price: number, band: string) {
   return true
 }
 
-function getItemRouteCode(item: DummyCatalogItem) {
+function getItemRouteCode(item: FlightCatalogTemplateItem) {
   return (
     item.facts.find((fact) => fact.label.toLowerCase() === "route code")?.value ||
     item.location.replace(/\s+/g, "")
@@ -120,7 +155,7 @@ function getItemRouteCode(item: DummyCatalogItem) {
 }
 
 function findAffiliateOfferForItem(
-  item: DummyCatalogItem,
+  item: FlightCatalogTemplateItem,
   offers: AffiliateFlightOffer[],
 ) {
   const itemRouteCode = getItemRouteCode(item).toUpperCase()
@@ -138,7 +173,7 @@ function findAffiliateOfferForItem(
 
 function findTemplateItemForOffer(
   offer: AffiliateFlightOffer,
-  items: DummyCatalogItem[],
+  items: FlightCatalogTemplateItem[],
 ) {
   if (offer.supplierMeta?.supplierKey === "fallback") return null
 
@@ -155,8 +190,8 @@ function findTemplateItemForOffer(
 
 function buildItemFromAffiliateOffer(
   offer: AffiliateFlightOffer,
-  templateItem: DummyCatalogItem | null,
-): DummyCatalogItem {
+  templateItem: FlightCatalogTemplateItem | null,
+): FlightCatalogTemplateItem {
   const routeCode = `${offer.originCode}-${offer.destinationCode}`
 
   return {
@@ -177,7 +212,7 @@ function buildItemFromAffiliateOffer(
   }
 }
 
-function mapAffiliateOfferToFlightCardMeta(offer: AffiliateFlightOffer, item: DummyCatalogItem): FlightCatalogCardMeta {
+function mapAffiliateOfferToFlightCardMeta(offer: AffiliateFlightOffer, item: FlightCatalogTemplateItem): FlightCatalogCardMeta {
   const flightNumber = offer.segments.map((segment) => segment.flightNumber).filter(Boolean)[0] || ""
 
   return {
@@ -270,21 +305,15 @@ export async function buildFlightCatalogItems({
     source,
   })
 
-  const baseResults =
-    affiliateFlightSearchResult.offers.length > 0
-      ? affiliateFlightSearchResult.offers.map((offer) => {
-          const templateItem = findTemplateItemForOffer(offer, items)
-          const item = buildItemFromAffiliateOffer(offer, templateItem)
+  const baseResults = affiliateFlightSearchResult.offers.map((offer) => {
+    const templateItem = findTemplateItemForOffer(offer, items)
+    const item = buildItemFromAffiliateOffer(offer, templateItem)
 
-          return {
-            item,
-            meta: mapAffiliateOfferToFlightCardMeta(offer, item),
-          }
-        })
-      : items.map((item, index) => ({
-          item,
-          meta: getFlightCardMeta(item, index, locale),
-        }))
+    return {
+      item,
+      meta: mapAffiliateOfferToFlightCardMeta(offer, item),
+    }
+  })
 
   const itemsResult = baseResults
     .filter(({ meta }) => {

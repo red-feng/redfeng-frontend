@@ -5,7 +5,6 @@ import type {
   AffiliateFlightSearchResult,
   AffiliateFlightSegment,
 } from "@/lib/flights/affiliateTypes"
-import { dummyAffiliateFlightProvider } from "@/lib/flights/dummyAffiliateFlightProvider"
 import {
   dharmawisataFormFetch,
   dharmawisataLogin,
@@ -385,6 +384,14 @@ function logDharmawisataEvent(
   console.info(payload)
 }
 
+function emptyDharmawisataFlightSearchResult(): AffiliateFlightSearchResult {
+  return {
+    providerKey: "dharmawisata-h2h",
+    salesModel: "affiliate",
+    offers: [],
+  }
+}
+
 async function resolveFinanceSettingsForFlightPricing() {
   try {
     return await getFinanceSettings(
@@ -508,12 +515,12 @@ export class DharmawisataAffiliateFlightProvider implements AffiliateFlightProvi
     }
 
     if (!isDharmawisataConfigured() || !searchPath) {
-      logDharmawisataEvent("warn", "provider-not-configured-using-dummy", {
+      logDharmawisataEvent("warn", "provider-not-configured-no-catalog-results", {
         ...requestSummary,
         configured: isDharmawisataConfigured(),
         hasSearchPath: Boolean(searchPath),
       })
-      return dummyAffiliateFlightProvider.searchFlights(params)
+      return emptyDharmawisataFlightSearchResult()
     }
 
     try {
@@ -541,12 +548,12 @@ export class DharmawisataAffiliateFlightProvider implements AffiliateFlightProvi
       })
 
       if (offers.length === 0) {
-        logDharmawisataEvent("warn", "no-live-offers-using-dummy", {
+        logDharmawisataEvent("warn", "no-live-offers-no-catalog-results", {
           ...requestSummary,
           journeyCount: journeys.length,
           fallbackFailureMessage,
         })
-        return dummyAffiliateFlightProvider.searchFlights(params)
+        return emptyDharmawisataFlightSearchResult()
       }
 
       return {
@@ -555,11 +562,11 @@ export class DharmawisataAffiliateFlightProvider implements AffiliateFlightProvi
         offers,
       }
     } catch (error) {
-      logDharmawisataEvent("error", "live-search-threw-using-dummy", {
+      logDharmawisataEvent("error", "live-search-threw-no-catalog-results", {
         ...requestSummary,
         error: error instanceof Error ? error.message : String(error),
       })
-      return dummyAffiliateFlightProvider.searchFlights(params)
+      return emptyDharmawisataFlightSearchResult()
     }
   }
 }

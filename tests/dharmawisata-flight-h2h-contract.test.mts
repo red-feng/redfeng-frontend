@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { resolve } from "node:path"
 
 const clientSource = readFileSync(resolve("lib/dharmawisata/client.ts"), "utf8")
@@ -12,6 +12,10 @@ const policySource = readFileSync(resolve("lib/flights/automationPolicy.ts"), "u
 const referenceSource = readFileSync(resolve("docs/dharmawisata-flight-h2h-reference.md"), "utf8")
 const flightBookingRouteSource = readFileSync(resolve("app/api/flights/bookings/route.ts"), "utf8")
 const adminBookingPageSource = readFileSync(resolve("app/admin/(protected)/bookings/[id]/page.tsx"), "utf8")
+const affiliateFlightProviderSource = readFileSync(resolve("lib/flights/dharmawisataAffiliateFlightProvider.ts"), "utf8")
+const flightCatalogServiceSource = readFileSync(resolve("lib/flights/flightCatalogService.ts"), "utf8")
+const flightCatalogRouteSource = readFileSync(resolve("app/pesawat/catalog/page.tsx"), "utf8")
+const serviceDummyCatalogPageSource = readFileSync(resolve("app/components/services/ServiceDummyCatalogPage.tsx"), "utf8")
 
 function assertIncludes(source: string, anchor: string, label: string) {
   assert.ok(source.includes(anchor), `${label} missing anchor: ${anchor}`)
@@ -156,6 +160,45 @@ for (const anchor of [
 ]) {
   assertIncludes(adminBookingPageSource, anchor, "Dharmawisata hold diagnostics admin highlight contract")
 }
+
+assert.ok(
+  !existsSync(resolve("lib/flights/dummyAffiliateFlightProvider.ts")),
+  "Flight catalog must not keep a dummy affiliate provider",
+)
+assert.ok(
+  !existsSync(resolve("lib/flights/dummyFlightCatalog.ts")),
+  "Flight catalog must not keep dummy flight card pricing presets",
+)
+for (const forbidden of [
+  "dummyAffiliateFlightProvider",
+  "using-dummy",
+]) {
+  assert.ok(!affiliateFlightProviderSource.includes(forbidden), `Dharmawisata flight provider must not use dummy fallback: ${forbidden}`)
+}
+assertIncludes(
+  affiliateFlightProviderSource,
+  "emptyDharmawisataFlightSearchResult",
+  "Dharmawisata flight provider empty live result contract",
+)
+assert.ok(
+  !flightCatalogServiceSource.includes("getFlightCardMeta") &&
+    flightCatalogServiceSource.includes("const baseResults = affiliateFlightSearchResult.offers.map"),
+  "Flight catalog must render only live supplier offers, not dummy card metadata",
+)
+assertIncludes(
+  flightCatalogRouteSource,
+  "FlightCatalogPage",
+  "Pesawat catalog route live-only page contract",
+)
+assert.ok(
+  !flightCatalogRouteSource.includes("ServiceDummyCatalogPage"),
+  "Pesawat catalog route must not render the dummy service catalog",
+)
+assert.ok(
+  serviceDummyCatalogPageSource.includes('requestedSlug === "pesawat"') &&
+    serviceDummyCatalogPageSource.includes("<FlightCatalogPage"),
+  "Legacy service dummy page must route pesawat requests to the live-only flight catalog",
+)
 
 for (const anchor of [
   'path: getPath("DHARMAWISATA_H2H_AIRLINE_CITY_PATH", "/Airline/City")',

@@ -6,6 +6,7 @@ import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
 import FlightCatalogInteractiveClient from "@/app/components/services/FlightCatalogInteractiveClient"
+import FlightCatalogPage from "@/app/components/services/FlightCatalogPage"
 import {
   getDefaultFlightSearchDates,
   isFlightTripMode,
@@ -258,6 +259,12 @@ export default async function ServiceDummyCatalogPage({
   const locale = await getCurrentLocale()
   const resolvedSearchParams = (await searchParams) || {}
   const service = servicePageConfigBySlug[slug]
+  const requestedSlug = String(slug)
+
+  if (requestedSlug === "pesawat") {
+    return <FlightCatalogPage searchParams={Promise.resolve(resolvedSearchParams)} />
+  }
+
   const catalog = getDummyServiceCatalog(slug)
 
   const rawHotelPassengerLabel = firstQueryValue(resolvedSearchParams.passengers)
