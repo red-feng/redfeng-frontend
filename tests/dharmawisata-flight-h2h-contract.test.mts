@@ -114,6 +114,8 @@ for (const anchor of [
 
 for (const anchor of [
   'return asString(payload.searchKey || payload.SearchKey)',
+  "function getPayloadAirlineIndex",
+  "function getPayloadTotalAirline",
   'return pickString(raw, ["detailSchedule", "journeyReference", "scheduleReference", "schDepart"])',
   "function getAirlineSegmentCode",
   "function getFareBasisCode",
@@ -127,9 +129,57 @@ for (const anchor of [
   "body: buildScheduleAllAirlineRequestBody(input, credentials.userId, accessToken, airlineAccessCode)",
   "departDate: scheduleDate(input.departureAt)",
   ': "0001-01-01"',
+  "searchKey: \"\"",
+  "extraDay: 0",
+  "cacheType: 2",
+  "isShowEachAirline: true",
   "const payload = await dharmawisataFormFetch({",
 ]) {
   assertIncludes(scheduleSource, anchor, "Dharmawisata Airline/Schedule booking context contract")
+}
+
+for (const anchor of [
+  "function buildScheduleRequestBody(",
+  "airlineID: input.airlineCode || \"\"",
+  "tripType: normalizeTripType(input.tripType)",
+  "origin: input.originAirportCode || \"\"",
+  "destination: input.destinationAirportCode || \"\"",
+  "departDate: scheduleDate(input.departureAt)",
+  "paxAdult: input.paxAdult",
+  "paxChild: input.paxChild || 0",
+  "paxInfant: input.paxInfant || 0",
+  "promoCode: \"\"",
+  "searchKey: \"\"",
+  "extraDay: 0",
+  "airlineAccessCode: input.airlineAccessCode || \"\"",
+  "userID,",
+  "accessToken,",
+  "path: schedulePath",
+  "body: scheduleBody",
+]) {
+  assertIncludes(scheduleSource, anchor, "Dharmawisata Airline/Schedule request payload contract")
+}
+
+for (const anchor of [
+  "function buildScheduleAllAirlineRequestBody(",
+  "tripType: normalizeTripType(input.tripType)",
+  "origin: input.originAirportCode || \"\"",
+  "destination: input.destinationAirportCode || \"\"",
+  "departDate: scheduleDate(input.departureAt)",
+  "paxAdult: input.paxAdult",
+  "paxChild: input.paxChild || 0",
+  "paxInfant: input.paxInfant || 0",
+  "promoCode: \"\"",
+  "airlineAccessCode,",
+  "cacheType: 2",
+  "isShowEachAirline: true",
+  "userID,",
+  "accessToken,",
+  "const nextAirlineAccessCode = getPayloadAirlineAccessCode(payload)",
+  "const airlineIndex = getPayloadAirlineIndex(payload)",
+  "const totalAirline = getPayloadTotalAirline(payload)",
+]) {
+  assertIncludes(scheduleSource, anchor, "Dharmawisata Airline/ScheduleAllAirline request payload contract")
 }
 
 assert.ok(
@@ -338,6 +388,11 @@ for (const anchor of [
   "RedFeng redacts `accessToken` in stored/debug balance metadata.",
   "The same `accessToken` from step 1 must be used through the transaction.",
   "`Airline/ScheduleAllAirline`",
+  "`Airline/Schedule` is called with `POST /Airline/Schedule`.",
+  "Its request body is `application/json` with `airlineID`, `tripType`, `origin`, `destination`, `departDate`, `returnDate`, `paxAdult`, `paxChild`, `paxInfant`, `promoCode`, `searchKey`, `extraDay`, `airlineAccessCode`, `userID`, and the same `accessToken`.",
+  "`Airline/ScheduleAllAirline` is called with `POST /Airline/ScheduleAllAirline`.",
+  "Its request body is `application/json` with `tripType`, `origin`, `destination`, `departDate`, `returnDate`, `paxAdult`, `paxChild`, `paxInfant`, `promoCode`, `airlineAccessCode`, `cacheType`, `isShowEachAirline`, `userID`, and the same `accessToken`.",
+  "`Airline/ScheduleAllAirline` responses may include `journeyDepart`, `journeyReturn`, `airlineAccessCode`, `totalAirline`, and `airlineIndex`.",
   "`Airline/PriceAllAirline`",
   "`Airline/PriceAllAirline.journeyDepartReference` uses the `journeyReference`",
   "`Airline/PriceAllAirline` must use the all-airline price payload",

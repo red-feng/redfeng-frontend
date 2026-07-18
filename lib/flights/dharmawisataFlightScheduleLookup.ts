@@ -297,6 +297,8 @@ function buildScheduleRequestBody(
     paxChild: input.paxChild || 0,
     paxInfant: input.paxInfant || 0,
     promoCode: "",
+    searchKey: "",
+    extraDay: 0,
     airlineAccessCode: input.airlineAccessCode || "",
     userID,
     accessToken,

@@ -47,6 +47,12 @@ The confirmed normal all-airline flight flow from Dharmawisata manual examples i
 
 The same `accessToken` from step 1 must be used through the transaction. `Airline/PriceAllAirline.journeyDepartReference` uses the `journeyReference` from `ScheduleAllAirline.journeyDepart`; for round trip, `journeyReturnReference` uses `journeyReference` from `journeyReturn`.
 
+`Airline/Schedule` is called with `POST /Airline/Schedule`. Its request body is `application/json` with `airlineID`, `tripType`, `origin`, `destination`, `departDate`, `returnDate`, `paxAdult`, `paxChild`, `paxInfant`, `promoCode`, `searchKey`, `extraDay`, `airlineAccessCode`, `userID`, and the same `accessToken`.
+
+`Airline/ScheduleAllAirline` is called with `POST /Airline/ScheduleAllAirline`. Its request body is `application/json` with `tripType`, `origin`, `destination`, `departDate`, `returnDate`, `paxAdult`, `paxChild`, `paxInfant`, `promoCode`, `airlineAccessCode`, `cacheType`, `isShowEachAirline`, `userID`, and the same `accessToken`.
+
+`Airline/ScheduleAllAirline` responses may include `journeyDepart`, `journeyReturn`, `airlineAccessCode`, `totalAirline`, and `airlineIndex`. RedFeng keeps looping with the returned `airlineAccessCode` until the selected schedule is found or the airline index is exhausted.
+
 `Airline/PriceAllAirline` must use the all-airline price payload: `airlineAccessCode`, `journeyDepartReference`, and `journeyReturnReference`. Do not send `schDeparts` or `schReturns` to this endpoint.
 
 `Airline/Price` is the single-airline price payload and must use `searchKey`, `promoCode`, `schDeparts`, and `schReturns` from the selected schedule context. Do not use the `journeyDepartReference` payload shape for this endpoint.
