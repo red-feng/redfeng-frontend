@@ -72,6 +72,10 @@ After `PriceAllAirline` succeeds, Dharmawisata returns `classFare` in `priceDepa
 
 `Airline/BaggageAndMeal` responses may include `addOns`, `respTime`, `userID`, `accessToken`, `status`, and `respMessage`. RedFeng stores only redacted diagnostics for this step, including add-on count and non-PII request summary.
 
+`Airline/Seat` is called with `POST /Airline/Seat`. Its request body is `application/json` with `airlineID`, `origin`, `destination`, `tripType`, `departDate`, `returnDate`, `schDepart`, `schReturn`, `paxAdult`, `paxChild`, `paxInfant`, `departureAirlineSegmentCode`, `departureFareBasisCode`, `returnAirlineSegmentCode`, `returnFareBasisCode`, passenger contact fields, `paxDetails`, `insurance`, `userID`, and the same `accessToken`.
+
+`Airline/Seat` responses may include `seatAddOns`, `respTime`, `userID`, `accessToken`, `status`, and `respMessage`. RedFeng stores only redacted diagnostics for this step, including seat add-on count and non-PII request summary.
+
 `Airline/LowFareSchedule` may feed the public catalog, but auto-hold must only continue after an official `Airline/ScheduleAllAirline` or `Airline/Schedule` context succeeds on the same transaction token. If only LowFareSchedule succeeds, stop before Price and keep the booking in admin recheck.
 
 ## Hold Diagnostics

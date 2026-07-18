@@ -570,6 +570,7 @@ function responseStepSummary(endpoint: string, raw: JsonRecord, expectedFlightCl
     returnClassFare: pickPriceClassFare(raw, ["priceReturn", "PriceReturn"], expectedFlightClass),
     sumFare: pickString(raw, ["sumFare", "SumFare"]),
     addOnsCount: Array.isArray(raw.addOns) ? raw.addOns.length : 0,
+    seatAddOnsCount: Array.isArray(raw.seatAddOns) ? raw.seatAddOns.length : 0,
     raw,
   }
 }
@@ -587,6 +588,7 @@ function summarizePreBookingResponse(step: ReturnType<typeof responseStepSummary
     returnClassFare: safeText(step.returnClassFare, 480),
     sumFare: safeText(step.sumFare),
     addOnsCount: step.addOnsCount,
+    seatAddOnsCount: step.seatAddOnsCount,
     responseKeys: responseKeys(step.raw),
   }
 }
