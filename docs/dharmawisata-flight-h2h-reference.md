@@ -53,7 +53,9 @@ The same `accessToken` from step 1 must be used through the transaction. `Airlin
 
 `Airline/ScheduleAllAirline` responses may include `journeyDepart`, `journeyReturn`, `airlineAccessCode`, `totalAirline`, and `airlineIndex`. RedFeng keeps looping with the returned `airlineAccessCode` until the selected schedule is found or the airline index is exhausted.
 
-`Airline/PriceAllAirline` must use the all-airline price payload: `airlineAccessCode`, `journeyDepartReference`, and `journeyReturnReference`. Do not send `schDeparts` or `schReturns` to this endpoint.
+`Airline/PriceAllAirline` is called with `POST /Airline/PriceAllAirline`. It must use the all-airline price payload: `airlineID`, `origin`, `destination`, `tripType`, `departDate`, `returnDate`, `paxAdult`, `paxChild`, `paxInfant`, `airlineAccessCode`, `journeyDepartReference`, `journeyReturnReference`, `userID`, and the same `accessToken`. Do not send `schDeparts` or `schReturns` to this endpoint.
+
+`Airline/PriceAllAirline` responses may include `airlineAccessCode`, `searchKey`, `promoCode`, `priceDepart`, `priceReturn`, `sumFare`, `respTime`, `userID`, `accessToken`, `status`, and `respMessage`. RedFeng uses `priceDepart`/`priceReturn.classFare` for the next add-on, seat, and booking payloads.
 
 `Airline/Price` is called with `POST /Airline/Price`. It is the single-airline price payload and must use `airlineID`, `origin`, `destination`, `tripType`, `departDate`, `returnDate`, `paxAdult`, `paxChild`, `paxInfant`, `searchKey`, `promoCode`, `schDeparts`, `schReturns`, `userID`, and the same `accessToken` from the selected `Airline/Schedule` context. Do not use the `journeyDepartReference` payload shape for this endpoint.
 
@@ -65,6 +67,10 @@ The same `accessToken` from step 1 must be used through the transaction. `Airlin
 
 After `PriceAllAirline` succeeds, Dharmawisata returns `classFare` in `priceDepart` or `priceReturn`. That `classFare` must be used as `schDepart`/`schReturn` for `BaggageAndMeal` and `Seat`, and as `schDeparts[].detailSchedule`/`schReturns[].detailSchedule` for `Booking`.
 `BaggageAndMeal` and `Seat` should also carry the schedule response segment/fare metadata: `departureAirlineSegmentCode` from the schedule airline segment code and `departureFareBasisCode` from schedule `classID`/fare basis when available.
+
+`Airline/BaggageAndMeal` is called with `POST /Airline/BaggageAndMeal`. Its request body is `application/json` with `airlineID`, `origin`, `destination`, `tripType`, `departDate`, `returnDate`, `schDepart`, `schReturn`, `paxAdult`, `paxChild`, `paxInfant`, `departureAirlineSegmentCode`, `departureFareBasisCode`, `returnAirlineSegmentCode`, `returnFareBasisCode`, passenger contact fields, `paxDetails`, `insurance`, `userID`, and the same `accessToken`.
+
+`Airline/BaggageAndMeal` responses may include `addOns`, `respTime`, `userID`, `accessToken`, `status`, and `respMessage`. RedFeng stores only redacted diagnostics for this step, including add-on count and non-PII request summary.
 
 `Airline/LowFareSchedule` may feed the public catalog, but auto-hold must only continue after an official `Airline/ScheduleAllAirline` or `Airline/Schedule` context succeeds on the same transaction token. If only LowFareSchedule succeeds, stop before Price and keep the booking in admin recheck.
 
