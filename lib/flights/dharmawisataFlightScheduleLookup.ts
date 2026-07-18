@@ -34,6 +34,8 @@ export type DharmawisataFlightScheduleSegment = {
   arrivalAt: string
   flightClass: string
   detailSchedule: string
+  airlineSegmentCode: string
+  fareBasisCode: string
 }
 
 export type DharmawisataFlightScheduleSource =
@@ -188,6 +190,17 @@ function getJourneyDetailSchedule(raw: JsonRecord) {
   return pickString(raw, ["detailSchedule", "journeyReference", "scheduleReference", "schDepart"])
 }
 
+function getAirlineSegmentCode(segment: JsonRecord, detail: JsonRecord) {
+  return (
+    pickString(detail, ["airlineSegmentCode", "AirlineSegmentCode", "segmentCode", "SegmentCode", "flightSegmentCode"]) ||
+    pickString(segment, ["airlineSegmentCode", "AirlineSegmentCode", "segmentCode", "SegmentCode", "flightSegmentCode"])
+  )
+}
+
+function getFareBasisCode(availableDetail: JsonRecord) {
+  return pickString(availableDetail, ["classID", "classId", "ClassID", "fareBasisCode", "FareBasisCode"])
+}
+
 function mapJourney(
   journey: unknown,
   airlineAccessCode: string,
@@ -224,6 +237,8 @@ function mapJourney(
           arrivalAt: asString(record.jiArrivalTime || detail.fdArrivalTime),
           flightClass: sourceFlightClass,
           detailSchedule,
+          airlineSegmentCode: getAirlineSegmentCode(source, detail),
+          fareBasisCode: getFareBasisCode(sourceAvailableDetail),
         }
       })
       .filter((item): item is DharmawisataFlightScheduleSegment => Boolean(item))

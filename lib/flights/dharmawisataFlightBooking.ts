@@ -326,6 +326,12 @@ function buildSchedules(input: DharmawisataFlightBookingInput) {
   return segments.length > 0 ? segments.map(buildScheduleFromSegment) : [buildSchedule(input)]
 }
 
+function getDepartureScheduleSegment(input: DharmawisataFlightBookingInput) {
+  return Array.isArray(input.scheduleSegments)
+    ? input.scheduleSegments.find((segment) => normalizeText(segment.detailSchedule) || normalizeText(segment.flightNumber)) || null
+    : null
+}
+
 function getMissingRequiredFields(input: DharmawisataFlightBookingInput) {
   const required: Array<[string, unknown]> = [
     ["airlineID", input.airlineId || input.airlineCode],
@@ -430,12 +436,22 @@ function buildPricePayload(input: DharmawisataFlightBookingInput, accessToken: s
 }
 
 function buildAddOnFlowPayload(input: DharmawisataFlightBookingInput, accessToken: string) {
+  const departureSegment = getDepartureScheduleSegment(input)
+  const departureAirlineSegmentCode =
+    departureSegment?.airlineSegmentCode ||
+    input.airlineAccessCode ||
+    input.searchKey ||
+    input.detailSchedule ||
+    input.flightNumber ||
+    ""
+  const departureFareBasisCode = departureSegment?.fareBasisCode || input.flightClass || ""
+
   return {
     ...buildFlightFlowBase(input, accessToken),
     schDepart: input.detailSchedule || "",
     schReturn: "",
-    departureAirlineSegmentCode: null,
-    departureFareBasisCode: null,
+    departureAirlineSegmentCode,
+    departureFareBasisCode,
     returnAirlineSegmentCode: null,
     returnFareBasisCode: null,
     contactFirstName: input.contactFirstName || "",
@@ -519,6 +535,10 @@ function summarizePreBookingRequest(endpoint: string, body: JsonRecord): JsonRec
     summary.schDepart = safeText(body.schDepart, 480)
     summary.hasSchReturn = hasText(body.schReturn)
     summary.schReturn = safeText(body.schReturn, 480)
+    summary.hasDepartureAirlineSegmentCode = hasText(body.departureAirlineSegmentCode)
+    summary.departureAirlineSegmentCode = safeText(body.departureAirlineSegmentCode, 240)
+    summary.hasDepartureFareBasisCode = hasText(body.departureFareBasisCode)
+    summary.departureFareBasisCode = safeText(body.departureFareBasisCode, 240)
   }
 
   if ("schDeparts" in body || "schReturns" in body) {

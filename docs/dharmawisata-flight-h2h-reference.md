@@ -40,6 +40,7 @@ The same `accessToken` from step 1 must be used through the transaction. `Airlin
 `Airline/Schedule` and `Airline/ScheduleAllAirline` send `departDate` and `returnDate` as `yyyy-MM-dd` date-only strings, matching the Redoc request examples. Later reservation steps such as `Airline/Price`, `Airline/PriceAllAirline`, and `Airline/Booking` keep the documented date-time format.
 
 After `PriceAllAirline` succeeds, Dharmawisata returns `classFare` in `priceDepart` or `priceReturn`. That `classFare` must be used as `schDepart`/`schReturn` for `BaggageAndMeal` and `Seat`, and as `schDeparts[].detailSchedule`/`schReturns[].detailSchedule` for `Booking`.
+`BaggageAndMeal` and `Seat` should also carry the schedule response segment/fare metadata: `departureAirlineSegmentCode` from the schedule airline segment code and `departureFareBasisCode` from schedule `classID`/fare basis when available.
 
 `Airline/LowFareSchedule` may feed the public catalog, but auto-hold must only continue after an official `Airline/ScheduleAllAirline` or `Airline/Schedule` context succeeds on the same transaction token. If only LowFareSchedule succeeds, stop before Price and keep the booking in admin recheck.
 
