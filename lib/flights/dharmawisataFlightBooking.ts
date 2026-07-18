@@ -568,6 +568,7 @@ function responseStepSummary(endpoint: string, raw: JsonRecord, expectedFlightCl
     airlineAccessCode: pickString(raw, ["airlineAccessCode"]),
     departureClassFare: pickPriceClassFare(raw, ["priceDepart", "PriceDepart"], expectedFlightClass),
     returnClassFare: pickPriceClassFare(raw, ["priceReturn", "PriceReturn"], expectedFlightClass),
+    sumFare: pickString(raw, ["sumFare", "SumFare"]),
     raw,
   }
 }
@@ -583,6 +584,7 @@ function summarizePreBookingResponse(step: ReturnType<typeof responseStepSummary
     departureClassFare: safeText(step.departureClassFare, 480),
     hasReturnClassFare: hasText(step.returnClassFare),
     returnClassFare: safeText(step.returnClassFare, 480),
+    sumFare: safeText(step.sumFare),
     responseKeys: responseKeys(step.raw),
   }
 }

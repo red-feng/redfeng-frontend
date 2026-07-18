@@ -55,7 +55,9 @@ The same `accessToken` from step 1 must be used through the transaction. `Airlin
 
 `Airline/PriceAllAirline` must use the all-airline price payload: `airlineAccessCode`, `journeyDepartReference`, and `journeyReturnReference`. Do not send `schDeparts` or `schReturns` to this endpoint.
 
-`Airline/Price` is the single-airline price payload and must use `searchKey`, `promoCode`, `schDeparts`, and `schReturns` from the selected schedule context. Do not use the `journeyDepartReference` payload shape for this endpoint.
+`Airline/Price` is called with `POST /Airline/Price`. It is the single-airline price payload and must use `airlineID`, `origin`, `destination`, `tripType`, `departDate`, `returnDate`, `paxAdult`, `paxChild`, `paxInfant`, `searchKey`, `promoCode`, `schDeparts`, `schReturns`, `userID`, and the same `accessToken` from the selected `Airline/Schedule` context. Do not use the `journeyDepartReference` payload shape for this endpoint.
+
+`Airline/Price` responses may include `priceDepart`, `priceReturn`, `sumFare`, `respTime`, `userID`, `accessToken`, `status`, and `respMessage`. RedFeng uses `priceDepart`/`priceReturn.classFare` for the next add-on, seat, and booking payloads, and keeps only redacted diagnostics.
 
 `ScheduleAllAirline` should be attempted before the single-airline `Schedule` fallback for booking hold, and its first request must start with an empty `airlineAccessCode`. Follow-up ScheduleAllAirline iterations may use the `airlineAccessCode` returned by Dharmawisata.
 
