@@ -93,7 +93,7 @@ function uniqueBy<T>(items: T[], getKey: (item: T) => string) {
 }
 
 function getPath(envName: string, fallback: string) {
-  return getDharmawisataConfiguredPath(envName) || fallback.replace(/^\/+/, "")
+  return getDharmawisataConfiguredPath(envName) || fallback
 }
 
 function getAirportCode(row: RecordValue) {

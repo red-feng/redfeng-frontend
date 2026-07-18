@@ -362,9 +362,16 @@ assert.ok(
 )
 
 for (const anchor of [
+  "function getPath(envName: string, fallback: string)",
+  "return getDharmawisataConfiguredPath(envName) || fallback",
   'path: getPath("DHARMAWISATA_H2H_AIRLINE_CITY_PATH", "/Airline/City")',
   'path: getPath("DHARMAWISATA_H2H_AIRLINE_LIST_PATH", "/Airline/List")',
   'path: getPath("DHARMAWISATA_H2H_AIRLINE_ROUTE_PATH", "/Airline/Route")',
+  'firstRecordArray(cityBody, ["cities", "Cities", "city", "City", "airports", "Airports", "data", "Data", "result", "Result"])',
+  'firstRecordArray(airlineBody, ["airlines", "Airlines", "airline", "Airline", "data", "Data", "result", "Result"])',
+  'firstRecordArray(routeBody, ["routes", "Routes", "route", "Route", "data", "Data", "result", "Result"])',
+  '.from("dharmawisata_flight_airports")',
+  '.from("dharmawisata_flight_routes")',
   "airlineID: airline.code,",
   "userID: credentials.userId,",
   "accessToken,",
@@ -382,9 +389,15 @@ for (const anchor of [
     'defaultPath: "/Airline/BookingDetail"',
     'defaultPath: "/Airline/Issued"',
     'envName: "DHARMAWISATA_H2H_AIRLINE_NATIONALITY_PATH"',
+    'envName: "DHARMAWISATA_H2H_AIRLINE_LIST_PATH"',
+    'envName: "DHARMAWISATA_H2H_AIRLINE_ROUTE_PATH"',
+    'envName: "DHARMAWISATA_H2H_AIRLINE_CITY_PATH"',
     'envName: "DHARMAWISATA_H2H_BOOKING_LIST_PATH"',
     'envName: "DHARMAWISATA_H2H_BOOKING_DETAIL_PATH"',
     'envName: "DHARMAWISATA_H2H_ISSUE_PATH"',
+    "auth = redactRecord(login)",
+    "payload: redactRecord(requestPayload)",
+    "response: compactRecord(raw)",
 ]) {
   assertIncludes(airlineApiSource, anchor, "Dharmawisata airline API descriptor contract")
 }
@@ -462,8 +475,12 @@ for (const anchor of [
   "Its request body is `application/json` with `airlineID`, `origin`, `destination`, `tripType`, `departDate`, `returnDate`, `schDepart`, `schReturn`, `paxAdult`, `paxChild`, `paxInfant`, `departureAirlineSegmentCode`, `departureFareBasisCode`, `returnAirlineSegmentCode`, `returnFareBasisCode`, passenger contact fields, `paxDetails`, `insurance`, `userID`, and the same `accessToken`.",
   "`Airline/Seat` responses may include `seatAddOns`, `respTime`, `userID`, `accessToken`, `status`, and `respMessage`.",
   "including seat add-on count and non-PII request summary",
-    "`Airline/List`, `Airline/City`, and `Airline/Nationality` are reference endpoints.",
-    "`Airline/Route` is a per-airline route reference endpoint.",
+    "`Airline/List` is called with `POST /Airline/List`.",
+    "`Airline/Route` is called with `POST /Airline/Route`.",
+    "`Airline/Nationality` is called with `POST /Airline/Nationality`.",
+    "`Airline/City` is called with `POST /Airline/City`.",
+    "RedFeng stores City/List/Route into local master-data/cache tables",
+    "All reference endpoint diagnostics redact `accessToken`.",
     "`Airline/Booking` is the mutating hold endpoint.",
     "`Airline/Booking` returns supplier identifiers",
     "Dharmawisata fare fields in the Booking response",

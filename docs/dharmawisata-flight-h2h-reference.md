@@ -86,8 +86,12 @@ After `PriceAllAirline` succeeds, Dharmawisata returns `classFare` in `priceDepa
 
 ## Airline Reference Endpoints
 
-- `Airline/List`, `Airline/City`, and `Airline/Nationality` are reference endpoints. Their request body only needs `userID` and `accessToken`.
-- `Airline/Route` is a per-airline route reference endpoint. Its request body needs `airlineID`, `userID`, and `accessToken`.
+- `Airline/List` is called with `POST /Airline/List`. Its request body is `application/json` with `userID` and `accessToken`; response may include `airlines`, `respTime`, `userID`, `accessToken`, `status`, and `respMessage`.
+- `Airline/Route` is called with `POST /Airline/Route`. Its request body is `application/json` with `airlineID`, `userID`, and `accessToken`; response may include `routes`, `respTime`, `userID`, `accessToken`, `status`, and `respMessage`.
+- `Airline/Nationality` is called with `POST /Airline/Nationality`. Its request body is `application/json` with `userID` and `accessToken`; response may include `countries`, `respTime`, `userID`, `accessToken`, `status`, and `respMessage`.
+- `Airline/City` is called with `POST /Airline/City`. Its request body is `application/json` with `userID` and `accessToken`; response may include `cities`, `respTime`, `userID`, `accessToken`, `status`, and `respMessage`.
+- RedFeng stores City/List/Route into local master-data/cache tables for airport and route lookup. Nationality is kept as a reference source for passenger nationality support.
+- All reference endpoint diagnostics redact `accessToken`.
 - These reference endpoints support master data and route cache sync. They are not a replacement for the transaction flow: `ScheduleAllAirline` or `Schedule`, then `PriceAllAirline` or `Price`, then add-ons, seat, and booking.
 - `Airline/Booking` is the mutating hold endpoint. It must receive the same search context: `schDeparts`, `schReturns`, passenger contact fields, `paxDetails`, `searchKey`, `airlineAccessCode`, `userID`, and the same `accessToken`.
 - `Airline/Booking` returns supplier identifiers such as `bookingCode`, `bookingDate`, `referenceNo`, `bookingCodeAirline`, and `timeLimit`, plus fare and flight snapshots. RedFeng stores the raw supplier response and maps those identifiers for hold/PNR tracking.
