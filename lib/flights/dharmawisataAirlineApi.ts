@@ -144,7 +144,7 @@ export const DHARMAWISATA_AIRLINE_ENDPOINTS: DharmawisataAirlineEndpointDefiniti
     defaultPath: "/Airline/BookingList",
     envName: "DHARMAWISATA_H2H_BOOKING_LIST_PATH",
     mode: "read",
-    summary: "Baca booking list yang dibuat agent H2H.",
+    summary: "Baca booking list agent H2H. Payload manual: filterByStatus, startDate, endDate; userID/accessToken otomatis.",
     requiresAuth: true,
     customerFlow: "adapter",
     timeoutMs: 45000,
