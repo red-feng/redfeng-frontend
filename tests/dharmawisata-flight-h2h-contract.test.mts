@@ -6,6 +6,7 @@ const clientSource = readFileSync(resolve("lib/dharmawisata/client.ts"), "utf8")
 const agentBalanceSource = readFileSync(resolve("lib/dharmawisata/agentBalance.ts"), "utf8")
 const scheduleSource = readFileSync(resolve("lib/flights/dharmawisataFlightScheduleLookup.ts"), "utf8")
 const bookingSource = readFileSync(resolve("lib/flights/dharmawisataFlightBooking.ts"), "utf8")
+const seatMapSource = readFileSync(resolve("lib/flights/dharmawisataFlightSeatMap.ts"), "utf8")
 const routeCacheSource = readFileSync(resolve("lib/flights/dharmawisataRouteCache.ts"), "utf8")
 const airlineApiSource = readFileSync(resolve("lib/flights/dharmawisataAirlineApi.ts"), "utf8")
 const ticketIssueSource = readFileSync(resolve("lib/flights/dharmawisataTicketIssue.ts"), "utf8")
@@ -183,6 +184,14 @@ for (const anchor of [
   assertIncludes(scheduleSource, anchor, "Dharmawisata Airline/ScheduleAllAirline request payload contract")
 }
 
+for (const anchor of [
+  "allowLowFareFallback?: boolean",
+  "if (input.allowLowFareFallback === false || !searchPath)",
+  "Schedule resmi tidak ditemukan lewat Airline/Schedule atau ScheduleAllAirline",
+]) {
+  assertIncludes(scheduleSource, anchor, "Dharmawisata official-only schedule lookup contract")
+}
+
 assert.ok(
   scheduleSource.indexOf('if (scheduleAllAirlinePath)') < scheduleSource.indexOf("if (schedulePath)"),
   "Dharmawisata booking lookup must prefer ScheduleAllAirline before Schedule",
@@ -339,12 +348,34 @@ for (const anchor of [
   "const scheduleLookupReadyForHold =",
   'scheduleLookup.source === "Airline/ScheduleAllAirline" || scheduleLookup.source === "Airline/Schedule"',
   "const canAutoHoldDharmawisata = shouldAutoBookDharmawisata && scheduleLookupReadyForHold",
+  "allowLowFareFallback: false",
   "const bookingApiResult = canAutoHoldDharmawisata",
   'bookingMode: "api_schedule_required"',
   'error: "airline_schedule_or_schedule_all_airline_step_required"',
   "...dharmawisataDiagnosticMetadata(bookingApiResult.diagnostics)",
 ]) {
   assertIncludes(flightBookingRouteSource, anchor, "Dharmawisata hold diagnostics event metadata contract")
+}
+
+for (const anchor of [
+  "findDharmawisataLowFareScheduleForBooking",
+  "allowLowFareFallback: false",
+  'scheduleLookup.source === "Airline/ScheduleAllAirline" || scheduleLookup.source === "Airline/Schedule"',
+  "sameTransactionToken: true",
+  "buildPriceAllAirlinePayload(resolvedInput, accessToken)",
+  "buildPricePayload(resolvedInput, accessToken, scheduleSegments)",
+  'getDharmawisataConfiguredPath("DHARMAWISATA_H2H_PRICE_ALL_AIRLINE_PATH") || "/Airline/PriceAllAirline"',
+  'getDharmawisataConfiguredPath("DHARMAWISATA_H2H_PRICE_PATH") || "/Airline/Price"',
+  'getDharmawisataConfiguredPath("DHARMAWISATA_H2H_BAGGAGE_AND_MEAL_PATH") || "/Airline/BaggageAndMeal"',
+  'getDharmawisataConfiguredPath("DHARMAWISATA_H2H_SEAT_PATH") || "/Airline/Seat"',
+  "Price Dharmawisata tidak mengembalikan classFare untuk schDepart",
+  "price_departure_class_fare_required",
+  "const baggageRaw = await dharmawisataJsonFetch({",
+  "const seatRaw = await dharmawisataJsonFetch({",
+  'error: "airline_schedule_or_schedule_all_airline_step_required"',
+  'seatMode: "api_contract_strict"',
+]) {
+  assertIncludes(seatMapSource, anchor, "Dharmawisata strict seat map preview contract")
 }
 
 for (const anchor of [

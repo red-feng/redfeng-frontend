@@ -780,6 +780,7 @@ export async function POST(req: Request) {
           paxAdult: passengerMix.adults,
           paxChild: passengerMix.children,
           paxInfant: 0,
+          allowLowFareFallback: false,
         }).catch<DharmawisataFlightScheduleLookupResult>((error) => ({
           ok: false,
           message: error instanceof Error ? error.message : "Schedule lookup gagal sebelum hold.",

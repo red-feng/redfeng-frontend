@@ -23,6 +23,7 @@ export type DharmawisataFlightScheduleLookupInput = {
   paxAdult: number
   paxChild?: number
   paxInfant?: number
+  allowLowFareFallback?: boolean
 }
 
 export type DharmawisataFlightScheduleSegment = {
@@ -451,12 +452,12 @@ export async function findDharmawisataLowFareScheduleForBooking(
     }
   }
 
-  if (!searchPath) {
+  if (input.allowLowFareFallback === false || !searchPath) {
     return {
       ok: false,
       message: lastMessage
-        ? `Schedule tidak ditemukan lewat Airline/Schedule atau ScheduleAllAirline: ${lastMessage}`
-        : "Schedule tidak ditemukan lewat Airline/Schedule atau ScheduleAllAirline.",
+        ? `Schedule resmi tidak ditemukan lewat Airline/Schedule atau ScheduleAllAirline: ${lastMessage}`
+        : "Schedule resmi tidak ditemukan lewat Airline/Schedule atau ScheduleAllAirline.",
       source: null,
       detailSchedule: null,
       searchKey: null,
